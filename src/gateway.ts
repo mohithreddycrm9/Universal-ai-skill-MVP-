@@ -28,6 +28,11 @@ import { InProcessSandbox } from "./sandbox/in-process.js";
 import type { SandboxProvider } from "./sandbox/provider.js";
 import { CapabilityFirewall } from "./capabilities/firewall.js";
 import { VerificationCache } from "./cache/verification-cache.js";
+import {
+  collectMaterialScannerImplementations,
+  materialScannerVersionsRecord,
+  type ScannerImplementationIdentity,
+} from "./cache/scanner-identity.js";
 import { AuditLog } from "./audit/audit-log.js";
 import { Logger, loggerFromEnv } from "./observability/log.js";
 import { Metrics } from "./observability/metrics.js";
@@ -103,6 +108,7 @@ export class SkillTrustGateway {
   private readonly candidates = new Map<string, SkillCandidate>();
   private readonly dataDir: string;
   private readonly configHash: string;
+  private readonly materialScannerVersions: Record<string, string>;
 
   constructor(opts: GatewayOptions = {}) {
     this.clock = opts.clock ?? systemClock;
@@ -112,7 +118,6 @@ export class SkillTrustGateway {
     const db = openRegistryDatabase(this.config, this.dataDir, opts.sqlitePath);
     this.registry = new SkillRegistry(db, this.clock);
     this.audit = new AuditLog(this.registry, this.clock);
-    this.cache = new VerificationCache(this.registry, this.clock);
     this.graph = new TrustGraph(this.registry, this.clock);
     this.broker = new TrustBroker([new AllowlistTrustProvider(this.config.trust)]);
     this.costDetector = new CostDetector(this.config.cost);
@@ -129,27 +134,30 @@ export class SkillTrustGateway {
         ...(githubEnabled ? [github] : []),
         ...sourcesFromRegistry(this.config.registry, this.config.configDir),
       ];
-    this.orchestrator = new SecurityOrchestrator(
-      [
-        new SecretScanner(this.clock),
-        new PromptInjectionScanner(this.clock),
-        new SuspiciousFilesScanner(this.clock),
-        new DependencyScanner(this.clock),
-        new LicenseScanner(this.clock),
-        new StrixScanner(this.clock),
-        new OssBinaryScanner("semgrep", "adapter-1.0.0", COST_CATALOG.semgrep, "semgrep", this.clock),
-        new OssBinaryScanner("gitleaks", "adapter-1.0.0", COST_CATALOG.gitleaks, "gitleaks", this.clock),
-        new OssBinaryScanner("trivy", "adapter-1.0.0", COST_CATALOG.trivy, "trivy", this.clock),
-        new OssBinaryScanner("clamav", "adapter-1.0.0", COST_CATALOG.clamav, "clamscan", this.clock),
-        new OssBinaryScanner("osv", "adapter-1.0.0", COST_CATALOG.osv, "osv-scanner", this.clock),
-        new OssBinaryScanner("syft", "adapter-1.0.0", COST_CATALOG.syft, "syft", this.clock),
-        new SnykScanner(this.clock),
-      ],
-      this.config,
-      this.clock,
+    const securityScanners = [
+      new SecretScanner(this.clock),
+      new PromptInjectionScanner(this.clock),
+      new SuspiciousFilesScanner(this.clock),
+      new DependencyScanner(this.clock),
+      new LicenseScanner(this.clock),
+      new StrixScanner(this.clock),
+      new OssBinaryScanner("semgrep", "adapter-1.0.0", COST_CATALOG.semgrep, "semgrep", this.clock),
+      new OssBinaryScanner("gitleaks", "adapter-1.0.0", COST_CATALOG.gitleaks, "gitleaks", this.clock),
+      new OssBinaryScanner("trivy", "adapter-1.0.0", COST_CATALOG.trivy, "trivy", this.clock),
+      new OssBinaryScanner("clamav", "adapter-1.0.0", COST_CATALOG.clamav, "clamscan", this.clock),
+      new OssBinaryScanner("osv", "adapter-1.0.0", COST_CATALOG.osv, "osv-scanner", this.clock),
+      new OssBinaryScanner("syft", "adapter-1.0.0", COST_CATALOG.syft, "syft", this.clock),
+      new SnykScanner(this.clock),
+    ];
+    const materialScanners: ScannerImplementationIdentity[] = collectMaterialScannerImplementations(
+      securityScanners,
+      this.config.scanners.scanners,
     );
+    this.materialScannerVersions = materialScannerVersionsRecord(materialScanners);
+    this.cache = new VerificationCache(this.registry, this.clock, { materialScanners });
+    this.orchestrator = new SecurityOrchestrator(securityScanners, this.config, this.clock);
     this.sandbox = opts.sandbox ?? defaultSandbox(this.config);
-    this.configHash = securityConfigurationHash(this.config);
+    this.configHash = securityConfigurationHash(this.config, materialScanners);
   }
 
   registerPackage(pkg: SkillPackage): void {
@@ -809,9 +817,8 @@ export class SkillTrustGateway {
       fingerprint: skill.fingerprint,
       skillId: skill.id,
       securityStatus: "PASS",
-      scannerVersions: Object.fromEntries(
-        this.registry.listScanResults(skill.fingerprint).map((run) => [run.scannerId, run.scannerVersion]),
-      ),
+      // Material enabled-scanner implementations (not whole app deps / not only runs).
+      scannerVersions: { ...this.materialScannerVersions },
       securityConfigHash: this.configHash,
       expiresAt: expiration,
     });

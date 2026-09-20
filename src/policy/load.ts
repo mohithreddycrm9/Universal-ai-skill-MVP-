@@ -5,6 +5,8 @@ import { z } from "zod";
 import { RISK_LEVELS, type RiskLevel } from "../types.js";
 import { canonicalize } from "../util/canonical.js";
 import { sha256 } from "../util/hash.js";
+import type { ScannerImplementationIdentity } from "../cache/scanner-identity.js";
+import { normalizeScannerImplementationIdentities } from "../cache/scanner-identity.js";
 import { COST_POLICIES, type CostPolicy } from "../cost/types.js";
 
 const trustSchema = z.object({
@@ -154,7 +156,20 @@ function loadYaml<T>(path: string, schema: z.ZodType<T>): T {
   return schema.parse(raw);
 }
 
-export function securityConfigurationHash(config: AppConfig): string {
+/**
+ * Canonical security-configuration identity for fingerprints / verification cache.
+ * Includes policy knobs, enabled-scanner config, and material scanner
+ * implementation versions (name+version). Scanner upgrade/downgrade/add/remove
+ * changes this hash → cache miss. Folded here so fingerprint stays the single
+ * cache key (no redundant parallel hash).
+ */
+export function securityConfigurationHash(
+  config: AppConfig,
+  materialScanners: readonly ScannerImplementationIdentity[] = [],
+): string {
+  const materialScannerImplementations = normalizeScannerImplementationIdentities(materialScanners).map(
+    (item) => ({ name: item.name, version: item.version }),
+  );
   return sha256(
     canonicalize({
       requiredScanners: config.security.requiredScanners,
@@ -162,6 +177,7 @@ export function securityConfigurationHash(config: AppConfig): string {
       strixRequiredForRisk: config.security.strixRequiredForRisk,
       failOnSeverity: config.security.failOnSeverity,
       scannerEnabled: config.scanners.scanners,
+      materialScannerImplementations,
     }),
   );
 }
