@@ -40,6 +40,8 @@ npx skill-mcp discover "csv normalization"
 npx skill-mcp list --json
 npx skill-mcp status skl_…
 npx skill-mcp audit --json
+npx skill-mcp costs --json
+npx skill-mcp approvals --json
 ```
 
 Data directory defaults to `./data` (gitignored). Override with `SKILL_MCP_DATA_DIR`.

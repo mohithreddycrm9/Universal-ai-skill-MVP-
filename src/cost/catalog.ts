@@ -73,8 +73,40 @@ export const COST_CATALOG = {
     freeTier: false,
     estimatedCost: "unknown",
     requiresApproval: true,
-    purpose: "Reserved SkillSource (MCP registry / vendor / enterprise)",
+    purpose: "Reserved SkillSource (agent discovery / unknown remote)",
     freeAlternative: "LocalRegistrySource or public GitHub",
+  },
+  mcp_registry_fixture: localFree("MCP registry fixture catalog", "Search a local YAML/JSON MCP skill catalog"),
+  mcp_registry_remote: {
+    provider: "MCP Registry",
+    service: "Remote MCP registry HTTP API",
+    pricingModel: "unknown" as const,
+    freeTier: false,
+    estimatedCost: "unknown",
+    requiresApproval: true,
+    purpose: "Query a remote MCP registry. Unknown-cost remotes fail closed.",
+    freeAlternative: "config/mcp-registry.fixture.yaml or public GitHub",
+  },
+  official_vendor_catalog: localFree(
+    "Official vendor YAML allowlist",
+    "Read config-driven official instruction catalogs (no vendor hard-coding in core)",
+  ),
+  enterprise_registry_catalog: localFree(
+    "Enterprise YAML allowlist",
+    "Read a config-driven enterprise skill catalog from disk",
+  ),
+  postgres: localFree("PostgreSQL registry", "Optional SkillRegistry driver (SQLite is default)", {
+    freeAlternative: "SQLite (node:sqlite)",
+  }),
+  cloud_sandbox: {
+    provider: "unspecified-cloud",
+    service: "Hosted/cloud sandbox",
+    pricingModel: "unknown" as const,
+    freeTier: false,
+    estimatedCost: "unknown",
+    requiresApproval: true,
+    purpose: "Remote sandbox execution (disabled by default; never a silent fallback)",
+    freeAlternative: "Local Docker/Podman or in-process evaluator",
   },
 } as const satisfies Record<string, CostMetadata>;
 

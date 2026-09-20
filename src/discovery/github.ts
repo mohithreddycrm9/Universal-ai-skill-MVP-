@@ -49,7 +49,7 @@ export class GitHubSource implements SkillSource {
   }
 
   async search(query: DiscoveryQuery): Promise<SkillCandidate[]> {
-    const q = encodeURIComponent(`${query.query} in:name,description`);
+    const q = encodeURIComponent(`${query.query} in:name,description is:public`);
     const url = `${this.apiBase}/search/repositories?q=${q}&per_page=${Math.min(query.limit, 10)}`;
     const json = await this.getJson<{
       items?: Array<{
@@ -93,10 +93,18 @@ export class GitHubSource implements SkillSource {
       owner: { login: string };
       html_url: string;
       archived: boolean;
+      private?: boolean;
       created_at: string;
       license: { spdx_id?: string } | null;
       default_branch: string;
     }>(`${this.apiBase}/repos/${owner}/${repo}`);
+    if (meta.private) {
+      throw new SkillMcpError(
+        "COST_APPROVAL_REQUIRED",
+        "Private GitHub repositories are not fetched without approval",
+        { metadata: COST_CATALOG.github_private_or_unknown },
+      );
+    }
     const files: SkillFile[] = [];
     let total = 0;
     for (const name of INTERESTING) {

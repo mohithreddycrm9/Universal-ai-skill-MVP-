@@ -48,4 +48,6 @@ Append-only: `id`, `request_id`, `actor`, `action`, `skill_id`, `fingerprint`, `
 
 ## PostgreSQL
 
-Same tables/types. `SqliteAdapter` is the shipping implementation; `PostgresAdapter` is an interface-compatible stub documented for operators (enable with `SKILL_MCP_DATABASE_URL=postgres://…` once implemented). The abstraction lives in `src/registry/database.ts`.
+Same tables/types as SQLite. `SqliteAdapter` is the default. `PostgresAdapter` (`src/registry/postgres.ts`) rewrites `?` placeholders to `$1..$n` and applies the same schema.
+
+Enable with `database.driver: postgres` plus `DATABASE_URL` or `registry.database.url`, and optional dependency `pg`. Missing URL or missing `pg` fails closed (no silent SQLite fallback). Unit tests cover dialect SQL; live tests run only when `DATABASE_URL` is set.

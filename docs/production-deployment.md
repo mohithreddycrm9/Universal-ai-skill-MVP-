@@ -10,7 +10,7 @@
 - Set `SKILL_MCP_LOG_LEVEL=info` (JSON on stderr). Ship logs to your SIEM. Metrics are exported on `/metrics` when HTTP is enabled.
 - Populate `trust-policy.yaml` official/verified allowlists. Empty lists mean **no publisher is official**.
 - Rotate / revalidate: keep `security.revalidationHours` finite.
-- PostgreSQL: implement/enable `PostgresAdapter` and set `SKILL_MCP_DATABASE_URL` when you outgrow SQLite. SQLite is acceptable for single-node MCP hosts.
+- PostgreSQL: set `database.driver: postgres` and `DATABASE_URL` (optional `pg` package). SQLite remains the default single-node driver. Missing URL fails closed.
 
 ## Hardening checklist
 

@@ -32,6 +32,31 @@ const securitySchema = z.object({
   maxFindingsPerScanner: z.number().default(50),
 });
 
+const SOURCE_KINDS = [
+  "github",
+  "mcp_registry",
+  "official_vendor",
+  "enterprise_registry",
+  "agent_discovery",
+  "local",
+] as const;
+export type SourceKind = (typeof SOURCE_KINDS)[number];
+
+const sourceSchema = z.object({
+  id: z.string(),
+  enabled: z.boolean().default(true),
+  kind: z.enum(SOURCE_KINDS).optional(),
+  apiBase: z.string().optional(),
+  fixturePath: z.string().optional(),
+  catalogPath: z.string().optional(),
+  mode: z.enum(["fixture", "remote"]).default("fixture"),
+  pricingModel: z.enum(["free", "freemium", "paid", "usage_based", "unknown"]).optional(),
+  freeTier: z.boolean().optional(),
+  requiresApproval: z.boolean().optional(),
+  estimatedCost: z.string().optional(),
+});
+export type RegistrySource = z.infer<typeof sourceSchema>;
+
 const sandboxSchema = z.object({
   runtime: z.string().default("docker"),
   image: z.string().default("busybox:1.36"),
@@ -48,6 +73,8 @@ const sandboxSchema = z.object({
   forbiddenEnvPatterns: z.array(z.string()).default(["*TOKEN*", "*SECRET*"]),
   executableRequiresSandbox: z.boolean().default(true),
   unexpectedPrivilegeQuarantine: z.boolean().default(true),
+  pullImage: z.boolean().default(false),
+  cloudSandboxEnabled: z.boolean().default(false),
 });
 
 const scannerSchema = z.object({
@@ -72,17 +99,10 @@ const registrySchema = z.object({
     .object({
       driver: z.enum(["sqlite", "postgres"]).default("sqlite"),
       sqlitePath: z.string().default("data/skill-mcp.sqlite"),
+      url: z.string().optional(),
     })
     .default({ driver: "sqlite", sqlitePath: "data/skill-mcp.sqlite" }),
-  sources: z
-    .array(
-      z.object({
-        id: z.string(),
-        enabled: z.boolean().default(true),
-        apiBase: z.string().optional(),
-      }),
-    )
-    .default([]),
+  sources: z.array(sourceSchema).default([]),
   response: z.object({ maxBytes: z.number().default(32768) }).default({ maxBytes: 32768 }),
   dataDir: z.string().default("data"),
   quarantineDir: z.string().default("data/quarantine"),

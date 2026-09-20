@@ -12,7 +12,13 @@ Any skill with executable components (`spec.entrypoints` non-empty, install scri
 - Read-only root where possible; tmpfs for scratch
 - CPU / memory / PID / timeout limits
 
-If the container runtime is unavailable, sandbox status is `INCONCLUSIVE` / `ERROR`. That **does not** become `PASS`.
+If the container runtime is unavailable, sandbox status is `INCONCLUSIVE`. That **does not** become `PASS`.
+
+Local Docker/Podman is free. Image pull is off by default (`pullImage: false`); a missing local image is `INCONCLUSIVE`. Cloud/hosted sandboxes stay disabled (`cloudSandboxEnabled: false`) and require cost approval — they are never a silent fallback.
+
+The observer does **not** execute skill install hooks or entrypoints. It records a behavioral fingerprint (files/network/processes) inside an isolated container: no host credentials, no `docker.sock`, default-deny network, resource limits, timeout.
+
+Malicious fixtures are simulated in tests via an injected runner. They are not executed on the host.
 
 ## Behavioral fingerprint
 

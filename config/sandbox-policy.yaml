@@ -1,7 +1,7 @@
 # Sandbox and host isolation.
 
 runtime: docker
-image: ghcr.io/skill-mcp/sandbox:local
+image: busybox:1.36
 network: none
 readOnlyRoot: true
 capDrop: [ALL]
@@ -11,6 +11,8 @@ cpus: 0.5
 pidsLimit: 64
 timeoutSeconds: 30
 tmpfs: ["/tmp"]
+pullImage: false
+cloudSandboxEnabled: false
 
 # Never mount these into a sandbox.
 forbiddenMounts:

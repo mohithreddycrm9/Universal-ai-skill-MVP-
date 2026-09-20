@@ -3,10 +3,14 @@ import { join } from "node:path";
 import type { AppConfig } from "./policy/load.js";
 import { loadConfig, securityConfigurationHash } from "./policy/load.js";
 import { SqliteAdapter } from "./registry/sqlite.js";
+import { PostgresAdapter } from "./registry/postgres.js";
+import type { DatabaseAdapter } from "./registry/database.js";
 import { SkillRegistry, type JobRecord } from "./registry/skill-registry.js";
 import type { SkillSource } from "./discovery/skill-source.js";
 import { GitHubSource } from "./discovery/github.js";
 import { LocalSource } from "./discovery/local-source.js";
+import { sourcesFromRegistry } from "./discovery/adapters.js";
+import { DockerSandbox } from "./sandbox/docker.js";
 import { rankCandidates } from "./discovery/rank.js";
 import { AllowlistTrustProvider, TrustBroker } from "./trust/broker.js";
 import { TrustGraph } from "./trust/graph.js";
@@ -42,6 +46,7 @@ import type { Clock } from "./util/clock.js";
 import { iso, systemClock } from "./util/clock.js";
 import { newId } from "./util/ids.js";
 import { SkillMcpError } from "./errors.js";
+import { assertNever } from "./util/assert-never.js";
 import type {
   DisclosureLevel,
   JobType,
@@ -92,8 +97,7 @@ export class SkillTrustGateway {
     this.logger = opts.logger ?? loggerFromEnv();
     this.config = opts.config ?? loadConfig(opts.configDir ?? process.env.SKILL_MCP_CONFIG_DIR ?? "config");
     this.dataDir = opts.dataDir ?? process.env.SKILL_MCP_DATA_DIR ?? this.config.registry.dataDir;
-    const sqlitePath = opts.sqlitePath ?? (this.dataDir === ":memory:" ? ":memory:" : join(this.dataDir, "skill-mcp.sqlite"));
-    const db = new SqliteAdapter(sqlitePath);
+    const db = openRegistryDatabase(this.config, this.dataDir, opts.sqlitePath);
     this.registry = new SkillRegistry(db, this.clock);
     this.audit = new AuditLog(this.registry, this.clock);
     this.cache = new VerificationCache(this.registry, this.clock);
@@ -101,11 +105,18 @@ export class SkillTrustGateway {
     this.broker = new TrustBroker([new AllowlistTrustProvider(this.config.trust)]);
     this.costDetector = new CostDetector(this.config.cost);
     this.localSource = opts.localSource ?? new LocalSource();
+    const githubEnabled = this.config.registry.sources.find((item) => item.id === "github")?.enabled !== false;
     const github = new GitHubSource(
       this.config.registry.sources.find((item) => item.id === "github")?.apiBase ?? "https://api.github.com",
       process.env.GITHUB_TOKEN,
     );
-    this.sources = opts.sources ?? [this.localSource, github];
+    this.sources =
+      opts.sources ??
+      [
+        this.localSource,
+        ...(githubEnabled ? [github] : []),
+        ...sourcesFromRegistry(this.config.registry, this.config.configDir),
+      ];
     this.orchestrator = new SecurityOrchestrator(
       [
         new SecretScanner(this.clock),
@@ -125,7 +136,7 @@ export class SkillTrustGateway {
       this.config,
       this.clock,
     );
-    this.sandbox = opts.sandbox ?? new InProcessSandbox();
+    this.sandbox = opts.sandbox ?? defaultSandbox(this.config);
     this.configHash = securityConfigurationHash(this.config);
   }
 
@@ -141,7 +152,7 @@ export class SkillTrustGateway {
     const remote: SkillCandidate[] = [];
     const skipped: Array<{ source: string; reason: string }> = [];
     for (const source of this.sources) {
-      const cost = source instanceof GitHubSource ? source.costFor() : source.cost;
+      const cost = this.sourceCost(source);
       const decision = this.evaluateCost("discover_skill", cost);
       if (!decision.proceed) {
         skipped.push({
@@ -825,7 +836,7 @@ export class SkillTrustGateway {
   }
 
   private sourceCost(source: SkillSource, repositoryUrl?: string): CostMetadata {
-    if (source instanceof GitHubSource) {
+    if (typeof source.costFor === "function") {
       return source.costFor(repositoryUrl ? { repositoryUrl } : undefined);
     }
     return source.cost;
@@ -878,4 +889,40 @@ export class SkillTrustGateway {
 
 export function createGateway(opts?: GatewayOptions): SkillTrustGateway {
   return new SkillTrustGateway(opts);
+}
+
+function openRegistryDatabase(config: AppConfig, dataDir: string, sqlitePath?: string): DatabaseAdapter {
+  switch (config.registry.database.driver) {
+    case "postgres": {
+      const url = process.env.DATABASE_URL ?? process.env.SKILL_MCP_DATABASE_URL ?? config.registry.database.url;
+      if (!url) {
+        throw new SkillMcpError(
+          "INVALID_INPUT",
+          "Postgres driver selected but DATABASE_URL / registry.database.url is missing. SQLite remains the default.",
+        );
+      }
+      return new PostgresAdapter(url);
+    }
+    case "sqlite": {
+      const path = sqlitePath ?? (dataDir === ":memory:" ? ":memory:" : join(dataDir, "skill-mcp.sqlite"));
+      return new SqliteAdapter(path);
+    }
+    default:
+      return assertNever(config.registry.database.driver, "database driver");
+  }
+}
+
+function defaultSandbox(config: AppConfig): SandboxProvider {
+  const runtime = (process.env.SKILL_MCP_SANDBOX ?? config.sandbox.runtime).toLowerCase();
+  if (config.sandbox.cloudSandboxEnabled) {
+    throw new SkillMcpError(
+      "COST_APPROVAL_REQUIRED",
+      "Cloud/hosted sandbox is disabled by default and is not a silent fallback. Use local Docker/Podman.",
+      { metadata: COST_CATALOG.cloud_sandbox },
+    );
+  }
+  if (runtime === "docker" || runtime === "podman") {
+    return new DockerSandbox(config.sandbox);
+  }
+  return new InProcessSandbox();
 }

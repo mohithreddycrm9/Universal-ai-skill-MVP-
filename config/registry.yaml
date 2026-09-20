@@ -1,17 +1,37 @@
 database:
   driver: sqlite
   sqlitePath: data/skill-mcp.sqlite
+  # Optional Postgres (never a silent fallback):
+  # driver: postgres
+  # url: postgres://localhost:5432/skill_mcp
+  # or set DATABASE_URL.
 
 sources:
   - id: github
     enabled: true
+    kind: github
     apiBase: https://api.github.com
+  - id: mcp_registry
+    enabled: true
+    kind: mcp_registry
+    mode: fixture
+    fixturePath: mcp-registry.fixture.yaml
+    # Remote MCP registry APIs are unknown-cost unless you mark them clearly free.
+    # apiBase: https://registry.modelcontextprotocol.io
+    # mode: remote
+    # pricingModel: unknown
+    # requiresApproval: true
+  - id: official_vendor
+    enabled: true
+    kind: official_vendor
+    catalogPath: official-vendors.yaml
   - id: enterprise_registry
+    enabled: true
+    kind: enterprise_registry
+    catalogPath: enterprise-registry.yaml
+  - id: agent_discovery
     enabled: false
-  - id: official_docs
-    enabled: false
-  - id: package_registry
-    enabled: false
+    kind: agent_discovery
 
 response:
   maxBytes: 32768

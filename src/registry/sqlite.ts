@@ -53,34 +53,3 @@ export class SqliteAdapter implements DatabaseAdapter {
     this.db.close();
   }
 }
-
-/**
- * PostgreSQL swap point. Not implemented in this build — configuring a postgres URL
- * fails closed rather than silently using SQLite.
- */
-export class PostgresAdapter implements DatabaseAdapter {
-  readonly driver = "postgres" as const;
-
-  constructor(_url: string) {
-    throw new Error(
-      "PostgresAdapter is the documented swap point but is not implemented in this build. Use SQLite or add a pg client.",
-    );
-  }
-
-  exec(): void {
-    throw new Error("PostgresAdapter not implemented");
-  }
-  run(): QueryResult {
-    throw new Error("PostgresAdapter not implemented");
-  }
-  get<T>(): T | undefined {
-    throw new Error("PostgresAdapter not implemented");
-  }
-  all<T>(): T[] {
-    throw new Error("PostgresAdapter not implemented");
-  }
-  transaction<T>(): T {
-    throw new Error("PostgresAdapter not implemented");
-  }
-  close(): void {}
-}

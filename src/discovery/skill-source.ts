@@ -23,6 +23,7 @@ export interface PinnedRef {
 export interface SkillSource {
   readonly id: string;
   readonly cost: CostMetadata;
+  costFor?(ref?: SkillRef): CostMetadata;
   search(query: DiscoveryQuery): Promise<SkillCandidate[]>;
   fetch(ref: SkillRef): Promise<SkillPackage>;
   pin(ref: SkillRef): Promise<PinnedRef>;

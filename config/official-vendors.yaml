@@ -1,0 +1,4 @@
+# Allowlisted official vendor / documentation skill catalogs.
+# Core does not hard-code product vendors. Add entries here if you operate an
+# official instruction catalog. Each entry must pin a commit SHA and include files.
+entries: []

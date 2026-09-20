@@ -20,6 +20,8 @@ describe("cost detector", () => {
     expect(decision.kind).toBe("FREE");
     expect(decision.proceed).toBe(true);
     expect(isClearlyFree(COST_CATALOG.github_public)).toBe(true);
+    expect(isClearlyFree(COST_CATALOG.mcp_registry_remote)).toBe(false);
+    expect(isClearlyFree(COST_CATALOG.cloud_sandbox)).toBe(false);
   });
 
   it("requires approval for paid operations", () => {

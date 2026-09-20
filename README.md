@@ -8,19 +8,42 @@ Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sand
 
 Trust is not authorization. `INCONCLUSIVE` is not `PASS`. The MCP never claims a skill is universally “safe.”
 
-
-## Requirements
-
-- Node.js 20.11+ (22+ recommended; SQLite uses `node:sqlite` with `--experimental-sqlite`)
-- Optional: Docker for the container sandbox adapter (missing runtime ⇒ `INCONCLUSIVE`, not `PASS`)
-
-## Setup
+## Fast path
 
 ```bash
 npm install
 npm test
 npm run build
+npx skill-mcp serve
 ```
+
+Optional HTTP:
+
+```bash
+npx skill-mcp serve --http --host 127.0.0.1 --port 43177
+```
+
+Cost catalog and approvals (still required before any metered/unknown-cost work):
+
+```bash
+npx skill-mcp costs --json
+npx skill-mcp approvals --json
+npx skill-mcp approve <approvalId>
+npx skill-mcp reject <approvalId>
+```
+
+## Requirements
+
+- Node.js 20.11+ (22+ recommended; SQLite uses `node:sqlite` with `--experimental-sqlite`)
+- Optional runtimes — missing tools never count as `PASS`:
+
+| Optional | Used for | If missing |
+| --- | --- | --- |
+| Docker or Podman | Isolated verification sandbox | `INCONCLUSIVE` |
+| `pg` + `DATABASE_URL` | PostgreSQL registry | SQLite stays default |
+| STRIX, Semgrep, Gitleaks, Trivy, ClamAV, OSV-Scanner, Syft | Extra OSS scans | `ERROR` / `NOT_RUN` |
+
+Local Docker is treated as free. Cloud/hosted sandboxes stay **off** and approval-gated.
 
 ## Run the MCP server (stdio)
 
@@ -32,13 +55,7 @@ npm run dev
 
 Logs go to **stderr**. Do not capture stdout when a client uses stdio MCP.
 
-## Optional HTTP
-
-```bash
-npx skill-mcp serve --http --host 127.0.0.1 --port 43177
-```
-
-- MCP: `POST http://127.0.0.1:43177/mcp`
+- MCP HTTP: `POST http://127.0.0.1:43177/mcp`
 - Health: `GET http://127.0.0.1:43177/health`
 
 ## CLI
@@ -49,6 +66,8 @@ npx skill-mcp acquire "csv-normalize" --wait --json
 npx skill-mcp list --json
 npx skill-mcp status skl_…
 npx skill-mcp audit --json
+npx skill-mcp costs --json
+npx skill-mcp approvals --json
 ```
 
 ## Connect a client
@@ -65,6 +84,8 @@ npm run bench
 ```
 
 Malicious fixtures under `examples/malicious-fixtures` are **simulated and non-destructive**. They are not executed on the host.
+
+Postgres live tests run only when `DATABASE_URL` is set.
 
 ## Docs
 
@@ -89,6 +110,8 @@ Malicious fixtures under `examples/malicious-fixtures` are **simulated and non-d
 ## Configuration
 
 Security-sensitive policy lives in `config/` (`trust-policy.yaml`, `security-policy.yaml`, `sandbox-policy.yaml`, `scanner-policy.yaml`, `registry.yaml`, `cost-policy.yaml`). Empty official/verified lists mean **no publisher is official**. Default cost policy is `ASK_BEFORE_ANY_PAID_OPERATION`.
+
+Discovery sources are config-driven allowlists (YAML). Core does not hard-code product vendors. The MCP registry adapter is fixture-backed by default; unknown-cost remotes fail closed.
 
 ## License
 

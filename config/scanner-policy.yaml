@@ -25,16 +25,23 @@ scanners:
     failOpen: false
   semgrep:
     enabled: false
+    binary: semgrep
+    rulesPath: config/semgrep-local.yml
   gitleaks:
     enabled: false
+    binary: gitleaks
   trivy:
     enabled: false
+    binary: trivy
   clamav:
     enabled: false
+    binary: clamscan
   osv:
     enabled: false
+    binary: osv-scanner
   syft:
     enabled: false
+    binary: syft
   snyk:
     enabled: false
     # Commercial. Never an automatic fallback. Requires cost approval even if enabled.

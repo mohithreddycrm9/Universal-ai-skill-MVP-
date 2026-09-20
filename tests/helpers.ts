@@ -3,6 +3,7 @@ import { loadConfig, type AppConfig } from "../src/policy/load.js";
 import { createGateway, type GatewayOptions } from "../src/gateway.js";
 import { LocalSource } from "../src/discovery/local-source.js";
 import { Logger } from "../src/observability/log.js";
+import { InProcessSandbox } from "../src/sandbox/in-process.js";
 
 export function testConfig(overrides?: (config: AppConfig) => void): AppConfig {
   const config = loadConfig("config");
@@ -97,6 +98,7 @@ export function testGateway(packages: SkillPackage[], config?: AppConfig): Retur
     dataDir: ":memory:",
     localSource: local,
     sources: [local],
+    sandbox: new InProcessSandbox(),
     logger: new Logger("silent"),
   };
   return createGateway(opts);

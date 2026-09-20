@@ -9,6 +9,7 @@ import { Logger } from "../../src/observability/log.js";
 import { SnykScanner } from "../../src/scanners/snyk.js";
 import { SecretScanner } from "../../src/scanners/secret.js";
 import { SecurityOrchestrator } from "../../src/security/orchestrator.js";
+import { InProcessSandbox } from "../../src/sandbox/in-process.js";
 
 class PaidRegistrySource implements SkillSource {
   readonly id = "paid_registry";
@@ -70,6 +71,7 @@ describe("cost control integration", () => {
       dataDir: ":memory:",
       localSource: local,
       sources: [paid],
+      sandbox: new InProcessSandbox(),
       logger: new Logger("silent"),
     });
     const result = (await gw.acquire({
@@ -92,6 +94,7 @@ describe("cost control integration", () => {
       dataDir: ":memory:",
       localSource: new LocalSource(),
       sources: [paid],
+      sandbox: new InProcessSandbox(),
       logger: new Logger("silent"),
     });
     const pending = (await gw.acquire({

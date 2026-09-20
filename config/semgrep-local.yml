@@ -1,0 +1,12 @@
+# Local-only Semgrep rules. Do not use --config auto (may call a hosted service).
+rules:
+  - id: skill-mcp.child-process
+    message: Skill package references process spawning
+    languages: [generic]
+    severity: WARNING
+    pattern-regex: child_process|\/bin\/sh|powershell
+  - id: skill-mcp.eval
+    message: Skill package references dynamic evaluation
+    languages: [generic]
+    severity: WARNING
+    pattern-regex: \beval\s*\(|new Function\s*\(

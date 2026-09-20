@@ -1,0 +1,4 @@
+# Allowlisted enterprise skill catalog (YAML). No remote calls unless you add
+# a source with mode: remote and a clearly-free cost in registry.yaml.
+# Unknown-cost remotes fail closed and require approval.
+entries: []

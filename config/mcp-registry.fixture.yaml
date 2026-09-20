@@ -1,0 +1,25 @@
+# Local/fixture-backed MCP skill catalog. Used when remote registry APIs are
+# unavailable or not clearly free. Entries are instruction packages (HOW), not
+# executable product APIs.
+entries:
+  - name: markdown-outline
+    description: Build a heading outline from a local Markdown file
+    publisher: fixture-org
+    repository: fixture-org/markdown-outline
+    repositoryUrl: https://example.local/fixture-org/markdown-outline
+    defaultRef: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    commitSha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    license: MIT
+    files:
+      - path: SKILL.md
+        content: |
+          ---
+          name: markdown-outline
+          description: Build a heading outline from a local Markdown file
+          ---
+
+          Collect ATX headings from a local Markdown document the user names.
+          Do not fetch remote pages. Do not write files unless the user explicitly asks
+          and the gateway has authorized filesystem.write (default: not authorized).
+      - path: LICENSE
+        content: MIT License
