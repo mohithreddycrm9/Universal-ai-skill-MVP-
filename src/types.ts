@@ -216,8 +216,11 @@ export interface SkillCandidate {
   repository: string;
   repositoryUrl: string;
   defaultRef: string;
+  owner?: string;
+  repo?: string;
   version?: string;
   commit?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ScanTarget {

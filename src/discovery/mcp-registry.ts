@@ -107,16 +107,24 @@ export class MCPRegistrySource implements SkillSource {
     }
     const json = (await response.json()) as Record<string, unknown>;
     const rows = extractRemoteServers(json);
-    return rows.slice(0, query.limit).map((row) => ({
-      candidateId: `${this.id}:${row.repository}`,
-      sourceId: this.id,
-      name: row.name,
-      description: row.description,
-      publisher: row.publisher,
-      repository: row.repository,
-      repositoryUrl: row.repositoryUrl,
-      defaultRef: row.defaultRef,
-    }));
+    return rows.slice(0, query.limit).map((row) => {
+      const parts = row.repository.split("/").filter(Boolean);
+      const owner = parts.length >= 2 ? parts[0] : row.publisher;
+      const repo = parts.length >= 2 ? parts.slice(1).join("/") : parts[0];
+      return {
+        candidateId: `${this.id}:${row.repository}`,
+        sourceId: this.id,
+        name: row.name,
+        description: row.description,
+        publisher: row.publisher,
+        repository: row.repository,
+        repositoryUrl: row.repositoryUrl,
+        defaultRef: row.defaultRef,
+        owner,
+        repo,
+        metadata: { mcpRegistry: true },
+      };
+    });
   }
 }
 

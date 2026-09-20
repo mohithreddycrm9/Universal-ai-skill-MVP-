@@ -40,7 +40,7 @@ import {
   manifestFromPackage,
 } from "./skills/manifest.js";
 import { customManifestToMcpSkill, filesDigest } from "./skills/mcp-skill.js";
-import { disclose } from "./skills/disclosure.js";
+import { canDiscloseSkillContent, disclose } from "./skills/disclosure.js";
 import { describeLifecycle, normalizeLifecycle } from "./skills/lifecycle.js";
 import type { Clock } from "./util/clock.js";
 import { iso, systemClock } from "./util/clock.js";
@@ -89,6 +89,8 @@ export class SkillTrustGateway {
   private readonly audit: AuditLog;
   private readonly costDetector: CostDetector;
   private readonly packages = new Map<string, SkillPackage>();
+  /** Discovery candidates keyed by candidateId — acquire must fetch via original SkillSource. */
+  private readonly candidates = new Map<string, SkillCandidate>();
   private readonly dataDir: string;
   private readonly configHash: string;
 
@@ -175,10 +177,14 @@ export class SkillTrustGateway {
       action: "discover_skill",
       detail: { query: input.query, hits: ranked.length },
     });
+    const surfaced = ranked.slice(0, limit);
+    for (const item of surfaced) {
+      this.rememberCandidate(item);
+    }
     return {
       securityNotice: SECURITY_NOTICE,
       localVerified: localHits.map((skill) => this.cardMeta(skill)),
-      candidates: ranked.slice(0, limit).map((item) => ({
+      candidates: surfaced.map((item) => ({
         ...item,
         note: "Candidate only. Not trusted until the gateway pipeline completes. Skills explain HOW; other tools execute.",
       })),
@@ -347,6 +353,19 @@ export class SkillTrustGateway {
     const pkg = this.packages.get(skill.id);
     const mcp = customManifestToMcpSkill(skill.manifest, pkg);
     const level = (input.level ?? 0) as DisclosureLevel;
+    if (level >= 1 && !canDiscloseSkillContent(skill)) {
+      throw new SkillMcpError(
+        "POLICY_DENIED",
+        "Skill content disclosure requires AVAILABLE lifecycle with PASS security; level 0 metadata remains available",
+        {
+          skillId: skill.id,
+          lifecycle: normalizeLifecycle(skill.lifecycle),
+          security: skill.securityStatus,
+          trust: skill.trustTier,
+          level,
+        },
+      );
+    }
     const body = input.resourcePath ? pkg?.files.find((file) => file.path === input.resourcePath)?.content : undefined;
     this.audit.record({
       requestId: input.requestId,
@@ -354,7 +373,7 @@ export class SkillTrustGateway {
       action: "get_skill",
       skillId: skill.id,
       fingerprint: skill.fingerprint,
-      detail: { level },
+      detail: { level, contentAllowed: canDiscloseSkillContent(skill) },
     });
     return disclose(skill, mcp, level, input.resourcePath, body);
   }
@@ -747,14 +766,87 @@ export class SkillTrustGateway {
     return id;
   }
 
+  private rememberCandidate(candidate: SkillCandidate): void {
+    this.candidates.set(candidate.candidateId, {
+      ...candidate,
+      owner: candidate.owner ?? candidate.repository.split("/")[0],
+      repo:
+        candidate.repo ??
+        (candidate.repository.includes("/")
+          ? candidate.repository.split("/").slice(1).join("/")
+          : candidate.repository),
+      metadata: candidate.metadata ?? {},
+    });
+  }
+
+  private async fetchFromSource(
+    source: SkillSource,
+    ref: { repositoryUrl: string; ref?: string; owner?: string; repo?: string },
+    approvalId?: string,
+  ): Promise<SkillPackage> {
+    const cost = this.sourceCost(source, ref.repositoryUrl);
+    const decision = this.evaluateCost("acquire_skill", cost, approvalId);
+    if (!decision.proceed) {
+      if (decision.kind === "NEEDS_APPROVAL") {
+        throw new SkillMcpError("COST_APPROVAL_REQUIRED", "Potentially billable source requires approval", {
+          review: decision.review,
+          metadata: decision.metadata,
+        });
+      }
+      throw new SkillMcpError("POLICY_DENIED", decision.reason, { metadata: decision.metadata });
+    }
+    return source.fetch(ref);
+  }
+
   private async resolvePackage(input: {
     query?: string;
     candidateId?: string;
     repositoryUrl?: string;
     approvalId?: string;
   }): Promise<SkillPackage> {
+    if (input.candidateId) {
+      const candidate = this.candidates.get(input.candidateId);
+      if (!candidate) {
+        throw new SkillMcpError(
+          "NOT_FOUND",
+          `Unknown candidateId '${input.candidateId}'. Call discover_skill first; acquire must resolve the original SkillSource.`,
+          { candidateId: input.candidateId },
+        );
+      }
+      const source = this.sources.find((item) => item.id === candidate.sourceId);
+      if (!source) {
+        throw new SkillMcpError(
+          "NOT_FOUND",
+          `SkillSource '${candidate.sourceId}' is not registered; refusing silent LocalSource fallback for candidate ${input.candidateId}`,
+          { candidateId: input.candidateId, sourceId: candidate.sourceId },
+        );
+      }
+      try {
+        return await this.fetchFromSource(
+          source,
+          {
+            repositoryUrl: candidate.repositoryUrl,
+            ref: candidate.commit ?? candidate.defaultRef,
+            owner: candidate.owner,
+            repo: candidate.repo,
+          },
+          input.approvalId,
+        );
+      } catch (error) {
+        if (error instanceof SkillMcpError) {
+          throw error;
+        }
+        throw new SkillMcpError(
+          "SOURCE_ERROR",
+          `Original SkillSource '${candidate.sourceId}' failed to fetch candidate ${input.candidateId}`,
+          { candidateId: input.candidateId, sourceId: candidate.sourceId, cause: String(error) },
+        );
+      }
+    }
+
     if (input.repositoryUrl) {
       let pending: CostDecision | undefined;
+      let lastError: unknown;
       for (const source of this.sources) {
         const cost = this.sourceCost(source, input.repositoryUrl);
         const decision = this.evaluateCost("acquire_skill", cost, input.approvalId);
@@ -764,7 +856,8 @@ export class SkillTrustGateway {
         }
         try {
           return await source.fetch({ repositoryUrl: input.repositoryUrl });
-        } catch {
+        } catch (error) {
+          lastError = error;
           continue;
         }
       }
@@ -777,13 +870,27 @@ export class SkillTrustGateway {
       if (pending?.kind === "DENIED") {
         throw new SkillMcpError("POLICY_DENIED", pending.reason, { metadata: pending.metadata });
       }
+      throw new SkillMcpError(
+        "NOT_FOUND",
+        "No SkillSource could fetch the repositoryUrl",
+        { repositoryUrl: input.repositoryUrl, cause: lastError ? String(lastError) : undefined },
+      );
     }
-    const q = input.query ?? (input.candidateId?.includes(":") ? input.candidateId.split(":")[1] : input.candidateId) ?? "";
-    const hits = await this.localSource.search({ query: q, limit: 1 });
-    const hit = hits[0];
-    if (hit) {
-      return this.localSource.fetch({ repositoryUrl: hit.repositoryUrl });
+
+    if (input.query) {
+      const hits = await this.localSource.search({ query: input.query, limit: 1 });
+      const hit = hits[0];
+      if (hit) {
+        this.rememberCandidate(hit);
+        return this.localSource.fetch({
+          repositoryUrl: hit.repositoryUrl,
+          owner: hit.owner,
+          repo: hit.repo,
+          ref: hit.commit ?? hit.defaultRef,
+        });
+      }
     }
+
     throw new SkillMcpError("NOT_FOUND", "No skill candidate resolved for acquisition");
   }
 

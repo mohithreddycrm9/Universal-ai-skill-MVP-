@@ -78,6 +78,7 @@ function stringField(value: unknown): string | undefined {
 }
 
 export function entryToCandidate(entry: CatalogEntry, sourceId: string): SkillCandidate {
+  const { owner, repo } = ownerRepoFromRepository(entry.repository);
   return {
     candidateId: `${sourceId}:${entry.repository}`,
     sourceId,
@@ -87,8 +88,20 @@ export function entryToCandidate(entry: CatalogEntry, sourceId: string): SkillCa
     repository: entry.repository,
     repositoryUrl: entry.repositoryUrl,
     defaultRef: entry.defaultRef,
+    owner,
+    repo,
     commit: entry.commitSha,
+    metadata: { catalog: true },
   };
+}
+
+function ownerRepoFromRepository(repository: string): { owner?: string; repo?: string } {
+  const trimmed = repository.trim().replace(/\.git$/i, "");
+  const parts = trimmed.split("/").filter(Boolean);
+  if (parts.length >= 2) {
+    return { owner: parts[0], repo: parts.slice(1).join("/") };
+  }
+  return {};
 }
 
 export function entryToPackage(entry: CatalogEntry, sourceId: string): SkillPackage {

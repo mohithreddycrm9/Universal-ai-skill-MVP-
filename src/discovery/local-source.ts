@@ -30,6 +30,9 @@ export class LocalSource implements SkillSource {
       if (!blob.includes(q) && !pkg.repository.toLowerCase().includes(q)) {
         continue;
       }
+      const parts = pkg.repository.split("/").filter(Boolean);
+      const owner = parts.length >= 2 ? parts[0] : pkg.ownerLogin;
+      const repo = parts.length >= 2 ? parts.slice(1).join("/") : parts[0];
       hits.push({
         candidateId: `local:${pkg.repository}`,
         sourceId: this.id,
@@ -39,6 +42,10 @@ export class LocalSource implements SkillSource {
         repository: pkg.repository,
         repositoryUrl: pkg.repositoryUrl,
         defaultRef: pkg.commitSha,
+        owner,
+        repo,
+        commit: pkg.commitSha,
+        metadata: { local: true },
       });
       if (hits.length >= query.limit) {
         break;

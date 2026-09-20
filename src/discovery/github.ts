@@ -60,16 +60,23 @@ export class GitHubSource implements SkillSource {
         default_branch: string;
       }>;
     }>(url);
-    return (json.items ?? []).map((item) => ({
-      candidateId: `github:${item.full_name}`,
-      sourceId: this.id,
-      name: item.full_name.split("/")[1] ?? item.full_name,
-      description: truncate(item.description ?? item.full_name, 240),
-      publisher: item.owner.login,
-      repository: item.full_name,
-      repositoryUrl: item.html_url,
-      defaultRef: item.default_branch,
-    }));
+    return (json.items ?? []).map((item) => {
+      const [owner, ...repoParts] = item.full_name.split("/");
+      const repo = repoParts.join("/") || undefined;
+      return {
+        candidateId: `github:${item.full_name}`,
+        sourceId: this.id,
+        name: repo ?? item.full_name,
+        description: truncate(item.description ?? item.full_name, 240),
+        publisher: item.owner.login,
+        repository: item.full_name,
+        repositoryUrl: item.html_url,
+        defaultRef: item.default_branch,
+        owner: owner || item.owner.login,
+        repo,
+        metadata: { defaultBranch: item.default_branch },
+      };
+    });
   }
 
   async pin(ref: SkillRef): Promise<PinnedRef> {

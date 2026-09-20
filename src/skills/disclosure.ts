@@ -10,6 +10,25 @@ import { SECURITY_NOTICE } from "../types.js";
 import { describeLifecycle, normalizeLifecycle } from "./lifecycle.js";
 import { truncate } from "./manifest.js";
 
+/** Status strings that must never unlock progressive content (level ≥ 1). */
+const CONTENT_BLOCK_STATUSES = new Set([
+  "FAIL",
+  "ERROR",
+  "TIMEOUT",
+  "INCONCLUSIVE",
+  "NOT_RUN",
+  "UNKNOWN",
+  "UNTRUSTED",
+  "QUARANTINED",
+  "REJECTED",
+]);
+
+export interface DisclosureSubject {
+  lifecycle: SkillRecord["lifecycle"];
+  securityStatus: SecurityStatus;
+  trustTier: TrustTier;
+}
+
 export interface DisclosureCard {
   level: DisclosureLevel;
   name: string;
@@ -27,6 +46,33 @@ export interface DisclosureCard {
   resource?: { path: string; content: string; digest: string };
   lifecycleNote: string;
   reputation?: string;
+  contentBlocked?: boolean;
+  contentBlockReason?: string;
+}
+
+/**
+ * Whether SKILL.md / resource bodies may be disclosed (progressive level ≥ 1).
+ * Level 0 metadata is always allowed for unverified skills; content requires an
+ * AVAILABLE skill with PASS security and a non-blocked trust tier.
+ */
+export function canDiscloseSkillContent(skill: DisclosureSubject | SkillRecord): boolean {
+  const lifecycle = normalizeLifecycle(skill.lifecycle);
+  if (lifecycle !== "AVAILABLE") {
+    return false;
+  }
+  if (skill.securityStatus !== "PASS") {
+    return false;
+  }
+  if (CONTENT_BLOCK_STATUSES.has(lifecycle)) {
+    return false;
+  }
+  if (CONTENT_BLOCK_STATUSES.has(skill.securityStatus)) {
+    return false;
+  }
+  if (CONTENT_BLOCK_STATUSES.has(skill.trustTier)) {
+    return false;
+  }
+  return true;
 }
 
 export function disclose(
@@ -53,6 +99,15 @@ export function disclose(
   };
   if (level === 0) {
     return base;
+  }
+  if (!canDiscloseSkillContent(record)) {
+    return {
+      ...base,
+      level: 0,
+      contentBlocked: true,
+      contentBlockReason:
+        "Skill content requires AVAILABLE lifecycle with PASS security; unverified or blocked states cannot disclose level ≥ 1.",
+    };
   }
   if (level === 1) {
     return { ...base, permissions: record.permissions, skillMd: truncate(mcp.body, 8 * 1024) };
