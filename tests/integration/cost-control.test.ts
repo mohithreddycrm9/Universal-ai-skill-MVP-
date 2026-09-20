@@ -50,8 +50,14 @@ class PaidRegistrySource implements SkillSource {
   }
 }
 
+function askBeforeConfig() {
+  return testConfig((cfg) => {
+    cfg.cost.policy = "ASK_BEFORE_ANY_PAID_OPERATION";
+  });
+}
+
 describe("cost control integration", () => {
-  it("lets a free local acquire proceed", async () => {
+  it("lets a free local acquire proceed under $0 free-only default", async () => {
     const gw = testGateway([benignPackage()]);
     const result = (await gw.acquire({ query: "csv-normalize", wait: true, requestId: "free" })) as {
       lifecycle: string;
@@ -61,15 +67,37 @@ describe("cost control integration", () => {
     expect(result.status).not.toBe("NEEDS_COST_APPROVAL");
   });
 
-  it("does not start a paid acquire without approval", async () => {
+  it("denies paid acquire under ALLOW_FREE_ONLY without offering a paid path", async () => {
     const pkg = benignPackage();
     const paid = new PaidRegistrySource(pkg);
-    const local = new LocalSource();
     const gw = createGateway({
       config: testConfig(),
       sqlitePath: ":memory:",
       dataDir: ":memory:",
-      localSource: local,
+      localSource: new LocalSource(),
+      sources: [paid],
+      sandbox: new InProcessSandbox(),
+      logger: new Logger("silent"),
+    });
+    await expect(
+      gw.acquire({
+        repositoryUrl: pkg.repositoryUrl,
+        wait: true,
+        requestId: "paid-free-only",
+      }),
+    ).rejects.toThrow(/ALLOW_FREE_ONLY|forbids paid/i);
+    const listed = gw.listSkills({});
+    expect((listed as { items: unknown[] }).items).toHaveLength(0);
+  });
+
+  it("does not start a paid acquire without approval when ask-before is enabled", async () => {
+    const pkg = benignPackage();
+    const paid = new PaidRegistrySource(pkg);
+    const gw = createGateway({
+      config: askBeforeConfig(),
+      sqlitePath: ":memory:",
+      dataDir: ":memory:",
+      localSource: new LocalSource(),
       sources: [paid],
       sandbox: new InProcessSandbox(),
       logger: new Logger("silent"),
@@ -85,11 +113,11 @@ describe("cost control integration", () => {
     expect((listed as { items: unknown[] }).items).toHaveLength(0);
   });
 
-  it("stops when the human rejects, and proceeds after explicit approval", async () => {
+  it("stops when the human rejects, and proceeds after explicit approval (ask-before)", async () => {
     const pkg = benignPackage();
     const paid = new PaidRegistrySource(pkg);
     const gw = createGateway({
-      config: testConfig(),
+      config: askBeforeConfig(),
       sqlitePath: ":memory:",
       dataDir: ":memory:",
       localSource: new LocalSource(),
