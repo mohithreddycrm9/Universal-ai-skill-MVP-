@@ -1,0 +1,20 @@
+database:
+  driver: sqlite
+  sqlitePath: data/skill-mcp.sqlite
+
+sources:
+  - id: github
+    enabled: true
+    apiBase: https://api.github.com
+  - id: enterprise_registry
+    enabled: false
+  - id: official_docs
+    enabled: false
+  - id: package_registry
+    enabled: false
+
+response:
+  maxBytes: 32768
+
+dataDir: data
+quarantineDir: data/quarantine

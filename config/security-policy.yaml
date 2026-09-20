@@ -1,0 +1,32 @@
+# Security gate. Default favors reject/quarantine.
+
+revalidationHours: 168
+
+requiredScanners:
+  - secret
+  - prompt_injection
+  - suspicious_files
+  - dependency
+
+# STRIX is pluggable. If the binary is missing it must NOT be recorded as PASS.
+# Required only for HIGH/CRITICAL risk skills.
+optionalScanners:
+  - license
+  - strix
+
+strixRequiredForRisk:
+  - HIGH
+  - CRITICAL
+
+failOnSeverity:
+  - CRITICAL
+  - HIGH
+
+inconclusiveRequiredIsNotPass: true
+
+# Never auto-approve when a required scanner is missing or errors.
+denyApproveOnInconclusive: true
+denyApproveOnFail: true
+
+maxFindingEvidenceChars: 480
+maxFindingsPerScanner: 50

@@ -1,0 +1,32 @@
+# Sandbox and host isolation.
+
+runtime: docker
+image: ghcr.io/skill-mcp/sandbox:local
+network: none
+readOnlyRoot: true
+capDrop: [ALL]
+noNewPrivileges: true
+memoryMb: 256
+cpus: 0.5
+pidsLimit: 64
+timeoutSeconds: 30
+tmpfs: ["/tmp"]
+
+# Never mount these into a sandbox.
+forbiddenMounts:
+  - /var/run/docker.sock
+  - /etc/shadow
+  - /root
+
+# Host environment keys that must not be forwarded.
+forbiddenEnvPatterns:
+  - "*TOKEN*"
+  - "*SECRET*"
+  - "*PASSWORD*"
+  - "*AWS*"
+  - "*GOOGLE*"
+  - "*AZURE*"
+  - "*PRIVATE_KEY*"
+
+executableRequiresSandbox: true
+unexpectedPrivilegeQuarantine: true

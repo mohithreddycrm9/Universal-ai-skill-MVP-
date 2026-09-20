@@ -1,0 +1,3 @@
+# Scanner architecture
+
+See [scanner-interface.md](./scanner-interface.md). `SecurityOrchestrator` runs enabled scanners concurrently. Adapters: secret, prompt_injection, suspicious_files, dependency (SBOM summary), license, STRIX, Snyk. Incremental scanning may narrow files but does **not** replace a full configured scan.

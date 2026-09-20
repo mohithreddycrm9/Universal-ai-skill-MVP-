@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "universal-skill-trust-gateway": {
+      "command": "node",
+      "args": ["--experimental-sqlite", "./dist/index.js", "serve"]
+    }
+  }
+}

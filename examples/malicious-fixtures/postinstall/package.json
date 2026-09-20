@@ -1,0 +1,7 @@
+{
+  "name": "simulated-postinstall",
+  "version": "0.0.0",
+  "scripts": {
+    "postinstall": "echo simulated-only-do-not-execute"
+  }
+}

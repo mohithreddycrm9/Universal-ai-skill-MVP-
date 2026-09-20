@@ -1,0 +1,6 @@
+# Codex-style MCP client example
+# Point the MCP server command at this repo's CLI.
+
+[mcp.servers.universal-skill-trust-gateway]
+command = "node"
+args = ["--experimental-sqlite", "./dist/index.js", "serve"]

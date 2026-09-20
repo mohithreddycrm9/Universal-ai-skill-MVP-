@@ -1,0 +1,46 @@
+{
+  "name": "@skill-mcp/universal-skill-trust",
+  "version": "0.1.0",
+  "description": "Software-agnostic Universal Skill Trust Gateway (MCP)",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "bin": {
+    "skill-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --experimental-sqlite dist/index.js",
+    "dev": "tsx --experimental-sqlite src/index.ts",
+    "cli": "tsx --experimental-sqlite src/index.ts",
+    "test": "node --experimental-sqlite ./node_modules/vitest/vitest.mjs run",
+    "test:watch": "node --experimental-sqlite ./node_modules/vitest/vitest.mjs",
+    "bench": "tsx --experimental-sqlite tests/perf/benchmark.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "skills",
+    "security",
+    "trust",
+    "supply-chain"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "commander": "^15.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

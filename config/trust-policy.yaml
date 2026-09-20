@@ -1,0 +1,17 @@
+# Publisher trust. Empty allowlists mean nobody is official by default.
+# A vendor name appearing in a repository path is not evidence.
+
+allowUnknownPublisherScan: true
+allowUnknownPublisherApprove: false
+treatArchivedAsUntrusted: true
+
+officialOrganizations: []
+verifiedPublishers: []
+trustedCommunityPublishers: []
+untrustedPublishers: []
+
+# Optional domain references used as supporting evidence only (never sufficient alone).
+officialDomainSuffixes: []
+
+# Signed-release / provenance requirements by tier.
+requireSignedReleaseForOfficial: false

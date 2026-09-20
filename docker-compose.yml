@@ -1,0 +1,38 @@
+services:
+  skill-mcp:
+    build: .
+    command: ["node", "--experimental-sqlite", "dist/index.js", "serve", "--http", "--host", "0.0.0.0", "--port", "43177"]
+    ports:
+      - "43177:43177"
+    volumes:
+      - ./config:/app/config:ro
+      - skill-data:/app/data
+    environment:
+      SKILL_MCP_CONFIG_DIR: /app/config
+      SKILL_MCP_DATA_DIR: /app/data
+      SKILL_MCP_LOG_LEVEL: info
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: "1.0"
+
+  sandbox-worker:
+    image: busybox:1.36
+    command: ["sh", "-c", "echo sandbox worker placeholder; sleep infinity"]
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: "0.5"
+    # Intentionally no docker.sock and no host credentials.
+
+volumes:
+  skill-data:
