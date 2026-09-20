@@ -16,6 +16,8 @@ Approved copy: **PASSED_CONFIGURED_CHECKS**, **FAILED**, **INCONCLUSIVE**, **QUA
 
 ## Lifecycle enforcement
 
+> Current sandbox stage: `ISOLATED_STATIC` / `SANDBOX_STATIC_ONLY` — static observation only; does not execute skill code/entrypoints/hooks (not runtime detonation).
+
 `DISCOVERED → UNTRUSTED → VERIFYING → SCANNING → SANDBOXING → APPROVED → AVAILABLE`
 
 Illegal transitions are rejected. Security steps cannot be skipped. Executable skills cannot reach `APPROVED` without a sandbox result that is not `FAIL`/`INCONCLUSIVE` when sandboxing is required.

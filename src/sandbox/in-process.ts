@@ -5,8 +5,8 @@ import { unexpectedPrivileges } from "./provider.js";
 import { COST_CATALOG } from "../cost/catalog.js";
 
 /**
- * Test/experimental sandbox: does not execute untrusted code.
- * Interprets package metadata into an observed behavioral fingerprint.
+ * ISOLATED_STATIC / SANDBOX_STATIC_ONLY test adapter: does not execute untrusted code.
+ * Interprets package metadata into an observed behavioral fingerprint (not detonation).
  */
 export class InProcessSandbox implements SandboxProvider {
   readonly id = "in-process";
@@ -39,7 +39,10 @@ export class InProcessSandbox implements SandboxProvider {
         status: "PASS",
         observed,
         unexpected: [],
-        notes: "No executable components; sandbox execution not required. This is not a malware-free claim.",
+        notes: "ISOLATED_STATIC/SANDBOX_STATIC_ONLY: No executable components; static observation not required. Does not run skill code. Not a malware-free claim.",
+        stage: "ISOLATED_STATIC",
+        sandboxMode: "SANDBOX_STATIC_ONLY",
+        executesSkillCode: false,
       };
     }
     if (unexpected.length) {
@@ -47,14 +50,20 @@ export class InProcessSandbox implements SandboxProvider {
         status: "FAIL",
         observed,
         unexpected,
-        notes: `Unexpected privileged behavior: ${unexpected.join(",")}`,
+        notes: `ISOLATED_STATIC/SANDBOX_STATIC_ONLY: Unexpected privileged signals in static observation: ${unexpected.join(",")}. Skill code was not executed.`,
+        stage: "ISOLATED_STATIC",
+        sandboxMode: "SANDBOX_STATIC_ONLY",
+        executesSkillCode: false,
       };
     }
     return {
       status: "PASS",
       observed,
       unexpected,
-      notes: "In-process static observation of declared vs observed. Not a host execution.",
+      notes: "ISOLATED_STATIC/SANDBOX_STATIC_ONLY: In-process static observation of declared vs observed. Does NOT execute skill code/entrypoints/hooks. Not runtime detonation.",
+      stage: "ISOLATED_STATIC",
+      sandboxMode: "SANDBOX_STATIC_ONLY",
+      executesSkillCode: false,
     };
   }
 }

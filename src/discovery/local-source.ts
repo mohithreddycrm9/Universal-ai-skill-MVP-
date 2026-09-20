@@ -42,10 +42,12 @@ export class LocalSource implements SkillSource {
         repository: pkg.repository,
         repositoryUrl: pkg.repositoryUrl,
         defaultRef: pkg.commitSha,
+        requestedRef: pkg.commitSha,
+        resolvedCommitSha: pkg.commitSha,
         owner,
         repo,
         commit: pkg.commitSha,
-        metadata: { local: true },
+        metadata: { local: true, pinnedAtDiscover: true },
       });
       if (hits.length >= query.limit) {
         break;

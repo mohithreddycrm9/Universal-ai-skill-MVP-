@@ -207,6 +207,17 @@ export interface SkillPackage {
   files: SkillFile[];
 }
 
+export type MetadataTrust = "UNTRUSTED" | "VERIFIED_ARTIFACT";
+
+/** Immutable skill artifact identity — never name/branch/latest alone. */
+export interface CanonicalArtifactIdentity {
+  sourceId: string;
+  repository: string;
+  resolvedCommitSha: string;
+  contentFingerprint: string;
+  filesDigest?: string;
+}
+
 export interface SkillCandidate {
   candidateId: string;
   sourceId: string;
@@ -216,6 +227,10 @@ export interface SkillCandidate {
   repository: string;
   repositoryUrl: string;
   defaultRef: string;
+  /** Ref requested at discovery (branch/tag/sha). */
+  requestedRef?: string;
+  /** Commit SHA resolved at discovery when possible (TOCTOU pin). */
+  resolvedCommitSha?: string;
   owner?: string;
   repo?: string;
   version?: string;

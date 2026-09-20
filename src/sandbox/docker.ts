@@ -12,7 +12,9 @@ import { hasInstallScripts } from "../skills/manifest.js";
 const HOST_CREDENTIAL_ENV = /TOKEN|SECRET|PASSWORD|AWS|GOOGLE|AZURE|PRIVATE_KEY|GITHUB|NPM_TOKEN|KUBE/i;
 
 /**
- * Isolated Docker/Podman sandbox for verification only.
+ * ISOLATED_STATIC / SANDBOX_STATIC_ONLY Docker/Podman adapter.
+ * Runs a read-only observer inside an isolated container — does NOT execute skill
+ * code, entrypoints, or install hooks (not runtime detonation).
  * Missing runtime → INCONCLUSIVE, never PASS.
  * Local engine is free. Cloud/hosted sandboxes are not constructed here.
  */
@@ -32,7 +34,10 @@ export class DockerSandbox implements SandboxProvider {
         status: "INCONCLUSIVE",
         observed: emptyBehavior(),
         unexpected: [],
-        notes: "Docker/Podman unavailable. Sandbox not executed. INCONCLUSIVE ≠ PASS.",
+        notes: "ISOLATED_STATIC/SANDBOX_STATIC_ONLY: Docker/Podman unavailable. Static sandbox not executed. Does not run skill code. INCONCLUSIVE ≠ PASS.",
+        stage: "ISOLATED_STATIC",
+        sandboxMode: "SANDBOX_STATIC_ONLY",
+        executesSkillCode: false,
       };
     }
 
@@ -43,7 +48,10 @@ export class DockerSandbox implements SandboxProvider {
         status: "INCONCLUSIVE",
         observed: emptyBehavior(),
         unexpected: [],
-        notes: `Image '${this.policy.image}' is not present locally and pull is disabled by default. INCONCLUSIVE ≠ PASS.`,
+        notes: `ISOLATED_STATIC/SANDBOX_STATIC_ONLY: Image '${this.policy.image}' is not present locally and pull is disabled by default. Does not run skill code. INCONCLUSIVE ≠ PASS.`,
+        stage: "ISOLATED_STATIC",
+        sandboxMode: "SANDBOX_STATIC_ONLY",
+        executesSkillCode: false,
       };
     }
 
@@ -68,7 +76,10 @@ export class DockerSandbox implements SandboxProvider {
           status: "TIMEOUT",
           observed: emptyBehavior(),
           unexpected: [],
-          notes: "Sandbox timed out. INCONCLUSIVE/TIMEOUT ≠ PASS.",
+          notes: "ISOLATED_STATIC/SANDBOX_STATIC_ONLY: Static sandbox timed out. Does not run skill entrypoints/hooks. INCONCLUSIVE/TIMEOUT ≠ PASS.",
+          stage: "ISOLATED_STATIC",
+          sandboxMode: "SANDBOX_STATIC_ONLY",
+          executesSkillCode: false,
         };
       }
       if (run.error || run.status !== 0) {
@@ -76,7 +87,10 @@ export class DockerSandbox implements SandboxProvider {
           status: "INCONCLUSIVE",
           observed: emptyBehavior(),
           unexpected: [],
-          notes: `Container run failed (${run.status ?? run.error?.message ?? "unknown"}). INCONCLUSIVE ≠ PASS.`,
+          notes: `ISOLATED_STATIC/SANDBOX_STATIC_ONLY: Container observer failed (${run.status ?? run.error?.message ?? "unknown"}). Does not run skill code. INCONCLUSIVE ≠ PASS.`,
+          stage: "ISOLATED_STATIC",
+          sandboxMode: "SANDBOX_STATIC_ONLY",
+          executesSkillCode: false,
         };
       }
 
@@ -90,7 +104,10 @@ export class DockerSandbox implements SandboxProvider {
           status: "FAIL",
           observed,
           unexpected,
-          notes: `Unexpected privileged behavior in sandbox: ${unexpected.join(",")}`,
+          notes: `ISOLATED_STATIC/SANDBOX_STATIC_ONLY: Unexpected privileged signals during static observation: ${unexpected.join(",")}. Skill entrypoints were not executed.`,
+          stage: "ISOLATED_STATIC",
+          sandboxMode: "SANDBOX_STATIC_ONLY",
+          executesSkillCode: false,
         };
       }
       return {
@@ -98,7 +115,10 @@ export class DockerSandbox implements SandboxProvider {
         observed,
         unexpected: [],
         notes:
-          "Isolated container observer completed configured checks for this pinned package. This is not a universal safety claim.",
+          "ISOLATED_STATIC / SANDBOX_STATIC_ONLY: Isolated container completed static observation for this pinned package. Does NOT execute skill code, entrypoints, or install hooks. Not runtime detonation. Not a universal safety claim.",
+        stage: "ISOLATED_STATIC",
+        sandboxMode: "SANDBOX_STATIC_ONLY",
+        executesSkillCode: false,
       };
     } finally {
       rmSync(work, { recursive: true, force: true });

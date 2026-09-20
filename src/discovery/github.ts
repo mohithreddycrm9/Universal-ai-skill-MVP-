@@ -60,10 +60,24 @@ export class GitHubSource implements SkillSource {
         default_branch: string;
       }>;
     }>(url);
-    return (json.items ?? []).map((item) => {
+    const out: SkillCandidate[] = [];
+    for (const item of json.items ?? []) {
       const [owner, ...repoParts] = item.full_name.split("/");
       const repo = repoParts.join("/") || undefined;
-      return {
+      const requestedRef = item.default_branch;
+      let resolvedCommitSha: string | undefined;
+      try {
+        const pinned = await this.pin({
+          repositoryUrl: item.html_url,
+          ref: requestedRef,
+          owner: owner || item.owner.login,
+          repo,
+        });
+        resolvedCommitSha = pinned.commitSha;
+      } catch {
+        // Best-effort discovery pin. Acquire will resolve before trust if missing.
+      }
+      out.push({
         candidateId: `github:${item.full_name}`,
         sourceId: this.id,
         name: repo ?? item.full_name,
@@ -71,12 +85,19 @@ export class GitHubSource implements SkillSource {
         publisher: item.owner.login,
         repository: item.full_name,
         repositoryUrl: item.html_url,
-        defaultRef: item.default_branch,
+        defaultRef: requestedRef,
+        requestedRef,
+        resolvedCommitSha,
+        commit: resolvedCommitSha,
         owner: owner || item.owner.login,
         repo,
-        metadata: { defaultBranch: item.default_branch },
-      };
-    });
+        metadata: {
+          defaultBranch: item.default_branch,
+          pinnedAtDiscover: Boolean(resolvedCommitSha),
+        },
+      });
+    }
+    return out;
   }
 
   async pin(ref: SkillRef): Promise<PinnedRef> {

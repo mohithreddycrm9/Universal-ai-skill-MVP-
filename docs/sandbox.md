@@ -1,5 +1,10 @@
 # Sandbox specification
 
+> **Terminology:** the current Docker/Podman stage is **`ISOLATED_STATIC` / `SANDBOX_STATIC_ONLY`**.
+> It performs static observation inside an isolated container and **does not execute** skill code, entrypoints, or install hooks.
+> It is **not** runtime detonation. External MCP/audit messages should say so explicitly.
+
+
 Any skill with executable components (`spec.entrypoints` non-empty, install scripts, or binaries) must be sandboxed before `APPROVED`.
 
 ## Isolation (container adapter)

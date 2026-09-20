@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SkillCandidate, SkillPackage } from "../../src/types.js";
+import type { DiscoveryL0 } from "../../src/discovery/discovery-l0.js";
 import type { DiscoveryQuery, PinnedRef, SkillRef, SkillSource } from "../../src/discovery/skill-source.js";
 import { COST_CATALOG } from "../../src/cost/catalog.js";
 import { SkillMcpError } from "../../src/errors.js";
@@ -101,7 +102,7 @@ Unique body marker SOURCE_A_ARTIFACT
     const gw = gatewayWithSources([sourceA]);
 
     const discovered = (await gw.discover({ query: "from-github-a", requestId: "acq-1" })) as {
-      candidates: SkillCandidate[];
+      candidates: Array<DiscoveryL0 & Partial<SkillCandidate>>;
     };
     expect(discovered.candidates.length).toBeGreaterThan(0);
     const candidate = discovered.candidates.find((c) => c.sourceId === "github-mock-a");
@@ -110,8 +111,10 @@ Unique body marker SOURCE_A_ARTIFACT
     expect(candidate!.repositoryUrl).toContain("from-github-a");
     expect(candidate!.owner).toBe("fixture-org");
     expect(candidate!.repo).toBe("from-github-a");
-    expect(candidate!.commit ?? candidate!.defaultRef).toBeTruthy();
-    expect(candidate!.metadata).toBeTruthy();
+    expect(candidate!.commit ?? candidate!.defaultRef ?? candidate!.resolvedCommitSha).toBeTruthy();
+    expect(candidate!.metadataTrust).toBe("UNTRUSTED");
+    // Raw source metadata is not echoed on L0; pin identity is exposed instead.
+    expect(candidate!.requestedRef ?? candidate!.defaultRef).toBeTruthy();
 
     const acquired = (await gw.acquire({
       candidateId: candidate!.candidateId,
@@ -165,7 +168,7 @@ LOCAL_TRAP_BODY
     const gw = gatewayWithSources([sourceA], [localTrap]);
 
     const discovered = (await gw.discover({ query: "remote-only", requestId: "acq-2" })) as {
-      candidates: SkillCandidate[];
+      candidates: Array<DiscoveryL0 & Partial<SkillCandidate>>;
     };
     const remoteCandidate = discovered.candidates.find((c) => c.sourceId === "github-mock-a");
     expect(remoteCandidate).toBeTruthy();
@@ -222,7 +225,7 @@ ARTIFACT_FROM_SOURCE_B
     const gw = gatewayWithSources([sourceA, sourceB]);
 
     const discovered = (await gw.discover({ query: "shared-name", requestId: "acq-3" })) as {
-      candidates: SkillCandidate[];
+      candidates: Array<DiscoveryL0 & Partial<SkillCandidate>>;
     };
     const candA = discovered.candidates.find((c) => c.sourceId === "github-mock-a");
     const candB = discovered.candidates.find((c) => c.sourceId === "github-mock-b");
@@ -272,7 +275,7 @@ ARTIFACT_FROM_SOURCE_B
     const sourceA = new MockGitHubLikeSource("github-mock-a", [pkg]);
     const gw = gatewayWithSources([sourceA]);
     const discovered = (await gw.discover({ query: "orphan", requestId: "acq-5" })) as {
-      candidates: SkillCandidate[];
+      candidates: Array<DiscoveryL0 & Partial<SkillCandidate>>;
     };
     const candidate = discovered.candidates.find((c) => c.sourceId === "github-mock-a");
     expect(candidate).toBeTruthy();

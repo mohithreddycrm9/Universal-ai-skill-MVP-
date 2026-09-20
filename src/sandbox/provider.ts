@@ -2,11 +2,21 @@ import type { BehavioralFingerprint, Capability, SkillManifest, SkillPackage } f
 import type { SecurityStatus } from "../types.js";
 import type { CostMetadata } from "../cost/types.js";
 
+/** Current Docker stage is static observation only — it does not execute skill code. */
+export type SandboxStage = "ISOLATED_STATIC";
+export type SandboxMode = "SANDBOX_STATIC_ONLY";
+
 export interface SandboxResult {
   status: SecurityStatus;
   observed: BehavioralFingerprint;
   unexpected: string[];
   notes: string;
+  /** Explicit stage label for MCP/audit — not runtime detonation. */
+  stage?: SandboxStage;
+  /** User-facing mode: static-only sandbox; skill entrypoints/hooks are not executed. */
+  sandboxMode?: SandboxMode;
+  /** Always false for the current Docker/in-process adapters. */
+  executesSkillCode?: boolean;
 }
 
 export interface SandboxProvider {

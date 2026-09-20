@@ -2,6 +2,8 @@
 
 A software-agnostic **MCP** that lets an agent discover, acquire, verify, cache, and **serve skills** — how to work with a technology. It does **not** execute Terraform, AWS, ServiceNow, or other product APIs. Other tools/MCPs do that.
 
+> Current sandbox stage: `ISOLATED_STATIC` / `SANDBOX_STATIC_ONLY` — static observation only; does not execute skill code/entrypoints/hooks (not runtime detonation).
+
 **DISCOVER → VERIFY → SECURITY-CHECK → SANDBOX → AUTHORIZE → CACHE → SERVE**
 
 Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sandbox. No cloud account or paid API is required. Any potentially billable adapter needs **explicit human approval**. Paid scanners never run as a silent fallback.

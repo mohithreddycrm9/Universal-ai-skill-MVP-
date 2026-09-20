@@ -48,6 +48,7 @@ export interface DisclosureCard {
   reputation?: string;
   contentBlocked?: boolean;
   contentBlockReason?: string;
+  metadataTrust?: "UNTRUSTED" | "VERIFIED_ARTIFACT";
 }
 
 /**
@@ -83,10 +84,11 @@ export function disclose(
   resourceBody?: string,
 ): DisclosureCard {
   const authorized = normalizeLifecycle(record.lifecycle) === "AVAILABLE";
+  const verified = canDiscloseSkillContent(record);
   const base: DisclosureCard = {
     level,
-    name: mcp.name,
-    description: mcp.description,
+    name: truncate(mcp.name, 120),
+    description: truncate(mcp.description, 240),
     version: mcp.version,
     trust: record.trustTier,
     security: record.securityStatus,
@@ -96,8 +98,10 @@ export function disclose(
     authorized,
     lifecycleNote: describeLifecycle(record.lifecycle),
     reputation: record.qualityStatus,
+    metadataTrust: verified ? "VERIFIED_ARTIFACT" : "UNTRUSTED",
   };
   if (level === 0) {
+    // L0 never includes SKILL.md / scripts / source — bounds are not a security boundary.
     return base;
   }
   if (!canDiscloseSkillContent(record)) {
