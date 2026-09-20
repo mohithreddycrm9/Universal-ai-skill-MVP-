@@ -41,7 +41,7 @@ npx skill-mcp reject <approvalId>
 | --- | --- | --- |
 | Docker or Podman | Isolated verification sandbox | `INCONCLUSIVE` |
 | `pg` + `DATABASE_URL` | PostgreSQL registry | SQLite stays default |
-| STRIX, Semgrep, Gitleaks, Trivy, ClamAV, OSV-Scanner, Syft | Extra OSS scans | `ERROR` / `NOT_RUN` |
+| [STRIX](https://github.com/usestrix/strix), Semgrep, Gitleaks, Trivy, ClamAV, OSV-Scanner, Syft | Extra OSS scans (STRIX needs Docker + LLM; see `docs/STRIX.md`) | `ERROR` / `NOT_RUN` |
 
 Local Docker is treated as free. Cloud/hosted sandboxes stay **off** and approval-gated.
 

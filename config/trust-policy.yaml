@@ -5,13 +5,17 @@ allowUnknownPublisherScan: true
 allowUnknownPublisherApprove: false
 treatArchivedAsUntrusted: true
 
-officialOrganizations: []
-verifiedPublishers: []
+officialOrganizations:
+  - usestrix
+verifiedPublishers:
+  - usestrix
 trustedCommunityPublishers: []
 untrustedPublishers: []
 
 # Optional domain references used as supporting evidence only (never sufficient alone).
-officialDomainSuffixes: []
+officialDomainSuffixes:
+  - strix.ai
+  - usestrix.com
 
 # Signed-release / provenance requirements by tier.
 requireSignedReleaseForOfficial: false

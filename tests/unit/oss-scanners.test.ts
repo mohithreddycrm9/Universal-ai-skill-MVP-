@@ -60,14 +60,61 @@ describe("OSS CLI scanners", () => {
   });
 
   it("keeps STRIX INCONCLUSIVE when the CLI exits non-zero without a parsed report", async () => {
-    const spawn: SpawnFn = (_cmd, args) => {
-      if (args[0] === "--version") {
-        return { status: 0, stdout: "strix 0.1\n", stderr: "" };
-      }
-      return { status: 2, stdout: "usage: strix", stderr: "" };
-    };
-    const run = await new StrixScanner(undefined, spawn).scan(target(), { enabled: true });
-    expect(run.status).toBe("INCONCLUSIVE");
-    expect(run.status).not.toBe("PASS");
+    const prevModel = process.env.STRIX_LLM;
+    const prevKey = process.env.LLM_API_KEY;
+    process.env.STRIX_LLM = "local/free-model";
+    process.env.LLM_API_KEY = "local";
+    try {
+      const spawn: SpawnFn = (cmd, args) => {
+        if (cmd === "docker") {
+          return { status: 0, stdout: "Server Version", stderr: "" };
+        }
+        if (args[0] === "--version") {
+          return { status: 0, stdout: "strix 0.1\n", stderr: "" };
+        }
+        expect(args[0]).toBe("--target");
+        return { status: 2, stdout: "usage: strix", stderr: "" };
+      };
+      const run = await new StrixScanner(undefined, spawn).scan(target(), { enabled: true });
+      expect(run.status).toBe("INCONCLUSIVE");
+      expect(run.status).not.toBe("PASS");
+    } finally {
+      if (prevModel === undefined) delete process.env.STRIX_LLM;
+      else process.env.STRIX_LLM = prevModel;
+      if (prevKey === undefined) delete process.env.LLM_API_KEY;
+      else process.env.LLM_API_KEY = prevKey;
+    }
+  });
+
+  it("refuses strix cloud args", async () => {
+    const spawn: SpawnFn = () => ({ status: 0, stdout: "strix 0.1\n", stderr: "" });
+    const run = await new StrixScanner(undefined, spawn).scan(target(), {
+      enabled: true,
+      args: ["cloud", "pentest"],
+    });
+    expect(run.status).toBe("ERROR");
+    expect(run.notes ?? "").toMatch(/refusing.*cloud/i);
+  });
+
+  it("errors when Docker is unavailable even if strix binary exists", async () => {
+    const prevModel = process.env.STRIX_LLM;
+    process.env.STRIX_LLM = "local/free-model";
+    try {
+      const spawn: SpawnFn = (cmd, args) => {
+        if (args[0] === "--version") {
+          return { status: 0, stdout: "strix 0.1\n", stderr: "" };
+        }
+        if (cmd === "docker") {
+          return enoent();
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      };
+      const run = await new StrixScanner(undefined, spawn).scan(target(), { enabled: true });
+      expect(run.status).toBe("ERROR");
+      expect(run.notes ?? "").toMatch(/docker/i);
+    } finally {
+      if (prevModel === undefined) delete process.env.STRIX_LLM;
+      else process.env.STRIX_LLM = prevModel;
+    }
   });
 });

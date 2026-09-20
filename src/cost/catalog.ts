@@ -27,9 +27,20 @@ export const COST_CATALOG = {
   suspicious_files: localFree("Built-in suspicious-file scanner", "Pattern scan of quarantined files"),
   dependency: localFree("Built-in dependency/SBOM scanner", "Parse manifests and emit a compact SBOM summary"),
   license: localFree("Built-in license scanner", "Compare declared licenses to policy"),
-  strix: localFree("STRIX CLI (OSS, if installed)", "Optional local STRIX binary. Missing binary is ERROR, never PASS.", {
-    freeAlternative: "Built-in scanners (secret, injection, dependency)",
-  }),
+  // Software is OSS (https://github.com/usestrix/strix, Apache-2.0). Runtime uses an LLM
+  // provider you configure — that provider may charge. For $0 use a free/local model.
+  // Strix Cloud / Enterprise are out of scope and never invoked by this adapter.
+  strix: {
+    provider: "usestrix/strix",
+    service: "Local STRIX OSS CLI (strix-agent)",
+    pricingModel: "freemium" as const,
+    freeTier: true,
+    estimatedCost:
+      "0 for the OSS CLI + local Docker; LLM API usage depends on STRIX_LLM / LLM_API_KEY (use a free/local model for $0)",
+    requiresApproval: false,
+    purpose: "Optional local AI pentest scan of quarantined skill content via usestrix/strix",
+    freeAlternative: "Built-in scanners (secret, injection, dependency) + Semgrep/Gitleaks/Trivy",
+  },
   semgrep: localFree("Semgrep CLI (OSS, if installed)", "Optional local SAST. Missing binary is ERROR, never PASS."),
   gitleaks: localFree("Gitleaks CLI (OSS, if installed)", "Optional local secret scan. Missing binary is ERROR, never PASS."),
   trivy: localFree("Trivy CLI (OSS, if installed)", "Optional local vuln/SBOM scan. Missing binary is ERROR, never PASS."),

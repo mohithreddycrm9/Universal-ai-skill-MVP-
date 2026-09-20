@@ -4,6 +4,7 @@ import type { CostMetadata } from "../cost/types.js";
 export interface ScannerConfig {
   [key: string]: unknown;
   enabled?: boolean;
+  timeoutMs?: number;
   failOpen?: boolean;
   binary?: string;
 }

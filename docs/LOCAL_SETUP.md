@@ -40,7 +40,7 @@ Missing tools are `ERROR` / `NOT_RUN` / `INCONCLUSIVE`, **never `PASS`**.
 | Binary | Purpose |
 | --- | --- |
 | Docker or Podman | Isolated verification sandbox (`SKILL_MCP_SANDBOX=docker`, default). Image pull is off; missing image ⇒ `INCONCLUSIVE`. |
-| `strix` | Optional STRIX CLI |
+| `strix` | Optional [usestrix/strix](https://github.com/usestrix/strix) OSS CLI (+ Docker + LLM; see [STRIX.md](./STRIX.md)) |
 | `semgrep` | Local SAST using `config/semgrep-local.yml` (offline; not `--config auto`) |
 | `gitleaks` | Local secret scan |
 | `trivy` | Offline fs scan (`--skip-db-update`) |
