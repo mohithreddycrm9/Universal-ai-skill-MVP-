@@ -50,20 +50,21 @@ export function inspectStrixLlm(input: {
   const explicitLocalFree =
     truthyFlag(cfg.llmIsLocalFree) || truthyFlag(env.SKILL_MCP_STRIX_LLM_IS_FREE);
 
-  // Explicit operator attestation that the configured LLM is local/$0.
-  if (explicitLocalFree) {
+  const haystack = `${provider} ${model}`.trim();
+
+  // External/chargeable markers always win — env/config attestation cannot rebrand OpenAI/etc as free.
+  if (haystack && EXTERNAL_MARKERS.test(haystack)) {
     return {
-      class: "local_free",
+      class: "external",
       model,
       provider,
       hasApiKey,
-      explicitLocalFree: true,
-      reason: "Explicit llmIsLocalFree / SKILL_MCP_STRIX_LLM_IS_FREE attests local/free LLM.",
+      explicitLocalFree: false,
+      reason: `Model/provider looks like an external/chargeable LLM (${haystack}). Attestation/env flags cannot override this.`,
     };
   }
 
-  const haystack = `${provider} ${model}`.trim();
-
+  // Proven local markers (ollama/lmstudio/localhost) — attestation not required.
   if (haystack && LOCAL_MARKERS.test(haystack)) {
     return {
       class: "local_free",
@@ -75,18 +76,7 @@ export function inspectStrixLlm(input: {
     };
   }
 
-  if (haystack && EXTERNAL_MARKERS.test(haystack)) {
-    return {
-      class: "external",
-      model,
-      provider,
-      hasApiKey,
-      explicitLocalFree: false,
-      reason: `Model/provider looks like an external/chargeable LLM (${haystack}).`,
-    };
-  }
-
-  // API key without proven-local model: do not treat as free.
+  // API key alone never implies free (with or without attestation).
   if (!haystack && hasApiKey) {
     return {
       class: "external",
@@ -94,7 +84,30 @@ export function inspectStrixLlm(input: {
       provider,
       hasApiKey,
       explicitLocalFree: false,
-      reason: "LLM API key present without a proven local/free model — treated as external/chargeable.",
+      reason: "LLM API key present without a proven local/free model — treated as external/chargeable. API keys never imply free.",
+    };
+  }
+
+  // Attestation is supporting evidence only for proven-local strings — never for empty, mystery, or external models.
+  // Env/config flags alone cannot bypass ALLOW_FREE_ONLY.
+  if (explicitLocalFree && haystack && LOCAL_MARKERS.test(haystack)) {
+    return {
+      class: "local_free",
+      model,
+      provider,
+      hasApiKey,
+      explicitLocalFree: true,
+      reason: "Explicit llmIsLocalFree / SKILL_MCP_STRIX_LLM_IS_FREE plus local markers attests local/free LLM.",
+    };
+  }
+  if (explicitLocalFree) {
+    return {
+      class: "unknown",
+      model,
+      provider,
+      hasApiKey,
+      explicitLocalFree: true,
+      reason: "Free-LLM attestation present but model/provider not proven local (empty or unrecognized). Attestation alone cannot bypass ALLOW_FREE_ONLY.",
     };
   }
 

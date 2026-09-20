@@ -278,9 +278,30 @@ describe("STRIX LLM cost gate (ALLOW_FREE_ONLY)", () => {
     });
   });
 
-  it("allows when SKILL_MCP_STRIX_LLM_IS_FREE attests local/free under ALLOW_FREE_ONLY", async () => {
+  it("blocks mystery model even when SKILL_MCP_STRIX_LLM_IS_FREE attests under ALLOW_FREE_ONLY", async () => {
     await withEnv(
       { STRIX_LLM: "custom-hosted/whatever", SKILL_MCP_STRIX_LLM_IS_FREE: "1", OPENAI_API_KEY: undefined },
+      async () => {
+        let targetSpawned = 0;
+        const spawn = healthyLocalSpawn(() => {
+          targetSpawned += 1;
+          return { status: 0, stdout: "ok", stderr: "" };
+        });
+        const run = await new StrixScanner(undefined, spawn, FREE_ONLY).scan(target(), {
+          enabled: true,
+          costPolicy: FREE_ONLY,
+        });
+        // Attestation alone cannot bypass ALLOW_FREE_ONLY for unrecognized models.
+        expect(targetSpawned).toBe(0);
+        expect(run.status).toBe("NOT_RUN");
+        expect(run.notes ?? "").toMatch(/attest|local|ALLOW_FREE_ONLY|not proven|unknown/i);
+      },
+    );
+  });
+
+  it("allows ollama when SKILL_MCP_STRIX_LLM_IS_FREE attests under ALLOW_FREE_ONLY", async () => {
+    await withEnv(
+      { STRIX_LLM: "ollama/llama3", SKILL_MCP_STRIX_LLM_IS_FREE: "1", OPENAI_API_KEY: undefined },
       async () => {
         let targetSpawned = 0;
         const spawn = healthyLocalSpawn(() => {

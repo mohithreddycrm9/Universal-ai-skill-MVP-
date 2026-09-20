@@ -20,7 +20,7 @@ const trustSchema = z.object({
 });
 
 const securitySchema = z.object({
-  revalidationHours: z.number().default(168),
+  revalidationHours: z.number().nonnegative().default(168),
   requiredScanners: z.array(z.string()).default(["secret", "prompt_injection", "suspicious_files", "dependency"]),
   optionalScanners: z.array(z.string()).default(["license", "strix"]),
   strixRequiredForRisk: z.array(z.enum(RISK_LEVELS)).default(["HIGH", "CRITICAL"]),
@@ -28,8 +28,10 @@ const securitySchema = z.object({
   inconclusiveRequiredIsNotPass: z.boolean().default(true),
   denyApproveOnInconclusive: z.boolean().default(true),
   denyApproveOnFail: z.boolean().default(true),
-  maxFindingEvidenceChars: z.number().default(480),
-  maxFindingsPerScanner: z.number().default(50),
+  maxFindingEvidenceChars: z.number().nonnegative().default(480),
+  maxFindingsPerScanner: z.number().nonnegative().default(50),
+  maxConcurrentScanners: z.number().int().positive().max(32).default(4),
+  scannerTimeoutMs: z.number().int().positive().max(600_000).default(120_000),
 });
 
 const SOURCE_KINDS = [
@@ -64,10 +66,10 @@ const sandboxSchema = z.object({
   readOnlyRoot: z.boolean().default(true),
   capDrop: z.array(z.string()).default(["ALL"]),
   noNewPrivileges: z.boolean().default(true),
-  memoryMb: z.number().default(256),
-  cpus: z.number().default(0.5),
-  pidsLimit: z.number().default(64),
-  timeoutSeconds: z.number().default(30),
+  memoryMb: z.number().positive().default(256),
+  cpus: z.number().positive().default(0.5),
+  pidsLimit: z.number().int().positive().default(64),
+  timeoutSeconds: z.number().positive().default(30),
   tmpfs: z.array(z.string()).default(["/tmp"]),
   forbiddenMounts: z.array(z.string()).default(["/var/run/docker.sock"]),
   forbiddenEnvPatterns: z.array(z.string()).default(["*TOKEN*", "*SECRET*"]),
@@ -86,7 +88,7 @@ const scannerSchema = z.object({
           enabled: z.boolean().default(true),
           binary: z.string().optional(),
           failOpen: z.boolean().optional(),
-          typosquatDistance: z.number().optional(),
+          typosquatDistance: z.number().nonnegative().optional(),
           allowed: z.array(z.string()).optional(),
         })
         .passthrough(),
@@ -103,7 +105,7 @@ const registrySchema = z.object({
     })
     .default({ driver: "sqlite", sqlitePath: "data/skill-mcp.sqlite" }),
   sources: z.array(sourceSchema).default([]),
-  response: z.object({ maxBytes: z.number().default(32768) }).default({ maxBytes: 32768 }),
+  response: z.object({ maxBytes: z.number().positive().default(32768) }).default({ maxBytes: 32768 }),
   dataDir: z.string().default("data"),
   quarantineDir: z.string().default("data/quarantine"),
 });
@@ -111,7 +113,7 @@ const registrySchema = z.object({
 const costSchema = z.object({
   policy: z.enum(COST_POLICIES).default("ALLOW_FREE_ONLY"),
   currency: z.string().default("USD"),
-  allowUpToAmount: z.number().default(0),
+  allowUpToAmount: z.number().nonnegative().default(0),
   preferFreeAlternatives: z.boolean().default(true),
   neverAutoPaidFallback: z.boolean().default(true),
   unknownCostRequiresApproval: z.boolean().default(true),

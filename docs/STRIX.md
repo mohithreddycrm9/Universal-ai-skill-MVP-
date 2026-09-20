@@ -20,10 +20,10 @@ Under this MCP’s default **`ALLOW_FREE_ONLY` ($0)** policy:
 
 - The STRIX **software** is free.
 - Your **LLM provider bill** is separate. Before any `strix --target` spawn, the adapter classifies the configured model (env + scanner config) via CostDetector:
-  - **Local/free confirmed** (e.g. `ollama` / `lmstudio` / `localhost` / `127.0.0.1`, or `llmIsLocalFree: true` / `SKILL_MCP_STRIX_LLM_IS_FREE=1`) → run allowed
+  - **Local/free confirmed** (model/provider string matches ollama / lmstudio / localhost / `127.0.0.1`; optional `llmIsLocalFree` / `SKILL_MCP_STRIX_LLM_IS_FREE=1` only *alongside* those local markers) → run allowed
   - **External** (openai, anthropic, openrouter, google, bedrock, vertex, azure, …) → **BLOCK** (`NOT_RUN`; no external request)
   - **Unknown** → **BLOCK**
-  - An API key alone is **not** approval; external/unknown + free-only = block
+  - An API key alone is **not** free. Attestation env/config **cannot** rebrand openai/anthropic/openrouter/mystery hosts as free under `ALLOW_FREE_ONLY`. External/unknown + free-only = block (`NOT_RUN`, no `--target`)
 - With `ASK_BEFORE_ANY_PAID_OPERATION`, a non-free LLM needs an explicit approved cost approval (`costApprovalStatus` + `costApprovalId`); there is no auto-paid mode.
 
 Missing binary, Docker, or LLM config → scanner status **`ERROR`**, never **`PASS`**.
@@ -63,3 +63,9 @@ SecurityOrchestrator
 Results are **PASSED_CONFIGURED_CHECKS** for that run only — never “universally safe / no malware.”
 
 See also [SCANNER_ADAPTERS.md](./SCANNER_ADAPTERS.md) and [COST_POLICY.md](./COST_POLICY.md).
+
+## Limitations (not absolute safety)
+
+- A STRIX `PASS` means the local OSS CLI exited 0 for this pinned quarantine path with a cost-allowed LLM — **not** that the skill is malware-free or safe in all environments.
+- Local-model detection is heuristic (string markers). A mislabeled remote endpoint that looks local could still incur cost; prefer truly local runtimes and network-isolated hosts.
+- Missing Docker / binary / LLM → `ERROR` / `NOT_RUN`, never `PASS`. Inconclusive outcomes never unlock `AVAILABLE` when STRIX is required by policy.

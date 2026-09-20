@@ -67,7 +67,11 @@ export function isClearlyFree(metadata: CostMetadata): boolean {
   if (metadata.requiresApproval) {
     return false;
   }
-  if (metadata.pricingModel === "unknown" || metadata.pricingModel === "paid" || metadata.pricingModel === "usage_based") {
+  if (
+    metadata.pricingModel === "unknown" ||
+    metadata.pricingModel === "paid" ||
+    metadata.pricingModel === "usage_based"
+  ) {
     return false;
   }
   if (!metadata.freeTier) {
@@ -76,7 +80,13 @@ export function isClearlyFree(metadata: CostMetadata): boolean {
   if (metadata.estimatedCost === "unknown") {
     return false;
   }
-  return metadata.estimatedCost === "0" || metadata.estimatedCost.startsWith("0 ");
+  // Freemium is NOT auto-free unless the free tier is proven as exact "0".
+  // Narratives like "0 for … when …" are not proof (STRIX LLM may still bill).
+  if (metadata.pricingModel === "freemium") {
+    return metadata.estimatedCost === "0";
+  }
+  // pricingModel === "free": require exact zero (no fuzzy "0 …" prefixes).
+  return metadata.estimatedCost === "0";
 }
 
 export function costIsUnknown(metadata: CostMetadata): boolean {

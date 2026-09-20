@@ -6,7 +6,7 @@ A software-agnostic **MCP** that lets an agent discover, acquire, verify, cache,
 
 Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sandbox. No cloud account or paid API is required. Any potentially billable adapter needs **explicit human approval**. Paid scanners never run as a silent fallback.
 
-Trust is not authorization. `INCONCLUSIVE` is not `PASS`. The MCP never claims a skill is universally “safe.”
+Trust is not authorization. `INCONCLUSIVE` is not `PASS`. Freemium adapters are not auto-free unless a free tier is proven (`estimatedCost` exactly `"0"`). API keys and env attestations cannot bypass `ALLOW_FREE_ONLY` for STRIX/Snyk/cloud/private. The MCP never claims a skill is universally “safe.”
 
 ## Fast path
 

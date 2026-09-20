@@ -46,12 +46,28 @@ export class CostDetector {
         reason: "Human rejected this potentially billable operation. It will not run.",
       };
     }
-    if (opts.approvalStatus === "APPROVED" && opts.approvalId) {
-      return { kind: "APPROVED", proceed: true, metadata, approvalId: opts.approvalId };
-    }
-
     const free = isClearlyFree(metadata);
     const unknown = costIsUnknown(metadata);
+
+    // Explicit approval never overrides ALLOW_FREE_ONLY / DENY_ALL_PAID_SERVICES.
+    // Those policies are hard $0 / no-paid gates — env, config, or approvalId cannot bypass them.
+    if (opts.approvalStatus === "APPROVED" && opts.approvalId) {
+      if (
+        (this.policy.policy === "ALLOW_FREE_ONLY" || this.policy.policy === "DENY_ALL_PAID_SERVICES") &&
+        !free
+      ) {
+        return {
+          kind: "DENIED",
+          proceed: false,
+          metadata,
+          reason:
+            this.policy.policy === "ALLOW_FREE_ONLY"
+              ? "Policy ALLOW_FREE_ONLY forbids paid/unknown-cost operations even with an approval id (no bypass)."
+              : "Policy DENY_ALL_PAID_SERVICES forbids this operation even with an approval id (no bypass).",
+        };
+      }
+      return { kind: "APPROVED", proceed: true, metadata, approvalId: opts.approvalId };
+    }
 
     switch (this.policy.policy) {
       case "ALLOW_FREE_ONLY":

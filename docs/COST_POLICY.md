@@ -45,3 +45,12 @@ There is **no** built-in paid LLM path. The optional STRIX OSS adapter may call 
 
 - MCP: `list_integrations`, `list_pending_cost_approvals`, `approve_paid_operation`, `reject_paid_operation`
 - CLI: `skill-mcp costs`, `skill-mcp approvals`, `skill-mcp approve <id>`, `skill-mcp reject <id>`
+
+## Freemium and bypass resistance
+
+- **Freemium is not auto-free.** `isClearlyFree` accepts freemium only when `freeTier` is true **and** `estimatedCost` is exactly `"0"` (proven free tier). Narratives like `"0 for … when …"` are **not** treated as free (this is why the static STRIX catalog row is not free — the runtime LLM gate decides).
+- **API keys never imply free.** An `OPENAI_API_KEY` / `LLM_API_KEY` without a proven local model is classified external/chargeable.
+- **`ALLOW_FREE_ONLY` cannot be bypassed** by approval ids, env flags alone, or config attestation for STRIX/Snyk/cloud/private. Explicit `SKILL_MCP_STRIX_LLM_IS_FREE` only helps when the model/provider string is also proven local (e.g. ollama/lmstudio/localhost); it cannot rebrand OpenAI/Anthropic/mystery hosts as free.
+- **Human approval** under `ASK_BEFORE_ANY_PAID_OPERATION` is still required for paid/unknown work; under `ALLOW_FREE_ONLY` / `DENY_ALL_PAID_SERVICES`, approval does not unlock paid paths.
+
+These controls reduce accidental spend. They are **not** a guarantee that every future adapter is free or that operators cannot misconfigure a local-looking endpoint that still bills.

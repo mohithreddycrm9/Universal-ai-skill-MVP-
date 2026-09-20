@@ -36,9 +36,10 @@ export const COST_CATALOG = {
     service: "Local STRIX OSS CLI (strix-agent)",
     pricingModel: "freemium" as const,
     freeTier: true,
-    estimatedCost:
-      "0 for the OSS CLI + local Docker when LLM is proven local/free; otherwise LLM may be chargeable",
-    requiresApproval: false,
+    // Static catalog row is NOT clearly free: freemium + LLM may bill.
+    // Runtime inspectStrixLlm + CostDetector gate before `strix --target`.
+    estimatedCost: "unknown",
+    requiresApproval: true,
     purpose: "Optional local AI pentest scan of quarantined skill content via usestrix/strix",
     freeAlternative: "Built-in scanners (secret, injection, dependency) + Semgrep/Gitleaks/Trivy",
   },
@@ -53,7 +54,7 @@ export const COST_CATALOG = {
     service: "Public REST API",
     pricingModel: "freemium" as const,
     freeTier: true,
-    estimatedCost: "0 for public repository REST within documented free rate limits",
+    estimatedCost: "0", // proven $0 public REST free tier (exact; freemium narratives are not auto-free)
     requiresApproval: false,
     purpose: "Discover and fetch a bounded public file subset (not a repo dump)",
     freeAlternative: "LocalRegistrySource",

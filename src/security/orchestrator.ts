@@ -32,36 +32,45 @@ export class SecurityOrchestrator {
       return cfg?.enabled !== false;
     });
     const allowPaid = new Set(options.allowPaidScannerIds ?? []);
-    const runs = await Promise.all(
-      enabled.map(async (scanner) => {
-        const cfg = this.config.scanners.scanners[scanner.id] ?? { enabled: true };
-        const commercial = isCommercial(scanner.cost);
-        if (commercial && (this.config.cost.neverAutoPaidFallback || !allowPaid.has(scanner.id))) {
-          return {
-            scannerId: scanner.id,
-            scannerVersion: scanner.version,
-            status: "NOT_RUN" as const,
-            findings: [],
-            notes: `Commercial scanner '${scanner.id}' skipped. Not an automatic paid fallback. Not PASS. Free alternative: ${scanner.cost.freeAlternative ?? "built-in OSS scanners"}.`,
-            startedAt: iso(this.clock),
-            finishedAt: iso(this.clock),
-          };
-        }
-        try {
-          return await scanner.scan(target, { ...cfg, costPolicy: this.config.cost });
-        } catch (error) {
-          return {
-            scannerId: scanner.id,
-            scannerVersion: scanner.version,
-            status: "ERROR" as const,
-            findings: [],
-            notes: error instanceof Error ? error.message : "scanner threw",
-            startedAt: iso(this.clock),
-            finishedAt: iso(this.clock),
-          };
-        }
-      }),
-    );
+    const concurrency = Math.max(1, this.config.security.maxConcurrentScanners ?? 4);
+    const defaultTimeoutMs = this.config.security.scannerTimeoutMs ?? 120_000;
+    const tasks = enabled.map((scanner) => async (): Promise<ScannerRun> => {
+      const cfg = this.config.scanners.scanners[scanner.id] ?? { enabled: true };
+      const commercial = isCommercial(scanner.cost);
+      if (commercial && (this.config.cost.neverAutoPaidFallback || !allowPaid.has(scanner.id))) {
+        return {
+          scannerId: scanner.id,
+          scannerVersion: scanner.version,
+          status: "NOT_RUN" as const,
+          findings: [],
+          notes: `Commercial scanner '${scanner.id}' skipped. Not an automatic paid fallback. Not PASS. Free alternative: ${scanner.cost.freeAlternative ?? "built-in OSS scanners"}.`,
+          startedAt: iso(this.clock),
+          finishedAt: iso(this.clock),
+        };
+      }
+      const timeoutMs =
+        typeof cfg.timeoutMs === "number" && cfg.timeoutMs > 0 ? cfg.timeoutMs : defaultTimeoutMs;
+      try {
+        return await withTimeout(
+          scanner.scan(target, { ...cfg, costPolicy: this.config.cost, timeoutMs }),
+          timeoutMs,
+          scanner.id,
+          scanner.version,
+          this.clock,
+        );
+      } catch (error) {
+        return {
+          scannerId: scanner.id,
+          scannerVersion: scanner.version,
+          status: "ERROR" as const,
+          findings: [],
+          notes: error instanceof Error ? error.message : "scanner threw",
+          startedAt: iso(this.clock),
+          finishedAt: iso(this.clock),
+        };
+      }
+    });
+    const runs = await mapPool(tasks, concurrency);
     return federate(runs, risk, this.config);
   }
 }
@@ -114,4 +123,49 @@ export function federate(runs: ScannerRun[], risk: RiskLevel, config: AppConfig)
 
 function hasFailSeverity(run: ScannerRun, failOn: FindingSeverity[]): boolean {
   return run.findings.some((finding) => failOn.includes(finding.severity));
+}
+
+async function mapPool<T>(tasks: Array<() => Promise<T>>, concurrency: number): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let next = 0;
+  async function worker(): Promise<void> {
+    for (;;) {
+      const i = next++;
+      if (i >= tasks.length) return;
+      results[i] = await tasks[i]!();
+    }
+  }
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
+async function withTimeout(
+  promise: Promise<ScannerRun>,
+  timeoutMs: number,
+  scannerId: string,
+  scannerVersion: string,
+  clock: Clock,
+): Promise<ScannerRun> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<ScannerRun>((resolve) => {
+        timer = setTimeout(() => {
+          resolve({
+            scannerId,
+            scannerVersion,
+            status: "TIMEOUT",
+            findings: [],
+            notes: `Scanner '${scannerId}' exceeded orchestrator timeout (${timeoutMs}ms). TIMEOUT ≠ PASS.`,
+            startedAt: iso(clock),
+            finishedAt: iso(clock),
+          });
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
