@@ -28,7 +28,8 @@ export const COST_CATALOG = {
   dependency: localFree("Built-in dependency/SBOM scanner", "Parse manifests and emit a compact SBOM summary"),
   license: localFree("Built-in license scanner", "Compare declared licenses to policy"),
   // Software is OSS (https://github.com/usestrix/strix, Apache-2.0). Runtime uses an LLM
-  // provider you configure — that provider may charge. For $0 use a free/local model.
+  // provider you configure — that provider may charge. Adapter classifies STRIX_LLM before
+  // `strix --target` and blocks under ALLOW_FREE_ONLY unless the LLM is proven local/free.
   // Strix Cloud / Enterprise are out of scope and never invoked by this adapter.
   strix: {
     provider: "usestrix/strix",
@@ -36,7 +37,7 @@ export const COST_CATALOG = {
     pricingModel: "freemium" as const,
     freeTier: true,
     estimatedCost:
-      "0 for the OSS CLI + local Docker; LLM API usage depends on STRIX_LLM / LLM_API_KEY (use a free/local model for $0)",
+      "0 for the OSS CLI + local Docker when LLM is proven local/free; otherwise LLM may be chargeable",
     requiresApproval: false,
     purpose: "Optional local AI pentest scan of quarantined skill content via usestrix/strix",
     freeAlternative: "Built-in scanners (secret, injection, dependency) + Semgrep/Gitleaks/Trivy",

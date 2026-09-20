@@ -39,7 +39,7 @@ Public GitHub REST for public repos is documented as **freemium with a $0 free t
 
 Local Docker/Podman is OSS compute on the operator’s machine, not a cloud bill. Cloud-hosted runners are out of scope for this adapter.
 
-There is **no** built-in paid LLM path.
+There is **no** built-in paid LLM path. The optional STRIX OSS adapter may call an operator-configured LLM: under `ALLOW_FREE_ONLY` that LLM must be **proven local/free** before `strix --target` (see [STRIX.md](./STRIX.md)); external/unknown LLMs are blocked with `NOT_RUN` and no outbound request.
 
 ## Tools / CLI
 

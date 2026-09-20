@@ -118,3 +118,182 @@ describe("OSS CLI scanners", () => {
     }
   });
 });
+
+const FREE_ONLY = {
+  policy: "ALLOW_FREE_ONLY" as const,
+  currency: "USD",
+  allowUpToAmount: 0,
+  preferFreeAlternatives: true,
+  neverAutoPaidFallback: true,
+  unknownCostRequiresApproval: true,
+};
+
+const ASK_BEFORE = { ...FREE_ONLY, policy: "ASK_BEFORE_ANY_PAID_OPERATION" as const };
+
+function withEnv(vars: Record<string, string | undefined>, fn: () => Promise<void>): Promise<void> {
+  const prev: Record<string, string | undefined> = {};
+  for (const key of Object.keys(vars)) {
+    prev[key] = process.env[key];
+    const next = vars[key];
+    if (next === undefined) delete process.env[key];
+    else process.env[key] = next;
+  }
+  return fn().finally(() => {
+    for (const key of Object.keys(vars)) {
+      if (prev[key] === undefined) delete process.env[key];
+      else process.env[key] = prev[key];
+    }
+  });
+}
+
+function healthyLocalSpawn(onTarget?: (args: readonly string[]) => SpawnResult): SpawnFn {
+  return (cmd, args) => {
+    if (cmd === "docker") {
+      return { status: 0, stdout: "Server Version", stderr: "" };
+    }
+    if (args[0] === "--version") {
+      return { status: 0, stdout: "strix 0.1\n", stderr: "" };
+    }
+    if (args[0] === "--target" || args.includes("--target")) {
+      return onTarget ? onTarget(args) : { status: 0, stdout: "ok", stderr: "" };
+    }
+    if (args[0] === "cloud") {
+      return { status: 0, stdout: "cloud", stderr: "" };
+    }
+    return { status: 0, stdout: "", stderr: "" };
+  };
+}
+
+describe("STRIX LLM cost gate (ALLOW_FREE_ONLY)", () => {
+  it("runs and spawns --target when model is proven local under ALLOW_FREE_ONLY", async () => {
+    await withEnv({ STRIX_LLM: "ollama/llama3", LLM_API_KEY: undefined, OPENAI_API_KEY: undefined }, async () => {
+      let targetSpawned = 0;
+      const spawn = healthyLocalSpawn(() => {
+        targetSpawned += 1;
+        return { status: 0, stdout: "ok", stderr: "" };
+      });
+      const run = await new StrixScanner(undefined, spawn, FREE_ONLY).scan(target(), {
+        enabled: true,
+        costPolicy: FREE_ONLY,
+      });
+      expect(targetSpawned).toBe(1);
+      expect(run.status).toBe("PASS");
+    });
+  });
+
+  it("blocks external model under ALLOW_FREE_ONLY and does not spawn --target", async () => {
+    await withEnv({ STRIX_LLM: "openai/gpt-4o", OPENAI_API_KEY: "sk-test", LLM_API_KEY: undefined }, async () => {
+      let targetSpawned = 0;
+      const spawn: SpawnFn = (cmd, args) => {
+        if (cmd === "docker") return { status: 0, stdout: "ok", stderr: "" };
+        if (args[0] === "--version") return { status: 0, stdout: "strix 0.1\n", stderr: "" };
+        if (args[0] === "--target") {
+          targetSpawned += 1;
+          return { status: 0, stdout: "ok", stderr: "" };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      };
+      const run = await new StrixScanner(undefined, spawn, FREE_ONLY).scan(target(), {
+        enabled: true,
+        costPolicy: FREE_ONLY,
+      });
+      expect(targetSpawned).toBe(0);
+      expect(run.status).toBe("NOT_RUN");
+      expect(run.status).not.toBe("PASS");
+      expect(run.notes ?? "").toMatch(/ALLOW_FREE_ONLY|no external LLM request/i);
+      expect(run.notes ?? "").toMatch(/external|chargeable/i);
+    });
+  });
+
+  it("blocks unknown provider under ALLOW_FREE_ONLY without --target spawn", async () => {
+    await withEnv({ STRIX_LLM: "mystery-vendor/custom-model-xyz", LLM_API_KEY: undefined, OPENAI_API_KEY: undefined }, async () => {
+      let targetSpawned = 0;
+      const spawn: SpawnFn = (cmd, args) => {
+        if (cmd === "docker") return { status: 0, stdout: "ok", stderr: "" };
+        if (args[0] === "--version") return { status: 0, stdout: "strix 0.1\n", stderr: "" };
+        if (args[0] === "--target") {
+          targetSpawned += 1;
+          return { status: 0, stdout: "ok", stderr: "" };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      };
+      const run = await new StrixScanner(undefined, spawn, FREE_ONLY).scan(target(), {
+        enabled: true,
+        costPolicy: FREE_ONLY,
+      });
+      expect(targetSpawned).toBe(0);
+      expect(["NOT_RUN", "INCONCLUSIVE"]).toContain(run.status);
+      expect(run.status).not.toBe("PASS");
+      expect(run.notes ?? "").toMatch(/unknown|not proven|ALLOW_FREE_ONLY|no external LLM request/i);
+    });
+  });
+
+  it("blocks when only an external API key is set under ALLOW_FREE_ONLY", async () => {
+    await withEnv({ STRIX_LLM: undefined, LLM_MODEL: undefined, OPENAI_API_KEY: "sk-live-key", LLM_API_KEY: undefined }, async () => {
+      let targetSpawned = 0;
+      const spawn: SpawnFn = (cmd, args) => {
+        if (cmd === "docker") return { status: 0, stdout: "ok", stderr: "" };
+        if (args[0] === "--version") return { status: 0, stdout: "strix 0.1\n", stderr: "" };
+        if (args[0] === "--target") {
+          targetSpawned += 1;
+          return { status: 0, stdout: "ok", stderr: "" };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      };
+      const run = await new StrixScanner(undefined, spawn, FREE_ONLY).scan(target(), {
+        enabled: true,
+        costPolicy: FREE_ONLY,
+      });
+      expect(targetSpawned).toBe(0);
+      expect(run.status).toBe("NOT_RUN");
+      expect(run.status).not.toBe("PASS");
+      expect(run.notes ?? "").toMatch(/API key|external|ALLOW_FREE_ONLY|no external LLM request/i);
+    });
+  });
+
+  it("allows external LLM under ASK_BEFORE only with explicit approval", async () => {
+    await withEnv({ STRIX_LLM: "anthropic/claude-3-5-sonnet", LLM_API_KEY: "key", OPENAI_API_KEY: undefined }, async () => {
+      let targetSpawned = 0;
+      const spawn = healthyLocalSpawn(() => {
+        targetSpawned += 1;
+        return { status: 0, stdout: "ok", stderr: "" };
+      });
+
+      const blocked = await new StrixScanner(undefined, spawn, ASK_BEFORE).scan(target(), {
+        enabled: true,
+        costPolicy: ASK_BEFORE,
+      });
+      expect(targetSpawned).toBe(0);
+      expect(blocked.status).toBe("NOT_RUN");
+      expect(blocked.notes ?? "").toMatch(/approval|ASK_BEFORE|no external LLM request/i);
+
+      const allowed = await new StrixScanner(undefined, spawn, ASK_BEFORE).scan(target(), {
+        enabled: true,
+        costPolicy: ASK_BEFORE,
+        costApprovalStatus: "APPROVED",
+        costApprovalId: "cst_test_approval",
+      });
+      expect(targetSpawned).toBe(1);
+      expect(allowed.status).toBe("PASS");
+    });
+  });
+
+  it("allows when SKILL_MCP_STRIX_LLM_IS_FREE attests local/free under ALLOW_FREE_ONLY", async () => {
+    await withEnv(
+      { STRIX_LLM: "custom-hosted/whatever", SKILL_MCP_STRIX_LLM_IS_FREE: "1", OPENAI_API_KEY: undefined },
+      async () => {
+        let targetSpawned = 0;
+        const spawn = healthyLocalSpawn(() => {
+          targetSpawned += 1;
+          return { status: 0, stdout: "ok", stderr: "" };
+        });
+        const run = await new StrixScanner(undefined, spawn, FREE_ONLY).scan(target(), {
+          enabled: true,
+          costPolicy: FREE_ONLY,
+        });
+        expect(targetSpawned).toBe(1);
+        expect(run.status).toBe("PASS");
+      },
+    );
+  });
+});

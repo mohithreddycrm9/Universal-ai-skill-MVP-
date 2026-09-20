@@ -11,7 +11,7 @@ This gateway’s STRIX adapter targets the **official open-source project**:
 
 | Path | Used? | Notes |
 | --- | --- | --- |
-| Local OSS CLI (`strix --target …`) | Yes (optional) | Adapter invokes this when installed |
+| Local OSS CLI (`strix --target …`) | Yes (optional) | Adapter invokes this when installed **and** LLM is allowed by cost policy |
 | Local Docker sandbox (STRIX’s own) | Required by upstream OSS | Must be running on the operator machine |
 | Operator-configured LLM (`STRIX_LLM` / `LLM_API_KEY`) | Required by upstream OSS | **May cost money** unless you use a free/local model |
 | `strix cloud` / Strix Cloud / Enterprise | **Never** | Managed/paid platforms — blocked by adapter |
@@ -19,9 +19,15 @@ This gateway’s STRIX adapter targets the **official open-source project**:
 Under this MCP’s default **`ALLOW_FREE_ONLY` ($0)** policy:
 
 - The STRIX **software** is free.
-- Your **LLM provider bill** is separate. For true $0, point `STRIX_LLM` at a free/local model (or leave STRIX unset and rely on built-in free scanners).
+- Your **LLM provider bill** is separate. Before any `strix --target` spawn, the adapter classifies the configured model (env + scanner config) via CostDetector:
+  - **Local/free confirmed** (e.g. `ollama` / `lmstudio` / `localhost` / `127.0.0.1`, or `llmIsLocalFree: true` / `SKILL_MCP_STRIX_LLM_IS_FREE=1`) → run allowed
+  - **External** (openai, anthropic, openrouter, google, bedrock, vertex, azure, …) → **BLOCK** (`NOT_RUN`; no external request)
+  - **Unknown** → **BLOCK**
+  - An API key alone is **not** approval; external/unknown + free-only = block
+- With `ASK_BEFORE_ANY_PAID_OPERATION`, a non-free LLM needs an explicit approved cost approval (`costApprovalStatus` + `costApprovalId`); there is no auto-paid mode.
 
 Missing binary, Docker, or LLM config → scanner status **`ERROR`**, never **`PASS`**.
+Policy LLM blocks → **`NOT_RUN`**, never **`PASS`**.
 
 ## Install (operator machine)
 
@@ -36,8 +42,9 @@ curl -sSL https://strix.ai/install | bash
 docker info
 
 # Configure a model (prefer free/local for $0)
-export STRIX_LLM="..."          # see https://docs.strix.ai/llm-providers/overview
-export LLM_API_KEY="..."        # omit/empty only if your local provider needs no key
+export STRIX_LLM="ollama/…"   # see https://docs.strix.ai/llm-providers/overview
+export LLM_API_KEY="…"        # omit/empty only if your local provider needs no key
+# Or attest: export SKILL_MCP_STRIX_LLM_IS_FREE=1
 ```
 
 ## Gateway behavior
@@ -45,10 +52,12 @@ export LLM_API_KEY="..."        # omit/empty only if your local provider needs n
 ```text
 SecurityOrchestrator
   └── StrixScanner (src/scanners/strix.ts)
-        ├── strix --version
-        ├── docker info
-        ├── require STRIX_LLM or LLM_API_KEY
-        └── strix --target <quarantinePath>
+        ├── strix --version          (local, free)
+        ├── docker info              (local, free)
+        ├── classify STRIX_LLM / config → CostDetector
+        │     ALLOW → continue
+        │     BLOCK → NOT_RUN (no --target)
+        └── strix --target <quarantinePath>   (only if LLM allowed)
 ```
 
 Results are **PASSED_CONFIGURED_CHECKS** for that run only — never “universally safe / no malware.”

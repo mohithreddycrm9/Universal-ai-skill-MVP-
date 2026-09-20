@@ -48,7 +48,7 @@ export class SecurityOrchestrator {
           };
         }
         try {
-          return await scanner.scan(target, cfg);
+          return await scanner.scan(target, { ...cfg, costPolicy: this.config.cost });
         } catch (error) {
           return {
             scannerId: scanner.id,

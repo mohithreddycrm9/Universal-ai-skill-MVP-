@@ -4,7 +4,19 @@ import type { ScanTarget, ScannerRun } from "../types.js";
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { runEnvelope } from "./helpers.js";
 import { COST_CATALOG } from "../cost/catalog.js";
+import { CostDetector } from "../cost/detector.js";
+import { costMetadataForStrixLlm, inspectStrixLlm } from "../cost/strix-llm.js";
+import type { CostPolicy } from "../cost/types.js";
 import { defaultSpawn, missingBinary, type SpawnFn } from "../util/spawn.js";
+
+const DEFAULT_FREE_ONLY: CostPolicy = {
+  policy: "ALLOW_FREE_ONLY",
+  currency: "USD",
+  allowUpToAmount: 0,
+  preferFreeAlternatives: true,
+  neverAutoPaidFallback: true,
+  unknownCostRequiresApproval: true,
+};
 
 /**
  * Adapter for the open-source STRIX CLI from https://github.com/usestrix/strix
@@ -14,8 +26,9 @@ import { defaultSpawn, missingBinary, type SpawnFn } from "../util/spawn.js";
  * Never invokes `strix cloud` (managed/paid platform).
  * Unparsed / non-zero exits stay INCONCLUSIVE — not a universal safety claim.
  *
- * Runtime needs Docker + an LLM key (see docs/STRIX.md). Under $0 policy use a
- * free/local LLM; commercial LLM usage is outside this MCP's free tier.
+ * Runtime needs Docker + an LLM. Under ALLOW_FREE_ONLY / DENY_ALL_PAID, the
+ * configured LLM must be proven local/free before any `strix --target` spawn
+ * (software is free; external LLM calls may be chargeable).
  */
 export class StrixScanner implements SecurityScanner {
   readonly id = "strix";
@@ -23,10 +36,12 @@ export class StrixScanner implements SecurityScanner {
   readonly cost = COST_CATALOG.strix;
   private readonly clock: Clock;
   private readonly spawn: SpawnFn;
+  private readonly defaultCostPolicy: CostPolicy;
 
-  constructor(clock?: Clock, spawn?: SpawnFn) {
+  constructor(clock?: Clock, spawn?: SpawnFn, costPolicy?: CostPolicy) {
     this.clock = clock ?? systemClock;
     this.spawn = spawn ?? defaultSpawn;
+    this.defaultCostPolicy = costPolicy ?? DEFAULT_FREE_ONLY;
   }
 
   async scan(target: ScanTarget, configuration: ScannerConfig): Promise<ScannerRun> {
@@ -84,10 +99,9 @@ export class StrixScanner implements SecurityScanner {
       );
     }
 
-    // LLM env: without a model/key STRIX cannot run; do not pretend it passed.
-    const llmModel = process.env.STRIX_LLM || process.env.LLM_MODEL || "";
-    const llmKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || "";
-    if (!llmModel && !llmKey) {
+    // Classify LLM cost BEFORE any `strix --target` (may call external providers).
+    const inspection = inspectStrixLlm({ env: process.env, config: configuration });
+    if (inspection.class === "unknown" && !inspection.model && !inspection.provider && !inspection.hasApiKey) {
       return runEnvelope(
         this.id,
         version,
@@ -96,6 +110,34 @@ export class StrixScanner implements SecurityScanner {
         [],
         "STRIX OSS needs STRIX_LLM / LLM_API_KEY for a model provider. For $0 use a free/local model. Scan not performed. Not PASS. See docs/STRIX.md.",
       );
+    }
+
+    const llmCost = costMetadataForStrixLlm(inspection);
+    const policy =
+      configuration.costPolicy && typeof configuration.costPolicy === "object"
+        ? (configuration.costPolicy as CostPolicy)
+        : this.defaultCostPolicy;
+    const detector = new CostDetector(policy);
+    const approvalStatus = configuration.costApprovalStatus;
+    const approvalId =
+      typeof configuration.costApprovalId === "string" ? configuration.costApprovalId : undefined;
+    const decision = detector.evaluate(
+      "scan_skill:strix_llm",
+      llmCost,
+      approvalStatus === "APPROVED" && approvalId
+        ? { approvalStatus: "APPROVED", approvalId }
+        : approvalStatus === "REJECTED"
+          ? { approvalStatus: "REJECTED" }
+          : {},
+    );
+
+    if (!decision.proceed) {
+      const policyName = policy.policy;
+      const note =
+        decision.kind === "NEEDS_APPROVAL"
+          ? `STRIX LLM not proven local/free (${inspection.class}). ${inspection.reason} Policy ${policyName} requires explicit approval before a potentially chargeable LLM call. No external LLM request was made. NOT_RUN ≠ PASS. Free alternative: local/ollama/lmstudio model or SKILL_MCP_STRIX_LLM_IS_FREE=1.`
+          : `STRIX blocked by cost policy ${policyName}: ${decision.reason} LLM class=${inspection.class}. ${inspection.reason} No external LLM request was made. ALLOW_FREE_ONLY/DENY blocks potentially chargeable LLM. NOT_RUN ≠ PASS.`;
+      return runEnvelope(this.id, version, this.clock, "NOT_RUN", [], note);
     }
 
     const args = configuredArgs ?? ["--target", quarantine];

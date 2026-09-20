@@ -7,6 +7,16 @@ export interface ScannerConfig {
   timeoutMs?: number;
   failOpen?: boolean;
   binary?: string;
+  /** Injected by orchestrator — used by STRIX LLM cost gate. */
+  costPolicy?: unknown;
+  /** Explicit local/free LLM attestation for STRIX. */
+  llmIsLocalFree?: boolean;
+  localOnly?: boolean;
+  model?: string;
+  provider?: string;
+  /** When ASK_BEFORE…: APPROVED + costApprovalId allows a non-free STRIX LLM. */
+  costApprovalStatus?: "APPROVED" | "REJECTED" | "PENDING";
+  costApprovalId?: string;
 }
 
 export interface SecurityScanner {
