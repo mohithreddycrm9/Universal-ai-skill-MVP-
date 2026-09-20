@@ -30,17 +30,21 @@ export class CapabilityFirewall {
   }
 
   /**
-   * Effective permissions are firewall-owned. Manifest-declared extras are ignored.
+   * Effective permissions = declared ∩ granted (+ filesystem.read baseline). Skills cannot self-grant.
    */
   effective(declared: Capability[], granted: Capability[]): Capability[] {
-    const allowed = new Set<Capability>(granted);
-    allowed.add("filesystem.read");
+    // effective = declared ∩ granted, plus explicit baseline (filesystem.read).
+    // Skills cannot self-grant: declared-but-not-granted is excluded.
+    // Granted-but-not-declared is excluded unless it is the baseline policy grant.
+    const grantedSet = new Set(granted);
+    const result = new Set<Capability>();
+    result.add("filesystem.read");
     for (const item of declared) {
-      if (!granted.includes(item) && item !== "filesystem.read") {
-        continue;
+      if (grantedSet.has(item)) {
+        result.add(item);
       }
     }
-    return [...allowed];
+    return [...result];
   }
 
   request(capability: string, opts: { approver?: string; risk: RiskLevel; current: Capability[] }): Capability[] {

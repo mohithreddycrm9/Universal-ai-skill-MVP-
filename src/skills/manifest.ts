@@ -197,14 +197,41 @@ export function extractInstructions(pkg: SkillPackage): string {
 }
 
 export function inferRisk(pkg: SkillPackage): RiskLevel {
-  const yaml = readSkillYaml(pkg);
-  if (yaml?.risk && (RISK_LEVELS as readonly string[]).includes(yaml.risk.toUpperCase())) {
-    return yaml.risk.toUpperCase() as RiskLevel;
-  }
+  const heuristic = heuristicRisk(pkg);
+  const declared = declaredRisk(pkg);
+  // Declared risk may raise only — never lower the heuristic floor.
+  return declared ? maxRisk(heuristic, declared) : heuristic;
+}
+
+const RISK_RANK: Record<RiskLevel, number> = {
+  LOW: 0,
+  MEDIUM: 1,
+  HIGH: 2,
+  CRITICAL: 3,
+};
+
+export function maxRisk(a: RiskLevel, b: RiskLevel): RiskLevel {
+  return RISK_RANK[a] >= RISK_RANK[b] ? a : b;
+}
+
+function heuristicRisk(pkg: SkillPackage): RiskLevel {
   if (hasInstallScripts(pkg) || inferEntrypoints(pkg).length > 0) {
     return "HIGH";
   }
   return "LOW";
+}
+
+function declaredRisk(pkg: SkillPackage): RiskLevel | undefined {
+  const yaml = readSkillYaml(pkg);
+  if (!yaml?.risk) {
+    return undefined;
+  }
+  const upper = yaml.risk.toUpperCase();
+  if ((RISK_LEVELS as readonly string[]).includes(upper)) {
+    return upper as RiskLevel;
+  }
+  // Malformed declared risk is ignored (safe fallback to heuristic).
+  return undefined;
 }
 
 export function hasInstallScripts(pkg: SkillPackage): boolean {

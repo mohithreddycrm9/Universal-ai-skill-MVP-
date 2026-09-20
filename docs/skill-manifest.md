@@ -48,3 +48,12 @@ fingerprint = sha256(canonical({
 ```
 
 Canonical form: UTF-8 JSON with recursively sorted object keys, no insignificant whitespace variation. Identical inputs always yield the same fingerprint.
+
+
+## Risk inference
+
+`inferRisk` computes a heuristic from install scripts / entrypoints, then applies any self-declared `risk` from skill YAML:
+
+- **Final risk = max(heuristic, declared)**. Declared risk may **raise** only — never lower a HIGH/CRITICAL heuristic to LOW.
+- Malformed declared values are ignored.
+- Final HIGH/CRITICAL drives `strixRequiredForRisk` (STRIX becomes a required coverage scanner).

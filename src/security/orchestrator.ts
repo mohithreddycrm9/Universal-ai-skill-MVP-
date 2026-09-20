@@ -75,21 +75,46 @@ export class SecurityOrchestrator {
   }
 }
 
+/**
+ * Federate scanner runs into a single gate status.
+ *
+ * - Every executed scanner (status !== NOT_RUN) contributes to the aggregate.
+ * - FAIL or findings at/above failOnSeverity → aggregate FAIL.
+ * - ERROR / TIMEOUT / INCONCLUSIVE → aggregate INCONCLUSIVE (unless already FAIL).
+ * - requiredScanners (+ strix when risk requires it) are coverage only:
+ *   missing / NOT_RUN required → incomplete → INCONCLUSIVE (never PASS).
+ * - optionalScanners may run and contribute when executed; absence is not a gap.
+ * - Commercial / $0-blocked scanners stay NOT_RUN (never PASS).
+ * - Disabled scanners are omitted from runs and have no effect.
+ */
 export function federate(runs: ScannerRun[], risk: RiskLevel, config: AppConfig): FederatedSecurityResult {
   const required = new Set(config.security.requiredScanners);
   if (isStrixRequired(risk, config.security)) {
     required.add("strix");
   }
+  // optionalScanners: may execute and contribute to the aggregate, but their
+  // absence / NOT_RUN never creates a coverage gap (unlike requiredScanners).
+  const optional = new Set(config.security.optionalScanners);
+  void optional;
+
   const byId = new Map(runs.map((run) => [run.scannerId, run]));
   const requiredMissing: string[] = [];
   let fail = false;
   let inconclusive = false;
 
+  // Coverage completeness — required scanners only.
   for (const id of required) {
     const run = byId.get(id);
     if (!run || run.status === "NOT_RUN") {
       requiredMissing.push(id);
       inconclusive = true;
+    }
+  }
+
+  // Every *executed* scanner contributes (required, optional, or ad-hoc).
+  // Commercial/$0 blocked scanners remain NOT_RUN and do not count as PASS.
+  for (const run of runs) {
+    if (run.status === "NOT_RUN") {
       continue;
     }
     switch (run.status) {
@@ -111,7 +136,12 @@ export function federate(runs: ScannerRun[], risk: RiskLevel, config: AppConfig)
     }
   }
 
-  const status: SecurityStatus = fail ? "FAIL" : inconclusive || requiredMissing.length ? "INCONCLUSIVE" : "PASS";
+  // Deterministic strongest result: FAIL > INCONCLUSIVE > PASS.
+  const status: SecurityStatus = fail
+    ? "FAIL"
+    : inconclusive || requiredMissing.length
+      ? "INCONCLUSIVE"
+      : "PASS";
   const claim =
     status === "PASS"
       ? "PASSED_CONFIGURED_CHECKS"

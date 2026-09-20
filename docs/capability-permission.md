@@ -38,3 +38,12 @@ Default policy (see `config/sandbox-policy.yaml` / trust+security):
 `request_capability` is the only mutation path. It records an audit event and consults policy + optional `approver`. Skill manifest fields cannot add to `effectivePermissions`.
 
 Composed skills inherit the **strictest** constraint among components.
+
+
+## Permissions identity binding
+
+Elevated permissions are bound to immutable skill identity: `skillId + repository + commitSha + fingerprint`.
+
+- Same artifact + successful revalidation → elevated grants **may be preserved**.
+- Commit/fingerprint change **or** security invalidation → elevated permissions **reset** to baseline (`filesystem.read`); structured output and audit include `permissionsReset` + `permissionsResetReason` (never silent).
+- Effective permissions = `declared ∩ granted` (+ `filesystem.read` baseline). Skills cannot self-grant.

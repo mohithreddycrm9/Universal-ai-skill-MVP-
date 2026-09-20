@@ -4,9 +4,9 @@
 
 Security is a gate, not a score. Terminal security statuses:
 
-- `PASS` — every **required** control completed with scanner status `PASS`. Optional scanners that did not run are recorded as `NOT_RUN`, never as pass.
-- `FAIL` — at least one required control failed, or a critical finding exists.
-- `INCONCLUSIVE` — a required control did not produce a decisive result (`ERROR`, `TIMEOUT`, missing binary, sandbox unavailable).
+- `PASS` — every **required** control completed with scanner status `PASS`, and no **executed** scanner (required or optional) returned `FAIL` / fail-severity findings / soft-fail statuses. Optional scanners that did not run are recorded as `NOT_RUN`, never as pass.
+- `FAIL` — any **executed** scanner returned `FAIL`, or produced a finding at/above `failOnSeverity` (required and optional alike).
+- `INCONCLUSIVE` — a required control is missing/`NOT_RUN`, or any executed scanner returned `ERROR` / `TIMEOUT` / `INCONCLUSIVE` (and none failed).
 
 `INCONCLUSIVE ≠ PASS`. The gate never upgrades uncertainty.
 

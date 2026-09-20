@@ -48,6 +48,7 @@ import { newId } from "./util/ids.js";
 import { SkillMcpError } from "./errors.js";
 import { assertNever } from "./util/assert-never.js";
 import type {
+  Capability,
   DisclosureLevel,
   JobType,
   SkillCandidate,
@@ -85,6 +86,13 @@ export class SkillTrustGateway {
   private readonly orchestrator: SecurityOrchestrator;
   private readonly sandbox: SandboxProvider;
   private readonly firewall = new CapabilityFirewall();
+  /** Elevated permissions are bound to immutable skill identity. */
+  private readonly permissionBindings = new Map<
+    string,
+    { skillId: string; repository: string; commitSha: string; fingerprint: string }
+  >();
+  private readonly permissionResets = new Map<string, { permissionsReset: true; reason: string }>();
+
   private readonly cache: VerificationCache;
   private readonly audit: AuditLog;
   private readonly costDetector: CostDetector;
@@ -456,16 +464,24 @@ export class SkillTrustGateway {
 
   getSkillPermissions(input: { skillId: string }): unknown {
     const skill = this.registry.requireSkill(input.skillId);
+    const reconciled = this.reconcilePermissions(skill, { preserveElevated: true });
+    const reset = this.permissionResets.get(skill.id);
+    const binding = this.permissionBindings.get(skill.id);
     return {
       skillId: skill.id,
       declared: skill.manifest.spec.capabilitiesDeclared,
-      effective: skill.permissions,
-      note: "Effective permissions come from the capability firewall, not skill text.",
+      effective: reconciled.permissions,
+      permissionsBoundTo: binding ?? null,
+      permissionsReset: reset?.permissionsReset ?? false,
+      permissionsResetReason: reset?.reason ?? null,
+      note: "Effective permissions come from the capability firewall and are bound to skillId+repository+commit+fingerprint.",
     };
   }
 
   invalidate(input: { skillId: string; reason: string; requestId: string }): unknown {
-    const skill = this.registry.updateSkill(input.skillId, { lifecycle: "INVALIDATED" });
+    let skill = this.registry.requireSkill(input.skillId);
+    const reset = this.resetElevatedPermissions(skill, `security_invalidated:${input.reason}`);
+    skill = this.registry.updateSkill(input.skillId, { lifecycle: "INVALIDATED", permissions: reset.permissions });
     this.enqueue("SKILL_INVALIDATION", skill.id, skill.fingerprint, { reason: input.reason });
     this.audit.record({
       requestId: input.requestId,
@@ -473,9 +489,19 @@ export class SkillTrustGateway {
       action: "invalidate_skill",
       skillId: skill.id,
       fingerprint: skill.fingerprint,
-      detail: { reason: input.reason },
+      detail: {
+        reason: input.reason,
+        permissionsReset: reset.permissionsReset,
+        permissionsResetReason: reset.reason,
+      },
     });
-    return { skillId: skill.id, lifecycle: "INVALIDATED" };
+    return {
+      skillId: skill.id,
+      lifecycle: "INVALIDATED",
+      permissionsReset: reset.permissionsReset,
+      permissionsResetReason: reset.reason,
+      effective: reset.permissions,
+    };
   }
 
   async refresh(input: { skillId: string; wait?: boolean; requestId: string }): Promise<unknown> {
@@ -523,22 +549,38 @@ export class SkillTrustGateway {
     approver?: string;
     requestId: string;
   }): unknown {
-    const skill = this.registry.requireSkill(input.skillId);
+    let skill = this.registry.requireSkill(input.skillId);
+    // Reconcile against immutable identity before elevating — never silent.
+    const reconciled = this.reconcilePermissions(skill, { preserveElevated: true });
+    skill = this.registry.requireSkill(input.skillId);
     const next = this.firewall.request(input.capability, {
       approver: input.approver,
       risk: skill.risk,
-      current: skill.permissions,
+      current: reconciled.permissions,
     });
     this.registry.updateSkill(skill.id, { permissions: next });
+    this.bindPermissions(this.registry.requireSkill(skill.id));
+    this.permissionResets.delete(skill.id);
     this.audit.record({
       requestId: input.requestId,
       actor: input.approver ?? "agent",
       action: "request_capability",
       skillId: skill.id,
       fingerprint: skill.fingerprint,
-      detail: { capability: input.capability },
+      detail: {
+        capability: input.capability,
+        permissionsBoundTo: this.permissionBindings.get(skill.id),
+        permissionsReset: reconciled.permissionsReset,
+        permissionsResetReason: reconciled.reason,
+      },
     });
-    return { skillId: skill.id, effective: next };
+    return {
+      skillId: skill.id,
+      effective: next,
+      permissionsReset: reconciled.permissionsReset,
+      permissionsResetReason: reconciled.reason,
+      permissionsBoundTo: this.permissionBindings.get(skill.id) ?? null,
+    };
   }
 
   release(input: { skillId: string; requestId: string }): unknown {
@@ -675,6 +717,7 @@ export class SkillTrustGateway {
     }
     this.registry.updateSkill(skill.id, { securityStatus: result.status });
     if (result.status !== "PASS") {
+      this.resetElevatedPermissions(this.registry.requireSkill(skill.id), `security_scan_${result.status.toLowerCase()}`);
       this.registry.updateSkill(skill.id, {
         lifecycle: result.status === "FAIL" ? "QUARANTINED" : "REJECTED",
       });
@@ -705,15 +748,36 @@ export class SkillTrustGateway {
   }
 
   private authorize(skill: SkillRecord, canApprove: boolean): void {
-    const granted = this.firewall.effective(skill.manifest.spec.capabilitiesDeclared, ["filesystem.read"]);
+    const baseline = this.firewall.effective(skill.manifest.spec.capabilitiesDeclared, ["filesystem.read"]);
     if (!canApprove) {
-      this.registry.updateSkill(skill.id, { lifecycle: "APPROVED", permissions: [] });
+      const reset = this.resetElevatedPermissions(skill, "trust_cannot_approve");
+      this.registry.updateSkill(skill.id, { lifecycle: "APPROVED", permissions: reset.permissions });
       this.registry.updateSkill(skill.id, { lifecycle: "REJECTED" });
       return;
     }
+    const reconciled = this.reconcilePermissions(skill, { preserveElevated: true, baseline });
     const hours = this.config.security.revalidationHours;
     const expiration = new Date(this.clock.now().getTime() + hours * 3600 * 1000).toISOString();
-    this.registry.updateSkill(skill.id, { lifecycle: "APPROVED", permissions: granted, expirationAt: expiration });
+    this.registry.updateSkill(skill.id, {
+      lifecycle: "APPROVED",
+      permissions: reconciled.permissions,
+      expirationAt: expiration,
+    });
+    this.bindPermissions(this.registry.requireSkill(skill.id));
+    if (reconciled.permissionsReset) {
+      this.audit.record({
+        requestId: "authorize",
+        actor: "gateway",
+        action: "permissions_reset",
+        skillId: skill.id,
+        fingerprint: skill.fingerprint,
+        detail: {
+          permissionsReset: true,
+          permissionsResetReason: reconciled.reason,
+          permissionsBoundTo: this.permissionBindings.get(skill.id),
+        },
+      });
+    }
     this.registry.updateSkill(skill.id, { lifecycle: "AVAILABLE" });
     this.cache.put({
       fingerprint: skill.fingerprint,
@@ -725,6 +789,111 @@ export class SkillTrustGateway {
       securityConfigHash: this.configHash,
       expiresAt: expiration,
     });
+  }
+
+  private permissionIdentity(skill: SkillRecord): {
+    skillId: string;
+    repository: string;
+    commitSha: string;
+    fingerprint: string;
+  } {
+    return {
+      skillId: skill.id,
+      repository: skill.repository,
+      commitSha: skill.commitSha,
+      fingerprint: skill.fingerprint,
+    };
+  }
+
+  private bindPermissions(skill: SkillRecord): void {
+    this.permissionBindings.set(skill.id, this.permissionIdentity(skill));
+  }
+
+  private baselinePermissions(skill: SkillRecord): Capability[] {
+    return this.firewall.effective(skill.manifest.spec.capabilitiesDeclared, ["filesystem.read"]);
+  }
+
+  /**
+   * Elevated permissions are bound to skillId+repository+commit+fingerprint.
+   * Same artifact + successful revalidation may preserve elevated grants.
+   * Identity change or security invalidation resets to baseline (never silent).
+   */
+  private reconcilePermissions(
+    skill: SkillRecord,
+    opts: { preserveElevated?: boolean; baseline?: Capability[] } = {},
+  ): { permissions: Capability[]; permissionsReset: boolean; reason: string | null } {
+    const baseline = opts.baseline ?? this.baselinePermissions(skill);
+    const binding = this.permissionBindings.get(skill.id);
+    const identity = this.permissionIdentity(skill);
+    const identityMatches =
+      binding !== undefined &&
+      binding.skillId === identity.skillId &&
+      binding.repository === identity.repository &&
+      binding.commitSha === identity.commitSha &&
+      binding.fingerprint === identity.fingerprint;
+
+    const securityInvalid =
+      skill.securityStatus === "FAIL" ||
+      skill.lifecycle === "INVALIDATED" ||
+      skill.lifecycle === "REJECTED" ||
+      skill.lifecycle === "QUARANTINED";
+
+    if (securityInvalid) {
+      return this.resetElevatedPermissions(skill, `security_invalid:${skill.securityStatus}:${skill.lifecycle}`);
+    }
+
+    if (!binding) {
+      // New skill / first bind — baseline only.
+      this.registry.updateSkill(skill.id, { permissions: baseline });
+      this.bindPermissions(this.registry.requireSkill(skill.id));
+      this.permissionResets.delete(skill.id);
+      return { permissions: baseline, permissionsReset: false, reason: null };
+    }
+
+    if (!identityMatches) {
+      return this.resetElevatedPermissions(
+        skill,
+        binding.commitSha !== identity.commitSha
+          ? "commit_changed"
+          : binding.fingerprint !== identity.fingerprint
+            ? "fingerprint_changed"
+            : "identity_changed",
+      );
+    }
+
+    if (opts.preserveElevated) {
+      // Same artifact — preserve elevated grants, ensure baseline is present.
+      const merged = [...new Set<Capability>([...baseline, ...skill.permissions])];
+      this.registry.updateSkill(skill.id, { permissions: merged });
+      this.bindPermissions(this.registry.requireSkill(skill.id));
+      return { permissions: merged, permissionsReset: false, reason: null };
+    }
+
+    return { permissions: skill.permissions, permissionsReset: false, reason: null };
+  }
+
+  private resetElevatedPermissions(
+    skill: SkillRecord,
+    reason: string,
+  ): { permissions: Capability[]; permissionsReset: boolean; reason: string } {
+    const baseline = this.baselinePermissions(skill);
+    const hadElevated = skill.permissions.some((cap) => !baseline.includes(cap));
+    const permissionsReset = hadElevated || skill.permissions.length !== baseline.length ||
+      baseline.some((cap) => !skill.permissions.includes(cap));
+    this.registry.updateSkill(skill.id, { permissions: baseline });
+    this.bindPermissions(this.registry.requireSkill(skill.id));
+    if (permissionsReset) {
+      this.permissionResets.set(skill.id, { permissionsReset: true, reason });
+      this.audit.record({
+        requestId: "permissions_reset",
+        actor: "gateway",
+        action: "permissions_reset",
+        skillId: skill.id,
+        fingerprint: skill.fingerprint,
+        detail: { permissionsReset: true, permissionsResetReason: reason },
+      });
+    }
+    return { permissions: baseline, permissionsReset, reason };
   }
 
   private fingerprintFor(pkg: SkillPackage, manifest: SkillRecord["manifest"]): string {

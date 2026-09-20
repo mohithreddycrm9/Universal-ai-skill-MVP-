@@ -1,0 +1,134 @@
+import { describe, expect, it } from "vitest";
+import { benignPackage, testGateway } from "../helpers.js";
+
+describe("permissions bound to immutable identity", () => {
+  it("same artifact + successful revalidation may preserve elevated permissions", async () => {
+    const gw = testGateway([benignPackage()]);
+    const acquired = (await gw.acquire({
+      query: "csv-normalize",
+      wait: true,
+      requestId: "perm-1",
+    })) as { skillId: string };
+
+    const elevated = gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "network.read",
+      approver: "human",
+      requestId: "perm-1b",
+    }) as { effective: string[]; permissionsReset: boolean };
+
+    expect(elevated.effective).toContain("network.read");
+    expect(elevated.permissionsReset).toBe(false);
+
+    // Same identity revalidation via getSkillPermissions reconcile.
+    const again = gw.getSkillPermissions({ skillId: acquired.skillId }) as {
+      effective: string[];
+      permissionsReset: boolean;
+      permissionsBoundTo: { commitSha: string; fingerprint: string };
+    };
+    expect(again.effective).toContain("network.read");
+    expect(again.permissionsReset).toBe(false);
+    expect(again.permissionsBoundTo?.commitSha).toBeTruthy();
+    expect(again.permissionsBoundTo?.fingerprint).toBeTruthy();
+  });
+
+  it("changed commit resets elevated permissions (visible)", async () => {
+    const gw = testGateway([benignPackage()]);
+    const acquired = (await gw.acquire({
+      query: "csv-normalize",
+      wait: true,
+      requestId: "perm-2",
+    })) as { skillId: string };
+
+    gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "network.read",
+      approver: "human",
+      requestId: "perm-2b",
+    });
+
+    gw.registry.updateSkill(acquired.skillId, {
+      commitSha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    });
+
+    const perms = gw.getSkillPermissions({ skillId: acquired.skillId }) as {
+      effective: string[];
+      permissionsReset: boolean;
+      permissionsResetReason: string | null;
+    };
+    expect(perms.effective).not.toContain("network.read");
+    expect(perms.effective).toContain("filesystem.read");
+    expect(perms.permissionsReset).toBe(true);
+    expect(perms.permissionsResetReason).toMatch(/commit/i);
+  });
+
+  it("changed fingerprint resets elevated permissions (visible)", async () => {
+    const gw = testGateway([benignPackage()]);
+    const acquired = (await gw.acquire({
+      query: "csv-normalize",
+      wait: true,
+      requestId: "perm-3",
+    })) as { skillId: string };
+
+    gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "network.read",
+      approver: "human",
+      requestId: "perm-3b",
+    });
+
+    gw.registry.updateSkill(acquired.skillId, {
+      fingerprint: "sha256:altered-fingerprint",
+    });
+
+    const perms = gw.getSkillPermissions({ skillId: acquired.skillId }) as {
+      effective: string[];
+      permissionsReset: boolean;
+      permissionsResetReason: string | null;
+    };
+    expect(perms.effective).not.toContain("network.read");
+    expect(perms.permissionsReset).toBe(true);
+    expect(perms.permissionsResetReason).toMatch(/fingerprint/i);
+  });
+
+  it("security invalidation resets elevated permissions (visible)", async () => {
+    const gw = testGateway([benignPackage()]);
+    const acquired = (await gw.acquire({
+      query: "csv-normalize",
+      wait: true,
+      requestId: "perm-4",
+    })) as { skillId: string };
+
+    gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "network.read",
+      approver: "human",
+      requestId: "perm-4b",
+    });
+
+    const invalidated = gw.invalidate({
+      skillId: acquired.skillId,
+      reason: "operator_revoke",
+      requestId: "perm-4c",
+    }) as {
+      permissionsReset: boolean;
+      permissionsResetReason: string;
+      effective: string[];
+    };
+
+    expect(invalidated.permissionsReset).toBe(true);
+    expect(invalidated.permissionsResetReason).toMatch(/invalid/i);
+    expect(invalidated.effective).not.toContain("network.read");
+  });
+
+  it("new skill starts at baseline (filesystem.read)", async () => {
+    const gw = testGateway([benignPackage()]);
+    const acquired = (await gw.acquire({
+      query: "csv-normalize",
+      wait: true,
+      requestId: "perm-5",
+    })) as { skillId: string };
+    const perms = gw.getSkillPermissions({ skillId: acquired.skillId }) as { effective: string[] };
+    expect(perms.effective).toEqual(["filesystem.read"]);
+  });
+});
