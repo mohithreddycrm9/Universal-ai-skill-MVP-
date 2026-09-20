@@ -16,8 +16,11 @@ Trust is not authorization. `INCONCLUSIVE` is not `PASS`. Freemium adapters are 
 npm install
 npm test
 npm run build
+npm run validate          # typecheck + build + test (includes e2e)
 npx skill-mcp serve
 ```
+
+E2E lifecycle scenarios A–N (local fixtures): `npm run test:e2e` — see [docs/E2E.md](./docs/E2E.md). Docker/network optional; live GitHub/STRIX are NOT_EXECUTED unless you run them yourself.
 
 Optional HTTP:
 

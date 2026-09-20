@@ -19,9 +19,12 @@
     "dev": "tsx --experimental-sqlite src/index.ts",
     "cli": "tsx --experimental-sqlite src/index.ts",
     "test": "node --experimental-sqlite ./node_modules/vitest/vitest.mjs run",
+    "test:e2e": "node --experimental-sqlite ./node_modules/vitest/vitest.mjs run tests/e2e",
     "test:watch": "node --experimental-sqlite ./node_modules/vitest/vitest.mjs",
     "bench": "tsx --experimental-sqlite tests/perf/benchmark.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "validate": "npm run typecheck && npm run build && npm test",
+    "validate:docker": "npm run validate && node --experimental-sqlite ./node_modules/vitest/vitest.mjs run tests/e2e/mvp-lifecycle.test.ts -t 'L — Docker'"
   },
   "keywords": [
     "mcp",
