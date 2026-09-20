@@ -4,6 +4,7 @@ import { systemClock } from "../util/clock.js";
 import type { ScanTarget, ScannerRun } from "../types.js";
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { runEnvelope } from "./helpers.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 /**
  * STRIX adapter. If the binary is missing or fails, status is ERROR — never PASS.
@@ -11,6 +12,7 @@ import { runEnvelope } from "./helpers.js";
 export class StrixScanner implements SecurityScanner {
   readonly id = "strix";
   readonly version = "adapter-1.0.0";
+  readonly cost = COST_CATALOG.strix;
 
   constructor(private readonly clock: Clock = systemClock) {}
 

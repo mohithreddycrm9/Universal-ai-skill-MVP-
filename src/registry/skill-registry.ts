@@ -16,6 +16,7 @@ import { SkillMcpError } from "../errors.js";
 import { assertTransition, normalizeLifecycle } from "../skills/lifecycle.js";
 import type { Clock } from "../util/clock.js";
 import { iso } from "../util/clock.js";
+import type { CostApproval, CostApprovalState, CostReview } from "../cost/types.js";
 
 interface SkillRow {
   id: string;
@@ -433,6 +434,99 @@ export class SkillRegistry {
       expiresAt: row.expires_at,
     };
   }
+
+  insertCostApproval(record: CostApproval): void {
+    this.db.run(
+      `INSERT INTO cost_approvals (id, operation, provider, service, status, approver, review_json, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        record.id,
+        record.operation,
+        record.provider,
+        record.service,
+        record.status,
+        record.approver,
+        JSON.stringify(record.review),
+        record.createdAt,
+        record.updatedAt,
+      ],
+    );
+  }
+
+  getCostApproval(id: string): CostApproval | undefined {
+    const row = this.db.get<{
+      id: string;
+      operation: string;
+      provider: string;
+      service: string;
+      status: CostApprovalState;
+      approver: string | null;
+      review_json: string;
+      created_at: string;
+      updated_at: string;
+    }>(`SELECT * FROM cost_approvals WHERE id = ?`, [id]);
+    return row ? mapCost(row) : undefined;
+  }
+
+  findOpenCostApproval(operation: string, provider: string, service: string): CostApproval | undefined {
+    const row = this.db.get<{
+      id: string;
+      operation: string;
+      provider: string;
+      service: string;
+      status: CostApprovalState;
+      approver: string | null;
+      review_json: string;
+      created_at: string;
+      updated_at: string;
+    }>(
+      `SELECT * FROM cost_approvals WHERE operation = ? AND provider = ? AND service = ? AND status IN ('PENDING','APPROVED') ORDER BY created_at DESC LIMIT 1`,
+      [operation, provider, service],
+    );
+    return row ? mapCost(row) : undefined;
+  }
+
+  listCostApprovals(status?: CostApprovalState): CostApproval[] {
+    const rows = status
+      ? this.db.all<{
+          id: string;
+          operation: string;
+          provider: string;
+          service: string;
+          status: CostApprovalState;
+          approver: string | null;
+          review_json: string;
+          created_at: string;
+          updated_at: string;
+        }>(`SELECT * FROM cost_approvals WHERE status = ? ORDER BY created_at DESC`, [status])
+      : this.db.all<{
+          id: string;
+          operation: string;
+          provider: string;
+          service: string;
+          status: CostApprovalState;
+          approver: string | null;
+          review_json: string;
+          created_at: string;
+          updated_at: string;
+        }>(`SELECT * FROM cost_approvals ORDER BY created_at DESC LIMIT 100`);
+    return rows.map(mapCost);
+  }
+
+  updateCostApproval(id: string, status: CostApprovalState, approver: string): CostApproval {
+    const current = this.getCostApproval(id);
+    if (!current) {
+      throw new SkillMcpError("NOT_FOUND", `Cost approval ${id} not found`);
+    }
+    const updatedAt = iso(this.clock);
+    this.db.run(`UPDATE cost_approvals SET status=?, approver=?, updated_at=? WHERE id=?`, [
+      status,
+      approver,
+      updatedAt,
+      id,
+    ]);
+    return { ...current, status, approver, updatedAt };
+  }
 }
 
 function mapSkill(row: SkillRow): SkillRecord {
@@ -468,6 +562,30 @@ function mapJob(row: JobRow): JobRecord {
     state: row.state,
     payload: JSON.parse(row.payload_json) as Record<string, unknown>,
     error: row.error,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapCost(row: {
+  id: string;
+  operation: string;
+  provider: string;
+  service: string;
+  status: CostApprovalState;
+  approver: string | null;
+  review_json: string;
+  created_at: string;
+  updated_at: string;
+}): CostApproval {
+  return {
+    id: row.id,
+    operation: row.operation,
+    provider: row.provider,
+    service: row.service,
+    status: row.status,
+    approver: row.approver,
+    review: JSON.parse(row.review_json) as CostReview,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

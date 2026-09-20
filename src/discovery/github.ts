@@ -2,6 +2,7 @@ import type { SkillCandidate, SkillFile, SkillPackage } from "../types.js";
 import { SkillMcpError } from "../errors.js";
 import { truncate } from "../skills/manifest.js";
 import type { DiscoveryQuery, PinnedRef, SkillRef, SkillSource } from "./skill-source.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 const MAX_FILE_BYTES = 64 * 1024;
 const MAX_FILES = 20;
@@ -28,12 +29,24 @@ export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
 export class GitHubSource implements SkillSource {
   readonly id = "github";
+  readonly cost = COST_CATALOG.github_public;
 
   constructor(
     private readonly apiBase: string,
     private readonly token: string | undefined,
     private readonly fetchImpl: FetchLike = fetch,
   ) {}
+
+  costFor(ref?: SkillRef): typeof COST_CATALOG.github_public | typeof COST_CATALOG.github_private_or_unknown {
+    const base = this.apiBase.replace(/\/+$/, "");
+    const publicApi = base === "https://api.github.com" || base === "http://api.github.com";
+    const url = ref?.repositoryUrl ?? "";
+    const looksPrivateHint = /gist\.github\.com|enterprise|github\.[a-z0-9-]+\.[a-z]+/i.test(url) && !/github\.com/i.test(url);
+    if (!publicApi || looksPrivateHint) {
+      return COST_CATALOG.github_private_or_unknown;
+    }
+    return COST_CATALOG.github_public;
+  }
 
   async search(query: DiscoveryQuery): Promise<SkillCandidate[]> {
     const q = encodeURIComponent(`${query.query} in:name,description`);

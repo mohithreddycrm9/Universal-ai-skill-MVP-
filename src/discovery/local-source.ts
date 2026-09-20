@@ -1,6 +1,7 @@
 import type { SkillCandidate, SkillPackage } from "../types.js";
 import { SkillMcpError } from "../errors.js";
 import type { DiscoveryQuery, PinnedRef, SkillRef, SkillSource } from "./skill-source.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 /**
  * Local / test SkillSource. GitHub remains the first remote adapter; this exists so
@@ -8,6 +9,7 @@ import type { DiscoveryQuery, PinnedRef, SkillRef, SkillSource } from "./skill-s
  */
 export class LocalSource implements SkillSource {
   readonly id = "local";
+  readonly cost = COST_CATALOG.local_source;
   private readonly packages = new Map<string, SkillPackage>();
 
   register(pkg: SkillPackage): void {

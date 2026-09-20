@@ -5,6 +5,7 @@ import { z } from "zod";
 import { RISK_LEVELS, type RiskLevel } from "../types.js";
 import { canonicalize } from "../util/canonical.js";
 import { sha256 } from "../util/hash.js";
+import { COST_POLICIES, type CostPolicy } from "../cost/types.js";
 
 const trustSchema = z.object({
   allowUnknownPublisherScan: z.boolean().default(true),
@@ -87,6 +88,14 @@ const registrySchema = z.object({
   quarantineDir: z.string().default("data/quarantine"),
 });
 
+const costSchema = z.object({
+  policy: z.enum(COST_POLICIES).default("ASK_BEFORE_ANY_PAID_OPERATION"),
+  currency: z.string().default("USD"),
+  allowUpToAmount: z.number().default(0),
+  preferFreeAlternatives: z.boolean().default(true),
+  neverAutoPaidFallback: z.boolean().default(true),
+  unknownCostRequiresApproval: z.boolean().default(true),
+});
 export type TrustPolicy = z.infer<typeof trustSchema>;
 export type SecurityPolicy = z.infer<typeof securitySchema>;
 export type SandboxPolicy = z.infer<typeof sandboxSchema>;
@@ -99,6 +108,7 @@ export interface AppConfig {
   sandbox: SandboxPolicy;
   scanners: ScannerPolicy;
   registry: RegistryPolicy;
+  cost: CostPolicy;
   configDir: string;
 }
 
@@ -110,6 +120,7 @@ export function loadConfig(configDir: string): AppConfig {
     sandbox: loadYaml(join(configDir, "sandbox-policy.yaml"), sandboxSchema),
     scanners: loadYaml(join(configDir, "scanner-policy.yaml"), scannerSchema),
     registry: loadYaml(join(configDir, "registry.yaml"), registrySchema),
+    cost: loadYaml(join(configDir, "cost-policy.yaml"), costSchema),
   };
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "@skill-mcp/universal-skill-trust",
   "version": "0.1.0",
-  "description": "Software-agnostic Universal Skill Trust Gateway (MCP)",
+  "description": "Universal Skills MCP — free/OSS-first skill discovery, verification, and delivery",
   "type": "module",
   "engines": {
     "node": ">=20.11.0"

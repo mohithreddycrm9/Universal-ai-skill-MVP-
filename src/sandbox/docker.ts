@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import type { SkillManifest, SkillPackage } from "../types.js";
 import type { SandboxProvider, SandboxResult } from "./provider.js";
 import type { SandboxPolicy } from "../policy/load.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 /**
  * Container sandbox. Missing Docker → ERROR/INCONCLUSIVE, never PASS.
@@ -9,6 +10,7 @@ import type { SandboxPolicy } from "../policy/load.js";
  */
 export class DockerSandbox implements SandboxProvider {
   readonly id = "docker";
+  readonly cost = COST_CATALOG.docker_local;
 
   constructor(private readonly policy: SandboxPolicy) {}
 

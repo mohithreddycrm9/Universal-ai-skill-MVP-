@@ -117,3 +117,27 @@ We do **not** reimplement MCP, Agent Skills hosting, or a general malware oracle
 5. SandboxProvider + capability firewall (trust ≠ authz) + tests.
 6. Gateway pipeline, jobs, MCP tools, CLI, examples, docs.
 7. Security corpus + integration tests. No completion claim without code + tests + docs.
+
+---
+
+## Refinement: Universal Skills MCP + free/OSS-first + cost approval
+
+Product framing: **Universal Skills MCP** — skills are HOW, not execution. ServiceNow is not the center (none in core).
+
+### KEEP / REFACTOR / REPLACE / REMOVE / NEW
+
+| Item | Action |
+| --- | --- |
+| Trust gateway pipeline, quarantine lifecycle, Trust Broker ≠ firewall, VerificationCache, async jobs, MCP Skills disclosure | **KEEP** |
+| GitHub + Local SkillSource, built-in scanners, STRIX adapter, SQLite, CLI, MCP tools | **KEEP** |
+| Snyk adapter | **REFACTOR** — tagged commercial; skipped unless explicit paid allow-list + human approval; never auto-fallback |
+| GitHub source | **REFACTOR** — cost metadata; public REST vs private/unknown |
+| Scanner/source interfaces | **REFACTOR** — required `cost` metadata |
+| SecurityOrchestrator | **REFACTOR** — skip commercial scanners by default |
+| Custom skill protocol as the product | **REPLACE** (already adapted) with MCP Skills serve path — still persist custom manifests |
+| Paid LLM / cloud-required core | **REMOVE** (never added; do not add as default) |
+| Hard-coded ServiceNow/AWS/K8s core | **REMOVE** / not present |
+| `CostDetector`, `config/cost-policy.yaml`, approval store, OSS binary scanners, cost MCP tools | **NEW** |
+| `docs/COST_POLICY.md`, `docs/LOCAL_SETUP.md`, `docs/SCANNER_ADAPTERS.md` | **NEW** |
+
+Default policy: `ASK_BEFORE_ANY_PAID_OPERATION`. Core clone-and-run uses only free local components.

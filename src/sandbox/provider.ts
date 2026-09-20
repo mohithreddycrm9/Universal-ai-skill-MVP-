@@ -1,5 +1,6 @@
 import type { BehavioralFingerprint, Capability, SkillManifest, SkillPackage } from "../types.js";
 import type { SecurityStatus } from "../types.js";
+import type { CostMetadata } from "../cost/types.js";
 
 export interface SandboxResult {
   status: SecurityStatus;
@@ -10,6 +11,7 @@ export interface SandboxResult {
 
 export interface SandboxProvider {
   readonly id: string;
+  readonly cost?: CostMetadata;
   evaluate(pkg: SkillPackage, manifest: SkillManifest): Promise<SandboxResult>;
 }
 

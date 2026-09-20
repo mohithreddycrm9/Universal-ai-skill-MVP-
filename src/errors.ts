@@ -6,7 +6,8 @@ export type ErrorCode =
   | "POLICY_DENIED"
   | "SOURCE_ERROR"
   | "TIMEOUT"
-  | "INTERNAL";
+  | "INTERNAL"
+  | "COST_APPROVAL_REQUIRED";
 
 export class SkillMcpError extends Error {
   readonly code: ErrorCode;

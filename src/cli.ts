@@ -6,7 +6,7 @@ import { Logger } from "./observability/log.js";
 
 export async function main(argv = process.argv): Promise<void> {
   const program = new Command();
-  program.name("skill-mcp").description("Universal Skill Trust Gateway CLI").version("0.2.0");
+  program.name("skill-mcp").description("Universal Skills MCP CLI (free/OSS-first)").version("0.3.0");
 
   program
     .command("serve")
@@ -84,6 +84,38 @@ export async function main(argv = process.argv): Promise<void> {
     .option("--json", "JSON output")
     .action((opts: { json?: boolean }) => {
       print(withGw().listAudit(50), opts.json);
+    });
+
+  program
+    .command("costs")
+    .option("--json", "JSON output")
+    .action((opts: { json?: boolean }) => {
+      print(withGw().listIntegrations(), opts.json);
+    });
+
+  program
+    .command("approvals")
+    .option("--json", "JSON output")
+    .action((opts: { json?: boolean }) => {
+      print(withGw().listPendingCostApprovals(), opts.json);
+    });
+
+  program
+    .command("approve")
+    .argument("<approvalId>")
+    .option("--approver <name>", "Human identity", "cli-operator")
+    .option("--json", "JSON output")
+    .action((approvalId: string, opts: { approver: string; json?: boolean }) => {
+      print(withGw().approvePaidOperation({ approvalId, approver: opts.approver, requestId: "cli" }), opts.json);
+    });
+
+  program
+    .command("reject")
+    .argument("<approvalId>")
+    .option("--approver <name>", "Human identity", "cli-operator")
+    .option("--json", "JSON output")
+    .action((approvalId: string, opts: { approver: string; json?: boolean }) => {
+      print(withGw().rejectPaidOperation({ approvalId, approver: opts.approver, requestId: "cli" }), opts.json);
     });
 
   program.action(async () => {

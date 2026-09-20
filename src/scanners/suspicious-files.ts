@@ -3,6 +3,7 @@ import { systemClock } from "../util/clock.js";
 import type { ScanTarget, ScannerRun } from "../types.js";
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { finding, runEnvelope, walkTarget } from "./helpers.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 const PATTERNS: Array<{ id: string; re: RegExp; title: string; severity: "HIGH" | "CRITICAL" | "MEDIUM" }> = [
   { id: "curl-sh", re: /curl\s[^|\n]{0,80}\|\s*(ba)?sh/i, title: "Pipe-to-shell pattern", severity: "CRITICAL" },
@@ -16,6 +17,7 @@ const PATTERNS: Array<{ id: string; re: RegExp; title: string; severity: "HIGH" 
 export class SuspiciousFilesScanner implements SecurityScanner {
   readonly id = "suspicious_files";
   readonly version = "1.0.0";
+  readonly cost = COST_CATALOG.suspicious_files;
 
   constructor(private readonly clock: Clock = systemClock) {}
 

@@ -19,6 +19,7 @@ import { DependencyScanner } from "./scanners/dependency.js";
 import { LicenseScanner } from "./scanners/license.js";
 import { StrixScanner } from "./scanners/strix.js";
 import { SnykScanner } from "./scanners/snyk.js";
+import { OssBinaryScanner } from "./scanners/oss-binary.js";
 import { InProcessSandbox } from "./sandbox/in-process.js";
 import type { SandboxProvider } from "./sandbox/provider.js";
 import { CapabilityFirewall } from "./capabilities/firewall.js";
@@ -50,6 +51,9 @@ import type {
   TrustTier,
 } from "./types.js";
 import { SECURITY_NOTICE } from "./types.js";
+import { CostDetector } from "./cost/detector.js";
+import { COST_CATALOG } from "./cost/catalog.js";
+import type { CostApproval, CostDecision, CostMetadata, CostReview } from "./cost/types.js";
 
 export interface GatewayOptions {
   config?: AppConfig;
@@ -78,6 +82,7 @@ export class SkillTrustGateway {
   private readonly firewall = new CapabilityFirewall();
   private readonly cache: VerificationCache;
   private readonly audit: AuditLog;
+  private readonly costDetector: CostDetector;
   private readonly packages = new Map<string, SkillPackage>();
   private readonly dataDir: string;
   private readonly configHash: string;
@@ -94,6 +99,7 @@ export class SkillTrustGateway {
     this.cache = new VerificationCache(this.registry, this.clock);
     this.graph = new TrustGraph(this.registry, this.clock);
     this.broker = new TrustBroker([new AllowlistTrustProvider(this.config.trust)]);
+    this.costDetector = new CostDetector(this.config.cost);
     this.localSource = opts.localSource ?? new LocalSource();
     const github = new GitHubSource(
       this.config.registry.sources.find((item) => item.id === "github")?.apiBase ?? "https://api.github.com",
@@ -108,6 +114,12 @@ export class SkillTrustGateway {
         new DependencyScanner(this.clock),
         new LicenseScanner(this.clock),
         new StrixScanner(this.clock),
+        new OssBinaryScanner("semgrep", "adapter-1.0.0", COST_CATALOG.semgrep, "semgrep", this.clock),
+        new OssBinaryScanner("gitleaks", "adapter-1.0.0", COST_CATALOG.gitleaks, "gitleaks", this.clock),
+        new OssBinaryScanner("trivy", "adapter-1.0.0", COST_CATALOG.trivy, "trivy", this.clock),
+        new OssBinaryScanner("clamav", "adapter-1.0.0", COST_CATALOG.clamav, "clamscan", this.clock),
+        new OssBinaryScanner("osv", "adapter-1.0.0", COST_CATALOG.osv, "osv-scanner", this.clock),
+        new OssBinaryScanner("syft", "adapter-1.0.0", COST_CATALOG.syft, "syft", this.clock),
         new SnykScanner(this.clock),
       ],
       this.config,
@@ -127,7 +139,17 @@ export class SkillTrustGateway {
       .searchSkills(input.query, limit)
       .filter((skill) => normalizeLifecycle(skill.lifecycle) === "AVAILABLE");
     const remote: SkillCandidate[] = [];
+    const skipped: Array<{ source: string; reason: string }> = [];
     for (const source of this.sources) {
+      const cost = source instanceof GitHubSource ? source.costFor() : source.cost;
+      const decision = this.evaluateCost("discover_skill", cost);
+      if (!decision.proceed) {
+        skipped.push({
+          source: source.id,
+          reason: decision.kind === "DENIED" ? decision.reason : "Potentially billable source skipped pending approval",
+        });
+        continue;
+      }
       try {
         remote.push(...(await source.search({ query: input.query, domain: input.domain, limit })));
       } catch (error) {
@@ -147,8 +169,9 @@ export class SkillTrustGateway {
       localVerified: localHits.map((skill) => this.cardMeta(skill)),
       candidates: ranked.slice(0, limit).map((item) => ({
         ...item,
-        note: "Candidate only. Not trusted until the gateway pipeline completes.",
+        note: "Candidate only. Not trusted until the gateway pipeline completes. Skills explain HOW; other tools execute.",
       })),
+      skippedSources: skipped,
     };
   }
 
@@ -157,9 +180,32 @@ export class SkillTrustGateway {
     candidateId?: string;
     repositoryUrl?: string;
     wait?: boolean;
+    approvalId?: string;
     requestId: string;
   }): Promise<unknown> {
-    const pkg = await this.resolvePackage(input);
+    let pkg: SkillPackage;
+    try {
+      pkg = await this.resolvePackage(input);
+    } catch (error) {
+      if (error instanceof SkillMcpError && error.code === "COST_APPROVAL_REQUIRED") {
+        const metadata = error.details.metadata as CostMetadata;
+        const review = error.details.review as CostReview;
+        const pending = this.ensurePending("acquire_skill", metadata, review);
+        this.audit.record({
+          requestId: input.requestId,
+          actor: "agent",
+          action: "cost_approval_required",
+          detail: { approvalId: pending.id, provider: metadata.provider, service: metadata.service },
+        });
+        return {
+          status: "NEEDS_COST_APPROVAL",
+          approvalId: pending.id,
+          review,
+          message: "Operation not started. Explicit human approval is required. You are not required to approve.",
+        };
+      }
+      throw error;
+    }
     this.assertPinned(pkg);
     const manifest = manifestFromPackage(pkg, extractInstructions(pkg), inferRisk(pkg));
     const fingerprint = this.fingerprintFor(pkg, manifest);
@@ -248,9 +294,32 @@ export class SkillTrustGateway {
     return this.getSkillTrust(input);
   }
 
-  async scan(input: { skillId: string; wait?: boolean; requestId: string }): Promise<unknown> {
+  async scan(input: {
+    skillId: string;
+    wait?: boolean;
+    includePaidScanners?: boolean;
+    approvalId?: string;
+    requestId: string;
+  }): Promise<unknown> {
     const skill = this.registry.requireSkill(input.skillId);
-    this.enqueue("SECURITY_SCAN", skill.id, skill.fingerprint, {});
+    if (input.includePaidScanners) {
+      const decision = this.evaluateCost("scan_skill:snyk", COST_CATALOG.snyk, input.approvalId);
+      if (!decision.proceed) {
+        if (decision.kind === "DENIED") {
+          throw new SkillMcpError("POLICY_DENIED", decision.reason);
+        }
+        const pending = this.ensurePending("scan_skill:snyk", COST_CATALOG.snyk, decision.review);
+        return {
+          status: "NEEDS_COST_APPROVAL",
+          approvalId: pending.id,
+          review: pending.review,
+          note: "Commercial scanners are not an automatic fallback. Free/OSS scanners still run.",
+        };
+      }
+    }
+    this.enqueue("SECURITY_SCAN", skill.id, skill.fingerprint, {
+      includePaidScanners: Boolean(input.includePaidScanners),
+    });
     if (input.wait) {
       await this.processJobs(20);
     }
@@ -457,6 +526,40 @@ export class SkillTrustGateway {
     return { events: this.registry.listAudit(limit, skillId) };
   }
 
+  listIntegrations(): unknown {
+    return {
+      policy: this.config.cost,
+      notice: "Core is free/OSS-first. Commercial rows require explicit approval and never run as silent fallbacks.",
+      integrations: Object.entries(COST_CATALOG).map(([id, cost]) => ({ id, ...cost })),
+    };
+  }
+
+  listPendingCostApprovals(): unknown {
+    return { items: this.registry.listCostApprovals("PENDING") };
+  }
+
+  approvePaidOperation(input: { approvalId: string; approver: string; requestId: string }): unknown {
+    const updated = this.registry.updateCostApproval(input.approvalId, "APPROVED", input.approver);
+    this.audit.record({
+      requestId: input.requestId,
+      actor: input.approver,
+      action: "approve_paid_operation",
+      detail: { approvalId: input.approvalId, provider: updated.provider, service: updated.service },
+    });
+    return { approval: updated, message: "Approved. Re-invoke the original operation with this approvalId." };
+  }
+
+  rejectPaidOperation(input: { approvalId: string; approver: string; requestId: string }): unknown {
+    const updated = this.registry.updateCostApproval(input.approvalId, "REJECTED", input.approver);
+    this.audit.record({
+      requestId: input.requestId,
+      actor: input.approver,
+      action: "reject_paid_operation",
+      detail: { approvalId: input.approvalId },
+    });
+    return { approval: updated, message: "Rejected. The operation will not run." };
+  }
+
   async processJobs(max = 8): Promise<number> {
     let n = 0;
     while (n < max) {
@@ -480,7 +583,8 @@ export class SkillTrustGateway {
         if (type === "ACQUIRE" || type === "PROVENANCE_CHECK" || type === "TRUST_REFRESH") {
           await this.runPipeline(skill, pkg);
         } else if (type === "SECURITY_SCAN" || type === "FULL_RESCAN" || type === "DEPENDENCY_REFRESH") {
-          await this.runScanStage(this.registry.requireSkill(job.skillId), pkg);
+          const allowPaid = job.payload.includePaidScanners === true ? ["snyk"] : [];
+          await this.runScanStage(this.registry.requireSkill(job.skillId), pkg, allowPaid);
           await this.runSandboxAndPolicy(this.registry.requireSkill(job.skillId), pkg);
         } else if (type === "SANDBOX_TEST") {
           await this.runSandboxAndPolicy(skill, pkg);
@@ -529,11 +633,12 @@ export class SkillTrustGateway {
     return decision;
   }
 
-  private async runScanStage(skill: SkillRecord, pkg: SkillPackage): Promise<void> {
+  private async runScanStage(skill: SkillRecord, pkg: SkillPackage, allowPaidScannerIds: string[] = []): Promise<void> {
     this.registry.updateSkill(skill.id, { lifecycle: "SECURITY_SCAN" });
     const result = await this.orchestrator.scan(
       { skillId: skill.id, package: pkg, quarantinePath: join(this.dataDir, "quarantine", skill.id) },
       skill.risk,
+      { allowPaidScannerIds },
     );
     for (const run of result.scanners) {
       this.registry.insertScanResult(skill.id, skill.fingerprint, run);
@@ -635,14 +740,31 @@ export class SkillTrustGateway {
     query?: string;
     candidateId?: string;
     repositoryUrl?: string;
+    approvalId?: string;
   }): Promise<SkillPackage> {
     if (input.repositoryUrl) {
+      let pending: CostDecision | undefined;
       for (const source of this.sources) {
+        const cost = this.sourceCost(source, input.repositoryUrl);
+        const decision = this.evaluateCost("acquire_skill", cost, input.approvalId);
+        if (!decision.proceed) {
+          pending = decision;
+          continue;
+        }
         try {
           return await source.fetch({ repositoryUrl: input.repositoryUrl });
         } catch {
           continue;
         }
+      }
+      if (pending?.kind === "NEEDS_APPROVAL") {
+        throw new SkillMcpError("COST_APPROVAL_REQUIRED", "Potentially billable source requires approval", {
+          review: pending.review,
+          metadata: pending.metadata,
+        });
+      }
+      if (pending?.kind === "DENIED") {
+        throw new SkillMcpError("POLICY_DENIED", pending.reason, { metadata: pending.metadata });
       }
     }
     const q = input.query ?? (input.candidateId?.includes(":") ? input.candidateId.split(":")[1] : input.candidateId) ?? "";
@@ -700,6 +822,57 @@ export class SkillTrustGateway {
       authorized: normalizeLifecycle(skill.lifecycle) === "AVAILABLE",
       reputation: skill.qualityStatus,
     };
+  }
+
+  private sourceCost(source: SkillSource, repositoryUrl?: string): CostMetadata {
+    if (source instanceof GitHubSource) {
+      return source.costFor(repositoryUrl ? { repositoryUrl } : undefined);
+    }
+    return source.cost;
+  }
+
+  private evaluateCost(operation: string, metadata: CostMetadata, approvalId?: string): CostDecision {
+    if (approvalId) {
+      const record = this.registry.getCostApproval(approvalId);
+      if (!record) {
+        throw new SkillMcpError("NOT_FOUND", `Cost approval ${approvalId} not found`);
+      }
+      if (record.status === "APPROVED") {
+        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "APPROVED", approvalId });
+      }
+      if (record.status === "REJECTED") {
+        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "REJECTED" });
+      }
+    }
+    const open = this.registry.findOpenCostApproval(operation, metadata.provider, metadata.service);
+    if (open?.status === "APPROVED") {
+      return this.costDetector.evaluate(operation, metadata, { approvalStatus: "APPROVED", approvalId: open.id });
+    }
+    if (open?.status === "REJECTED") {
+      return this.costDetector.evaluate(operation, metadata, { approvalStatus: "REJECTED" });
+    }
+    return this.costDetector.evaluate(operation, metadata);
+  }
+
+  private ensurePending(operation: string, metadata: CostMetadata, review: CostReview): CostApproval {
+    const existing = this.registry.findOpenCostApproval(operation, metadata.provider, metadata.service);
+    if (existing?.status === "PENDING") {
+      return existing;
+    }
+    const now = iso(this.clock);
+    const record: CostApproval = {
+      id: newId("cst"),
+      operation,
+      provider: metadata.provider,
+      service: metadata.service,
+      status: "PENDING",
+      approver: null,
+      review,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.registry.insertCostApproval(record);
+    return record;
   }
 }
 

@@ -3,10 +3,12 @@ import { systemClock } from "../util/clock.js";
 import type { ScanTarget, ScannerRun } from "../types.js";
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { finding, runEnvelope, walkTarget } from "./helpers.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 export class LicenseScanner implements SecurityScanner {
   readonly id = "license";
   readonly version = "1.0.0";
+  readonly cost = COST_CATALOG.license;
 
   constructor(private readonly clock: Clock = systemClock) {}
 

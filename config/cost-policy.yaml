@@ -1,0 +1,11 @@
+# Cost control. Default asks before any paid or unknown-cost operation.
+# Core remains usable with zero paid services.
+
+policy: ASK_BEFORE_ANY_PAID_OPERATION
+currency: USD
+allowUpToAmount: 0
+preferFreeAlternatives: true
+neverAutoPaidFallback: true
+
+# Explicit human approval is required when cost is unknown.
+unknownCostRequiresApproval: true

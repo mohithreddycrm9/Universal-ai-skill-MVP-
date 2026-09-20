@@ -23,3 +23,18 @@ scanners:
     binary: strix
     # If binary/API is absent, status is ERROR/NOT_RUN — never PASS.
     failOpen: false
+  semgrep:
+    enabled: false
+  gitleaks:
+    enabled: false
+  trivy:
+    enabled: false
+  clamav:
+    enabled: false
+  osv:
+    enabled: false
+  syft:
+    enabled: false
+  snyk:
+    enabled: false
+    # Commercial. Never an automatic fallback. Requires cost approval even if enabled.

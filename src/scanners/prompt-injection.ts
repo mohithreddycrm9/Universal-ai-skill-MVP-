@@ -3,6 +3,7 @@ import { systemClock } from "../util/clock.js";
 import type { ScanTarget, ScannerRun } from "../types.js";
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { finding, runEnvelope, walkTarget } from "./helpers.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 const PATTERNS: Array<{ id: string; re: RegExp; title: string }> = [
   { id: "ignore-prev", re: /ignore (all )?(previous|prior|above) instructions/i, title: "Instruction-hijack phrasing" },
@@ -18,6 +19,7 @@ const PATTERNS: Array<{ id: string; re: RegExp; title: string }> = [
 export class PromptInjectionScanner implements SecurityScanner {
   readonly id = "prompt_injection";
   readonly version = "1.0.0";
+  readonly cost = COST_CATALOG.prompt_injection;
 
   constructor(private readonly clock: Clock = systemClock) {}
 

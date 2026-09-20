@@ -11,7 +11,7 @@ function toolResult(payload: unknown) {
 }
 
 export function createMcpServer(gateway: SkillTrustGateway): McpServer {
-  const server = new McpServer({ name: "universal-skill-trust-gateway", version: "0.2.0" });
+  const server = new McpServer({ name: "universal-skills-mcp", version: "0.3.0" });
   const max = gateway.config.registry.response.maxBytes ?? MAX;
 
   const wrap = async (fn: (requestId: string) => Promise<unknown> | unknown) => {
@@ -80,6 +80,7 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
         candidateId: z.string().optional(),
         repositoryUrl: z.string().optional(),
         wait: z.boolean().optional(),
+        approvalId: z.string().optional(),
       }),
     },
     async (args) => wrap((requestId) => gateway.acquire({ ...args, requestId })),
@@ -99,8 +100,13 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
     "scan_skill",
     {
       title: "Scan skill",
-      description: "Enqueue configured scanners. Absence of a scanner is not PASS.",
-      inputSchema: z.object({ skillId: z.string(), wait: z.boolean().optional() }),
+      description: "Enqueue configured scanners. Absence of a scanner is not PASS. Paid scanners never auto-run.",
+      inputSchema: z.object({
+        skillId: z.string(),
+        wait: z.boolean().optional(),
+        includePaidScanners: z.boolean().optional(),
+        approvalId: z.string().optional(),
+      }),
     },
     async (args) => wrap((requestId) => gateway.scan({ ...args, requestId })),
   );
@@ -213,6 +219,46 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
     async (args) => wrap((requestId) => gateway.release({ skillId: args.skillId, requestId })),
   );
 
+  server.registerTool(
+    "list_integrations",
+    {
+      title: "List integrations",
+      description: "Cost metadata for every source and scanner. Core is free/OSS-first.",
+      inputSchema: z.object({}),
+    },
+    async () => wrap(() => gateway.listIntegrations()),
+  );
+
+  server.registerTool(
+    "list_pending_cost_approvals",
+    {
+      title: "List pending cost approvals",
+      description: "Human review queue for potentially billable operations.",
+      inputSchema: z.object({}),
+    },
+    async () => wrap(() => gateway.listPendingCostApprovals()),
+  );
+
+  server.registerTool(
+    "approve_paid_operation",
+    {
+      title: "Approve paid operation",
+      description: "Explicit human approval. Never implied. Re-invoke the original tool with approvalId.",
+      inputSchema: z.object({ approvalId: z.string(), approver: z.string().min(1).max(120) }),
+    },
+    async (args) => wrap((requestId) => gateway.approvePaidOperation({ ...args, requestId })),
+  );
+
+  server.registerTool(
+    "reject_paid_operation",
+    {
+      title: "Reject paid operation",
+      description: "Reject a potentially billable operation. The MCP will not run it.",
+      inputSchema: z.object({ approvalId: z.string(), approver: z.string().min(1).max(120) }),
+    },
+    async (args) => wrap((requestId) => gateway.rejectPaidOperation({ ...args, requestId })),
+  );
+
   return server;
 }
 
@@ -233,4 +279,8 @@ export const GATEWAY_TOOL_NAMES = [
   "compare_skill_versions",
   "request_capability",
   "release_skill",
+  "list_integrations",
+  "list_pending_cost_approvals",
+  "approve_paid_operation",
+  "reject_paid_operation",
 ] as const;

@@ -15,7 +15,7 @@ export function serveHttp(gateway: SkillTrustGateway, host: string, port: number
     const url = new URL(req.url ?? "/", `http://${host}:${port}`);
     if (req.method === "GET" && url.pathname === "/health") {
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", service: "universal-skill-trust-gateway" }));
+      res.end(JSON.stringify({ status: "ok", service: "universal-skills-mcp" }));
       return;
     }
     if (req.method === "GET" && url.pathname === "/metrics") {

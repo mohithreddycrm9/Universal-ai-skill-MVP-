@@ -1,14 +1,13 @@
-# Universal Skill Trust Gateway
+# Universal Skills MCP
 
-A software-agnostic **MCP gateway** that sits between AI agents and Agent Skills / MCP Skills / GitHub / vendor / enterprise registries / scanners.
-
-It is not “an AI that downloads random skills from GitHub.” It is a security and trust control plane:
+A software-agnostic **MCP** that lets an agent discover, acquire, verify, cache, and **serve skills** — how to work with a technology. It does **not** execute Terraform, AWS, ServiceNow, or other product APIs. Other tools/MCPs do that.
 
 **DISCOVER → VERIFY → SECURITY-CHECK → SANDBOX → AUTHORIZE → CACHE → SERVE**
 
-Verified capabilities are served with **progressive disclosure** (metadata first, SKILL.md only when needed). Repositories are never dumped into the model context.
+Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sandbox. No cloud account or paid API is required. Any potentially billable adapter needs **explicit human approval**. Paid scanners never run as a silent fallback.
 
-Trust is not authorization. `INCONCLUSIVE` is not `PASS`. The gateway never claims a skill is universally “safe” or free of malware.
+Trust is not authorization. `INCONCLUSIVE` is not `PASS`. The MCP never claims a skill is universally “safe.”
+
 
 ## Requirements
 
@@ -81,12 +80,15 @@ Malicious fixtures under `examples/malicious-fixtures` are **simulated and non-d
 | [docs/SCANNER-ARCHITECTURE.md](docs/SCANNER-ARCHITECTURE.md) | Pluggable scanners |
 | [docs/SANDBOX.md](docs/sandbox.md) | Isolation |
 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | Cache, parallel scan, tokens |
+| [docs/COST_POLICY.md](docs/COST_POLICY.md) | Free-first + human cost approval |
+| [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md) | Clone-and-run without payment |
+| [docs/SCANNER_ADAPTERS.md](docs/SCANNER_ADAPTERS.md) | OSS vs commercial scanners |
 | [docs/local-development.md](docs/local-development.md) | Dev setup |
 | [docs/production-deployment.md](docs/production-deployment.md) | Production notes |
 
 ## Configuration
 
-Security-sensitive policy lives in `config/` (`trust-policy.yaml`, `security-policy.yaml`, `sandbox-policy.yaml`, `scanner-policy.yaml`, `registry.yaml`). Empty official/verified lists mean **no publisher is official**.
+Security-sensitive policy lives in `config/` (`trust-policy.yaml`, `security-policy.yaml`, `sandbox-policy.yaml`, `scanner-policy.yaml`, `registry.yaml`, `cost-policy.yaml`). Empty official/verified lists mean **no publisher is official**. Default cost policy is `ASK_BEFORE_ANY_PAID_OPERATION`.
 
 ## License
 

@@ -78,6 +78,18 @@ CREATE TABLE IF NOT EXISTS verified_cache (
   expires_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS cost_approvals (
+  id TEXT PRIMARY KEY,
+  operation TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  service TEXT NOT NULL,
+  status TEXT NOT NULL,
+  approver TEXT,
+  review_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_skills_lifecycle ON skills(lifecycle);
 CREATE INDEX IF NOT EXISTS idx_skills_name ON skills(name);
 CREATE INDEX IF NOT EXISTS idx_jobs_state ON jobs(state);

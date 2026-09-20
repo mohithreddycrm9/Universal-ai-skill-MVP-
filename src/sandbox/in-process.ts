@@ -2,6 +2,7 @@ import type { SkillManifest, SkillPackage } from "../types.js";
 import { hasInstallScripts } from "../skills/manifest.js";
 import type { SandboxProvider, SandboxResult } from "./provider.js";
 import { unexpectedPrivileges } from "./provider.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 /**
  * Test/experimental sandbox: does not execute untrusted code.
@@ -9,6 +10,7 @@ import { unexpectedPrivileges } from "./provider.js";
  */
 export class InProcessSandbox implements SandboxProvider {
   readonly id = "in-process";
+  readonly cost = COST_CATALOG.in_process_sandbox;
 
   async evaluate(pkg: SkillPackage, manifest: SkillManifest): Promise<SandboxResult> {
     const observed = {

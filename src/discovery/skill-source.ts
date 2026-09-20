@@ -1,4 +1,5 @@
 import type { SkillCandidate, SkillPackage } from "../types.js";
+import type { CostMetadata } from "../cost/types.js";
 
 export interface DiscoveryQuery {
   query: string;
@@ -21,6 +22,7 @@ export interface PinnedRef {
 
 export interface SkillSource {
   readonly id: string;
+  readonly cost: CostMetadata;
   search(query: DiscoveryQuery): Promise<SkillCandidate[]>;
   fetch(ref: SkillRef): Promise<SkillPackage>;
   pin(ref: SkillRef): Promise<PinnedRef>;

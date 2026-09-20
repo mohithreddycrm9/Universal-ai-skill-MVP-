@@ -5,12 +5,18 @@ import type { Clock } from "../util/clock.js";
 import { iso } from "../util/clock.js";
 import type { FindingSeverity, RiskLevel, ScanTarget, ScannerRun, SecurityStatus } from "../types.js";
 import { assertNever } from "../util/assert-never.js";
+import { isCommercial } from "../cost/types.js";
 
 export interface FederatedSecurityResult {
   status: SecurityStatus;
   scanners: ScannerRun[];
   claim: string;
   requiredMissing: string[];
+}
+
+export interface OrchestratorScanOptions {
+  /** Commercial scanners never run unless their ids are listed here. */
+  allowPaidScannerIds?: string[];
 }
 
 export class SecurityOrchestrator {
@@ -20,14 +26,27 @@ export class SecurityOrchestrator {
     private readonly clock: Clock,
   ) {}
 
-  async scan(target: ScanTarget, risk: RiskLevel): Promise<FederatedSecurityResult> {
+  async scan(target: ScanTarget, risk: RiskLevel, options: OrchestratorScanOptions = {}): Promise<FederatedSecurityResult> {
     const enabled = this.scanners.filter((scanner) => {
       const cfg = this.config.scanners.scanners[scanner.id];
       return cfg?.enabled !== false;
     });
+    const allowPaid = new Set(options.allowPaidScannerIds ?? []);
     const runs = await Promise.all(
       enabled.map(async (scanner) => {
         const cfg = this.config.scanners.scanners[scanner.id] ?? { enabled: true };
+        const commercial = isCommercial(scanner.cost);
+        if (commercial && (this.config.cost.neverAutoPaidFallback || !allowPaid.has(scanner.id))) {
+          return {
+            scannerId: scanner.id,
+            scannerVersion: scanner.version,
+            status: "NOT_RUN" as const,
+            findings: [],
+            notes: `Commercial scanner '${scanner.id}' skipped. Not an automatic paid fallback. Not PASS. Free alternative: ${scanner.cost.freeAlternative ?? "built-in OSS scanners"}.`,
+            startedAt: iso(this.clock),
+            finishedAt: iso(this.clock),
+          };
+        }
         try {
           return await scanner.scan(target, cfg);
         } catch (error) {

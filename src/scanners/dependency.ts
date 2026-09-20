@@ -3,6 +3,7 @@ import { systemClock } from "../util/clock.js";
 import type { ScanTarget, ScannerRun } from "../types.js";
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { finding, runEnvelope, walkTarget } from "./helpers.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 const POPULAR = [
   "lodash",
@@ -20,6 +21,7 @@ const POPULAR = [
 export class DependencyScanner implements SecurityScanner {
   readonly id = "dependency";
   readonly version = "1.0.0";
+  readonly cost = COST_CATALOG.dependency;
 
   constructor(private readonly clock: Clock = systemClock) {}
 

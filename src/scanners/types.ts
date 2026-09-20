@@ -1,4 +1,5 @@
 import type { ScanTarget, ScannerRun } from "../types.js";
+import type { CostMetadata } from "../cost/types.js";
 
 export interface ScannerConfig {
   [key: string]: unknown;
@@ -10,5 +11,6 @@ export interface ScannerConfig {
 export interface SecurityScanner {
   readonly id: string;
   readonly version: string;
+  readonly cost: CostMetadata;
   scan(target: ScanTarget, configuration: ScannerConfig): Promise<ScannerRun>;
 }

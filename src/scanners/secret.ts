@@ -3,6 +3,7 @@ import { systemClock } from "../util/clock.js";
 import type { ScanTarget, ScannerRun } from "../types.js";
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { finding, runEnvelope, walkTarget } from "./helpers.js";
+import { COST_CATALOG } from "../cost/catalog.js";
 
 const PATTERNS: Array<{ id: string; re: RegExp; title: string }> = [
   { id: "aws-access-key", re: /AKIA[0-9A-Z]{16}/g, title: "Possible cloud access key" },
@@ -16,6 +17,7 @@ const PATTERNS: Array<{ id: string; re: RegExp; title: string }> = [
 export class SecretScanner implements SecurityScanner {
   readonly id = "secret";
   readonly version = "1.0.0";
+  readonly cost = COST_CATALOG.secret;
 
   constructor(private readonly clock: Clock = systemClock) {}
 
