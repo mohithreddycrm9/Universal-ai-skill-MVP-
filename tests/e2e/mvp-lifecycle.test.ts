@@ -357,27 +357,35 @@ CHANGED_BODY_E2E
     expect(third.fingerprint).not.toBe(first.fingerprint);
   });
 
-  it("I — capability firewall (shell denied without approver; elevated with human)", async () => {
+  it("I — capability firewall (shell pending without CLI; elevated via local_interactive)", async () => {
     const gw = e2eGateway([benignPackage()]);
     const acquired = (await gw.acquire({
       query: "csv-normalize",
       wait: true,
       requestId: "e2e-i",
     })) as { skillId: string };
-    expect(() =>
-      gw.requestCapability({
-        skillId: acquired.skillId,
-        capability: "shell.execute",
-        requestId: "e2e-i-deny",
-      }),
-    ).toThrow(/denied|approval|POLICY/i);
+    const denied = gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "shell.execute",
+      approver: "human-e2e",
+      requestId: "e2e-i-deny",
+    }) as { status: string; effective: string[] };
+    expect(denied.status).toBe("NEEDS_CAPABILITY_APPROVAL");
+    expect(denied.effective).not.toContain("shell.execute");
 
+    const pending = gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "network.read",
+      requestId: "e2e-i-req",
+    }) as { approvalId: string };
+    gw.approveLocalInteractive({ approvalId: pending.approvalId, requestId: "e2e-i-apr", actor: "human-e2e" });
     const elevated = gw.requestCapability({
       skillId: acquired.skillId,
       capability: "network.read",
-      approver: "human-e2e",
+      approvalId: pending.approvalId,
       requestId: "e2e-i-allow",
-    }) as { effective: string[] };
+    }) as { effective: string[]; status: string };
+    expect(elevated.status).toBe("GRANTED");
     expect(elevated.effective).toContain("network.read");
     expect(elevated.effective).toContain("filesystem.read");
 
@@ -392,10 +400,16 @@ CHANGED_BODY_E2E
       wait: true,
       requestId: "e2e-j",
     })) as { skillId: string };
+    const pending = gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "network.read",
+      requestId: "e2e-j-req",
+    }) as { approvalId: string };
+    gw.approveLocalInteractive({ approvalId: pending.approvalId, requestId: "e2e-j-apr" });
     gw.requestCapability({
       skillId: acquired.skillId,
       capability: "network.read",
-      approver: "human",
+      approvalId: pending.approvalId,
       requestId: "e2e-j-elev",
     });
     gw.registry.updateSkill(acquired.skillId, {

@@ -46,6 +46,20 @@ Append-only: `id`, `request_id`, `actor`, `action`, `skill_id`, `fingerprint`, `
 
 `fingerprint` PK, `skill_id`, `security_status`, `scanner_versions_json`, `security_config_hash`, `created_at`, `expires_at`.
 
+## `cost_approvals`
+
+Pending/approved billable ops. `method` must be `local_interactive` for APPROVED to authorize. Includes `expires_at`, `approved_at`.
+
+## `capability_approvals`
+
+| Column | Notes |
+| --- | --- |
+| id | `cap_…` |
+| skill_id, repository, commit_sha, fingerprint, capability | Binding |
+| status | PENDING / APPROVED / REJECTED / EXPIRED / CONSUMED |
+| method | null until trusted CLI approve → `local_interactive` |
+| expires_at / approved_at / timestamps | Clock-based |
+
 ## PostgreSQL
 
 Same tables/types as SQLite. `SqliteAdapter` is the default. `PostgresAdapter` (`src/registry/postgres.ts`) rewrites `?` placeholders to `$1..$n` and applies the same schema.

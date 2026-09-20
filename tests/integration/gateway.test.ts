@@ -81,9 +81,14 @@ describe("gateway pipeline", () => {
   it("keeps trust independent from authorization (shell still denied)", async () => {
     const gw = testGateway([benignPackage()]);
     const acquired = (await gw.acquire({ query: "csv", wait: true, requestId: "authz" })) as { skillId: string };
-    expect(() =>
-      gw.requestCapability({ skillId: acquired.skillId, capability: "shell.execute", requestId: "authz" }),
-    ).toThrow();
+    const pending = gw.requestCapability({
+      skillId: acquired.skillId,
+      capability: "shell.execute",
+      approver: "human",
+      requestId: "authz",
+    }) as { status: string; effective: string[] };
+    expect(pending.status).toBe("NEEDS_CAPABILITY_APPROVAL");
+    expect(pending.effective).not.toContain("shell.execute");
     const perms = gw.getSkillPermissions({ skillId: acquired.skillId }) as { effective: string[] };
     expect(perms.effective).toContain("filesystem.read");
     expect(perms.effective).not.toContain("shell.execute");

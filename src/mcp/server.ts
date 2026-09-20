@@ -199,11 +199,14 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
     "request_capability",
     {
       title: "Request capability",
-      description: "Ask the firewall for a capability. Skills cannot self-grant.",
+      description:
+        "Ask the firewall for a capability. Creates a PENDING approval only — caller approver strings never authorize. After CLI `skill-mcp approve <id>`, re-invoke with approvalId.",
       inputSchema: z.object({
         skillId: z.string(),
         capability: z.string(),
+        /** Ignored for authorization (claim only). */
         approver: z.string().optional(),
+        approvalId: z.string().optional(),
       }),
     },
     async (args) => wrap((requestId) => gateway.requestCapability({ ...args, requestId })),
@@ -243,20 +246,28 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
     "approve_paid_operation",
     {
       title: "Approve paid operation",
-      description: "Explicit human approval. Never implied. Re-invoke the original tool with approvalId.",
-      inputSchema: z.object({ approvalId: z.string(), approver: z.string().min(1).max(120) }),
+      description:
+        "Does NOT authorize. MCP approver strings are untrusted. Use CLI: skill-mcp approve <id> (interactive y/N).",
+      inputSchema: z.object({ approvalId: z.string(), approver: z.string().min(1).max(120).optional() }),
     },
-    async (args) => wrap((requestId) => gateway.approvePaidOperation({ ...args, requestId })),
+    async (args) =>
+      wrap((requestId) =>
+        gateway.approvePaidOperation({ ...args, requestId, channel: "mcp" }),
+      ),
   );
 
   server.registerTool(
     "reject_paid_operation",
     {
       title: "Reject paid operation",
-      description: "Reject a potentially billable operation. The MCP will not run it.",
-      inputSchema: z.object({ approvalId: z.string(), approver: z.string().min(1).max(120) }),
+      description:
+        "Does NOT authorize reject via MCP. Use CLI: skill-mcp reject <id> (interactive y/N).",
+      inputSchema: z.object({ approvalId: z.string(), approver: z.string().min(1).max(120).optional() }),
     },
-    async (args) => wrap((requestId) => gateway.rejectPaidOperation({ ...args, requestId })),
+    async (args) =>
+      wrap((requestId) =>
+        gateway.rejectPaidOperation({ ...args, requestId, channel: "mcp" }),
+      ),
   );
 
   return server;

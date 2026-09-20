@@ -1,6 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { benignPackage, testGateway } from "../helpers.js";
 
+function elevate(gw: ReturnType<typeof testGateway>, skillId: string, capability: string, requestId: string) {
+  const pending = gw.requestCapability({
+    skillId,
+    capability,
+    requestId: `${requestId}-req`,
+  }) as { approvalId: string; status: string };
+  expect(pending.status).toBe("NEEDS_CAPABILITY_APPROVAL");
+  gw.approveLocalInteractive({ approvalId: pending.approvalId, requestId: `${requestId}-apr` });
+  return gw.requestCapability({
+    skillId,
+    capability,
+    approvalId: pending.approvalId,
+    requestId: `${requestId}-grant`,
+  }) as { effective: string[]; permissionsReset: boolean; status: string };
+}
+
 describe("permissions bound to immutable identity", () => {
   it("same artifact + successful revalidation may preserve elevated permissions", async () => {
     const gw = testGateway([benignPackage()]);
@@ -10,17 +26,11 @@ describe("permissions bound to immutable identity", () => {
       requestId: "perm-1",
     })) as { skillId: string };
 
-    const elevated = gw.requestCapability({
-      skillId: acquired.skillId,
-      capability: "network.read",
-      approver: "human",
-      requestId: "perm-1b",
-    }) as { effective: string[]; permissionsReset: boolean };
+    const elevated = elevate(gw, acquired.skillId, "network.read", "perm-1b");
 
     expect(elevated.effective).toContain("network.read");
-    expect(elevated.permissionsReset).toBe(false);
+    expect(elevated.permissionsReset ?? false).toBe(false);
 
-    // Same identity revalidation via getSkillPermissions reconcile.
     const again = gw.getSkillPermissions({ skillId: acquired.skillId }) as {
       effective: string[];
       permissionsReset: boolean;
@@ -40,12 +50,7 @@ describe("permissions bound to immutable identity", () => {
       requestId: "perm-2",
     })) as { skillId: string };
 
-    gw.requestCapability({
-      skillId: acquired.skillId,
-      capability: "network.read",
-      approver: "human",
-      requestId: "perm-2b",
-    });
+    elevate(gw, acquired.skillId, "network.read", "perm-2b");
 
     gw.registry.updateSkill(acquired.skillId, {
       commitSha: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -70,12 +75,7 @@ describe("permissions bound to immutable identity", () => {
       requestId: "perm-3",
     })) as { skillId: string };
 
-    gw.requestCapability({
-      skillId: acquired.skillId,
-      capability: "network.read",
-      approver: "human",
-      requestId: "perm-3b",
-    });
+    elevate(gw, acquired.skillId, "network.read", "perm-3b");
 
     gw.registry.updateSkill(acquired.skillId, {
       fingerprint: "sha256:altered-fingerprint",
@@ -87,6 +87,7 @@ describe("permissions bound to immutable identity", () => {
       permissionsResetReason: string | null;
     };
     expect(perms.effective).not.toContain("network.read");
+    expect(perms.effective).toContain("filesystem.read");
     expect(perms.permissionsReset).toBe(true);
     expect(perms.permissionsResetReason).toMatch(/fingerprint/i);
   });
@@ -99,12 +100,7 @@ describe("permissions bound to immutable identity", () => {
       requestId: "perm-4",
     })) as { skillId: string };
 
-    gw.requestCapability({
-      skillId: acquired.skillId,
-      capability: "network.read",
-      approver: "human",
-      requestId: "perm-4b",
-    });
+    elevate(gw, acquired.skillId, "network.read", "perm-4b");
 
     const invalidated = gw.invalidate({
       skillId: acquired.skillId,

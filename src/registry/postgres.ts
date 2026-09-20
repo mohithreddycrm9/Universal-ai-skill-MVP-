@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import type { DatabaseAdapter, QueryResult } from "./database.js";
-import { SCHEMA_SQL } from "./schema.js";
+import { SCHEMA_MIGRATE_SQL, SCHEMA_SQL } from "./schema.js";
 import { splitSqlStatements, sqlitePlaceholdersToPostgres } from "./dialect.js";
 
 export interface PostgresQueryResult {
@@ -26,6 +26,13 @@ export class PostgresAdapter implements DatabaseAdapter {
     this.client = driver ?? createDefaultPgDriver(url);
     for (const statement of splitSqlStatements(SCHEMA_SQL)) {
       this.client.query(sqlitePlaceholdersToPostgres(statement), []);
+    }
+    for (const statement of splitSqlStatements(SCHEMA_MIGRATE_SQL)) {
+      try {
+        this.client.query(sqlitePlaceholdersToPostgres(statement), []);
+      } catch {
+        // Column already exists.
+      }
     }
   }
 

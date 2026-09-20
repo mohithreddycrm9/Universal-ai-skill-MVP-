@@ -63,10 +63,16 @@ import type {
   SkillRecord,
   TrustTier,
 } from "./types.js";
-import { SECURITY_NOTICE } from "./types.js";
+import { SECURITY_NOTICE, isCapability } from "./types.js";
 import { CostDetector } from "./cost/detector.js";
 import { COST_CATALOG } from "./cost/catalog.js";
 import type { CostApproval, CostDecision, CostMetadata, CostReview } from "./cost/types.js";
+import {
+  DEFAULT_APPROVAL_TTL_MS,
+  type CapabilityApproval,
+  type TrustedApprovalDecision,
+} from "./approvals/types.js";
+import { isHighRiskCapability } from "./capabilities/firewall.js";
 
 export interface GatewayOptions {
   config?: AppConfig;
@@ -580,41 +586,230 @@ export class SkillTrustGateway {
   requestCapability(input: {
     skillId: string;
     capability: string;
+    /** Ignored for authorization — logged only as a claim. */
     approver?: string;
+    approvalId?: string;
     requestId: string;
   }): unknown {
     let skill = this.registry.requireSkill(input.skillId);
-    // Reconcile against immutable identity before elevating — never silent.
     const reconciled = this.reconcilePermissions(skill, { preserveElevated: true });
     skill = this.registry.requireSkill(input.skillId);
-    const next = this.firewall.request(input.capability, {
-      approver: input.approver,
-      risk: skill.risk,
-      current: reconciled.permissions,
-    });
-    this.registry.updateSkill(skill.id, { permissions: next });
-    this.bindPermissions(this.registry.requireSkill(skill.id));
-    this.permissionResets.delete(skill.id);
+
+    if (input.approvalId) {
+      return this.consumeCapabilityApproval(skill, reconciled.permissions, input);
+    }
+
+    // Model/MCP path: create PENDING only. Caller approver strings never authorize.
+    if (!isCapability(input.capability)) {
+      throw new SkillMcpError("INVALID_INPUT", `Unknown capability ${input.capability}`);
+    }
+    const decision = this.firewall.decide(input.capability, { risk: skill.risk });
+    if (decision === "ALLOW" && input.capability === "filesystem.read") {
+      return {
+        status: "ALLOWED",
+        skillId: skill.id,
+        capability: input.capability,
+        effective: reconciled.permissions,
+        permissionsBoundTo: this.permissionBindings.get(skill.id) ?? null,
+      };
+    }
+
+    const pending = this.ensurePendingCapability(skill, input.capability);
     this.audit.record({
       requestId: input.requestId,
-      actor: input.approver ?? "agent",
-      action: "request_capability",
+      actor: "agent",
+      action: "CAPABILITY_REQUESTED",
       skillId: skill.id,
       fingerprint: skill.fingerprint,
       detail: {
         capability: input.capability,
-        permissionsBoundTo: this.permissionBindings.get(skill.id),
-        permissionsReset: reconciled.permissionsReset,
-        permissionsResetReason: reconciled.reason,
+        approvalId: pending.id,
+        claimedApprover: input.approver ?? null,
+        decision,
+        notice: "Caller approver strings do not authorize. Use skill-mcp approve <id> (local interactive).",
       },
     });
     return {
+      status: "NEEDS_CAPABILITY_APPROVAL",
       skillId: skill.id,
-      effective: next,
-      permissionsReset: reconciled.permissionsReset,
-      permissionsResetReason: reconciled.reason,
-      permissionsBoundTo: this.permissionBindings.get(skill.id) ?? null,
+      capability: input.capability,
+      approvalId: pending.id,
+      expiresAt: pending.expiresAt,
+      effective: reconciled.permissions,
+      message:
+        "PENDING approval created. Approver strings via MCP do not authorize. Run: skill-mcp approve " +
+        pending.id,
     };
+  }
+
+  /**
+   * Trusted channel only: CLI interactive y/N outside the MCP tool surface.
+   * Sets method=local_interactive. MCP tools must never call this with a forged channel.
+   */
+  approveLocalInteractive(input: {
+    approvalId: string;
+    requestId: string;
+    actor?: string;
+  }): unknown {
+    const actor = input.actor ?? "human";
+    const cap = this.registry.getCapabilityApproval(input.approvalId);
+    if (cap) {
+      this.assertApprovalUsable(cap.status, cap.expiresAt, "capability");
+      if (cap.status !== "PENDING") {
+        throw new SkillMcpError("POLICY_DENIED", `Capability approval ${cap.id} is ${cap.status}, not PENDING`);
+      }
+      const updated = this.registry.updateCapabilityApproval(cap.id, {
+        status: "APPROVED",
+        method: "local_interactive",
+        approvedAt: iso(this.clock),
+      });
+      this.audit.record({
+        requestId: input.requestId,
+        actor: "human",
+        action: "CAPABILITY_APPROVED",
+        skillId: updated.skillId,
+        fingerprint: updated.fingerprint,
+        detail: {
+          approvalId: updated.id,
+          capability: updated.capability,
+          method: "local_interactive",
+          channel: "local_interactive",
+          operator: actor,
+        },
+      });
+      return {
+        approval: updated,
+        kind: "capability",
+        message:
+          "Approved via local interactive CLI. Re-invoke request_capability with this approvalId to apply the grant.",
+      };
+    }
+
+    const cost = this.registry.getCostApproval(input.approvalId);
+    if (!cost) {
+      throw new SkillMcpError("NOT_FOUND", `Approval ${input.approvalId} not found`);
+    }
+    this.assertApprovalUsable(cost.status, cost.expiresAt, "cost");
+    if (cost.status !== "PENDING") {
+      throw new SkillMcpError("POLICY_DENIED", `Cost approval ${cost.id} is ${cost.status}, not PENDING`);
+    }
+    const updated = this.registry.updateCostApproval(cost.id, {
+      status: "APPROVED",
+      approver: actor,
+      method: "local_interactive",
+      approvedAt: iso(this.clock),
+    });
+    this.audit.record({
+      requestId: input.requestId,
+      actor: "human",
+      action: "approve_paid_operation",
+      detail: {
+        approvalId: updated.id,
+        provider: updated.provider,
+        service: updated.service,
+        method: "local_interactive",
+        channel: "local_interactive",
+      },
+    });
+    return {
+      approval: updated,
+      kind: "cost",
+      message: "Approved via local interactive CLI. Re-invoke the original operation with this approvalId.",
+    };
+  }
+
+  rejectLocalInteractive(input: {
+    approvalId: string;
+    requestId: string;
+    actor?: string;
+  }): unknown {
+    const actor = input.actor ?? "human";
+    const cap = this.registry.getCapabilityApproval(input.approvalId);
+    if (cap) {
+      if (cap.status !== "PENDING" && cap.status !== "APPROVED") {
+        throw new SkillMcpError("POLICY_DENIED", `Capability approval ${cap.id} cannot be rejected from ${cap.status}`);
+      }
+      const updated = this.registry.updateCapabilityApproval(cap.id, {
+        status: "REJECTED",
+        method: cap.method,
+        approvedAt: null,
+      });
+      this.audit.record({
+        requestId: input.requestId,
+        actor: "human",
+        action: "CAPABILITY_REJECTED",
+        skillId: updated.skillId,
+        fingerprint: updated.fingerprint,
+        detail: { approvalId: updated.id, capability: updated.capability, channel: "local_interactive", operator: actor },
+      });
+      return { approval: updated, kind: "capability", message: "Rejected. The capability will not be granted." };
+    }
+
+    const cost = this.registry.getCostApproval(input.approvalId);
+    if (!cost) {
+      throw new SkillMcpError("NOT_FOUND", `Approval ${input.approvalId} not found`);
+    }
+    if (cost.status !== "PENDING" && cost.status !== "APPROVED") {
+      throw new SkillMcpError("POLICY_DENIED", `Cost approval ${cost.id} cannot be rejected from ${cost.status}`);
+    }
+    const updated = this.registry.updateCostApproval(cost.id, {
+      status: "REJECTED",
+      approver: actor,
+      method: cost.method,
+      approvedAt: null,
+    });
+    this.audit.record({
+      requestId: input.requestId,
+      actor: "human",
+      action: "reject_paid_operation",
+      detail: { approvalId: updated.id, channel: "local_interactive" },
+    });
+    return { approval: updated, kind: "cost", message: "Rejected. The operation will not run." };
+  }
+
+  /**
+   * @deprecated MCP must not approve. Prefer approveLocalInteractive.
+   * Caller approver strings never authorize — only channel local_interactive does.
+   */
+  approvePaidOperation(input: {
+    approvalId: string;
+    approver?: string;
+    requestId: string;
+    /** Must be local_interactive (CLI). MCP omits this and is denied. */
+    channel?: "local_interactive" | "mcp";
+  }): unknown {
+    if (input.channel !== "local_interactive") {
+      throw new SkillMcpError(
+        "POLICY_DENIED",
+        "MCP approver strings do not authorize paid operations. Use CLI: skill-mcp approve <id> (interactive y/N).",
+        { approvalId: input.approvalId, claimedApprover: input.approver ?? null },
+      );
+    }
+    return this.approveLocalInteractive({
+      approvalId: input.approvalId,
+      requestId: input.requestId,
+      actor: input.approver ?? "human",
+    });
+  }
+
+  rejectPaidOperation(input: {
+    approvalId: string;
+    approver?: string;
+    requestId: string;
+    channel?: "local_interactive" | "mcp";
+  }): unknown {
+    if (input.channel !== "local_interactive") {
+      throw new SkillMcpError(
+        "POLICY_DENIED",
+        "MCP approver strings do not authorize reject/approve. Use CLI: skill-mcp reject <id> (interactive y/N).",
+        { approvalId: input.approvalId, claimedApprover: input.approver ?? null },
+      );
+    }
+    return this.rejectLocalInteractive({
+      approvalId: input.approvalId,
+      requestId: input.requestId,
+      actor: input.approver ?? "human",
+    });
   }
 
   release(input: { skillId: string; requestId: string }): unknown {
@@ -641,29 +836,10 @@ export class SkillTrustGateway {
   }
 
   listPendingCostApprovals(): unknown {
-    return { items: this.registry.listCostApprovals("PENDING") };
-  }
-
-  approvePaidOperation(input: { approvalId: string; approver: string; requestId: string }): unknown {
-    const updated = this.registry.updateCostApproval(input.approvalId, "APPROVED", input.approver);
-    this.audit.record({
-      requestId: input.requestId,
-      actor: input.approver,
-      action: "approve_paid_operation",
-      detail: { approvalId: input.approvalId, provider: updated.provider, service: updated.service },
-    });
-    return { approval: updated, message: "Approved. Re-invoke the original operation with this approvalId." };
-  }
-
-  rejectPaidOperation(input: { approvalId: string; approver: string; requestId: string }): unknown {
-    const updated = this.registry.updateCostApproval(input.approvalId, "REJECTED", input.approver);
-    this.audit.record({
-      requestId: input.requestId,
-      actor: input.approver,
-      action: "reject_paid_operation",
-      detail: { approvalId: input.approvalId },
-    });
-    return { approval: updated, message: "Rejected. The operation will not run." };
+    return {
+      items: this.registry.listCostApprovals("PENDING"),
+      capabilityItems: this.registry.listCapabilityApprovals("PENDING"),
+    };
   }
 
   async processJobs(max = 8): Promise<number> {
@@ -1189,35 +1365,17 @@ export class SkillTrustGateway {
     return source.cost;
   }
 
-  private evaluateCost(operation: string, metadata: CostMetadata, approvalId?: string): CostDecision {
-    if (approvalId) {
-      const record = this.registry.getCostApproval(approvalId);
-      if (!record) {
-        throw new SkillMcpError("NOT_FOUND", `Cost approval ${approvalId} not found`);
-      }
-      if (record.status === "APPROVED") {
-        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "APPROVED", approvalId });
-      }
-      if (record.status === "REJECTED") {
-        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "REJECTED" });
-      }
-    }
-    const open = this.registry.findOpenCostApproval(operation, metadata.provider, metadata.service);
-    if (open?.status === "APPROVED") {
-      return this.costDetector.evaluate(operation, metadata, { approvalStatus: "APPROVED", approvalId: open.id });
-    }
-    if (open?.status === "REJECTED") {
-      return this.costDetector.evaluate(operation, metadata, { approvalStatus: "REJECTED" });
-    }
-    return this.costDetector.evaluate(operation, metadata);
-  }
-
   private ensurePending(operation: string, metadata: CostMetadata, review: CostReview): CostApproval {
     const existing = this.registry.findOpenCostApproval(operation, metadata.provider, metadata.service);
     if (existing?.status === "PENDING") {
-      return existing;
+      this.expireIfNeeded(existing);
+      const again = this.registry.getCostApproval(existing.id);
+      if (again?.status === "PENDING") {
+        return again;
+      }
     }
-    const now = iso(this.clock);
+    const now = this.clock.now();
+    const nowIso = now.toISOString();
     const record: CostApproval = {
       id: newId("cst"),
       operation,
@@ -1225,14 +1383,201 @@ export class SkillTrustGateway {
       service: metadata.service,
       status: "PENDING",
       approver: null,
+      method: null,
       review,
-      createdAt: now,
-      updatedAt: now,
+      expiresAt: new Date(now.getTime() + DEFAULT_APPROVAL_TTL_MS).toISOString(),
+      approvedAt: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
     this.registry.insertCostApproval(record);
     return record;
   }
+
+  private ensurePendingCapability(skill: SkillRecord, capability: string): CapabilityApproval {
+    const now = this.clock.now();
+    const nowIso = now.toISOString();
+    const record: CapabilityApproval = {
+      id: newId("cap"),
+      skillId: skill.id,
+      repository: skill.repository,
+      commitSha: skill.commitSha,
+      fingerprint: skill.fingerprint,
+      capability,
+      status: "PENDING",
+      method: null,
+      expiresAt: new Date(now.getTime() + DEFAULT_APPROVAL_TTL_MS).toISOString(),
+      approvedAt: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    this.registry.insertCapabilityApproval(record);
+    return record;
+  }
+
+  private consumeCapabilityApproval(
+    skill: SkillRecord,
+    currentPermissions: Capability[],
+    input: {
+      skillId: string;
+      capability: string;
+      approvalId?: string;
+      approver?: string;
+      requestId: string;
+    },
+  ): unknown {
+    const approvalId = input.approvalId!;
+    const record = this.registry.getCapabilityApproval(approvalId);
+    if (!record) {
+      throw new SkillMcpError("NOT_FOUND", `Capability approval ${approvalId} not found`);
+    }
+    this.assertApprovalUsable(record.status, record.expiresAt, "capability");
+    if (record.status !== "APPROVED") {
+      throw new SkillMcpError(
+        "POLICY_DENIED",
+        `Capability approval ${approvalId} is ${record.status}. Only APPROVED (via local interactive CLI) authorizes.`,
+        { status: record.status },
+      );
+    }
+    if (record.method !== "local_interactive") {
+      throw new SkillMcpError(
+        "POLICY_DENIED",
+        `Capability approval ${approvalId} lacks trusted method=local_interactive`,
+      );
+    }
+    if (
+      record.skillId !== skill.id ||
+      record.repository !== skill.repository ||
+      record.commitSha !== skill.commitSha ||
+      record.fingerprint !== skill.fingerprint ||
+      record.capability !== input.capability
+    ) {
+      throw new SkillMcpError(
+        "POLICY_DENIED",
+        "Capability approval binding mismatch (skillId+repository+commit+fingerprint+capability)",
+        {
+          expected: {
+            skillId: record.skillId,
+            repository: record.repository,
+            commitSha: record.commitSha,
+            fingerprint: record.fingerprint,
+            capability: record.capability,
+          },
+          actual: {
+            skillId: skill.id,
+            repository: skill.repository,
+            commitSha: skill.commitSha,
+            fingerprint: skill.fingerprint,
+            capability: input.capability,
+          },
+        },
+      );
+    }
+
+    const trusted: TrustedApprovalDecision = {
+      approvalId: record.id,
+      method: "local_interactive",
+    };
+    const next = this.firewall.request(input.capability, {
+      risk: skill.risk,
+      current: currentPermissions,
+      trustedApproval: trusted,
+    });
+    this.registry.updateSkill(skill.id, { permissions: next });
+    this.bindPermissions(this.registry.requireSkill(skill.id));
+    this.permissionResets.delete(skill.id);
+
+    if (isCapability(input.capability) && isHighRiskCapability(input.capability)) {
+      this.registry.updateCapabilityApproval(record.id, { status: "CONSUMED" });
+    }
+
+    this.audit.record({
+      requestId: input.requestId,
+      actor: "system",
+      action: "CAPABILITY_GRANTED",
+      skillId: skill.id,
+      fingerprint: skill.fingerprint,
+      detail: {
+        capability: input.capability,
+        approvalId: record.id,
+        method: "local_interactive",
+        consumed: isCapability(input.capability) && isHighRiskCapability(input.capability),
+        claimedApprover: input.approver ?? null,
+        permissionsBoundTo: this.permissionBindings.get(skill.id),
+      },
+    });
+
+    return {
+      status: "GRANTED",
+      skillId: skill.id,
+      capability: input.capability,
+      approvalId: record.id,
+      effective: next,
+      permissionsBoundTo: this.permissionBindings.get(skill.id) ?? null,
+    };
+  }
+
+  private assertApprovalUsable(
+    status: string,
+    expiresAt: string | null | undefined,
+    kind: string,
+  ): void {
+    if (status === "EXPIRED" || status === "CONSUMED" || status === "REJECTED") {
+      throw new SkillMcpError("POLICY_DENIED", `${kind} approval is ${status} and cannot authorize`);
+    }
+    if (expiresAt && this.clock.now().getTime() > Date.parse(expiresAt)) {
+      throw new SkillMcpError("POLICY_DENIED", `${kind} approval has expired`, { expiresAt });
+    }
+  }
+
+  private expireIfNeeded(record: CostApproval): void {
+    if (record.status === "PENDING" && record.expiresAt && this.clock.now().getTime() > Date.parse(record.expiresAt)) {
+      this.registry.updateCostApproval(record.id, { status: "EXPIRED" });
+    }
+  }
+
+  private evaluateCost(operation: string, metadata: CostMetadata, approvalId?: string): CostDecision {
+    if (approvalId) {
+      const record = this.registry.getCostApproval(approvalId);
+      if (!record) {
+        throw new SkillMcpError("NOT_FOUND", `Cost approval ${approvalId} not found`);
+      }
+      if (record.expiresAt && this.clock.now().getTime() > Date.parse(record.expiresAt) && record.status !== "APPROVED") {
+        this.registry.updateCostApproval(record.id, { status: "EXPIRED" });
+        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "REJECTED" });
+      }
+      if (record.status === "APPROVED") {
+        if (record.method !== "local_interactive") {
+          throw new SkillMcpError(
+            "POLICY_DENIED",
+            `Cost approval ${approvalId} is not from trusted local_interactive channel`,
+          );
+        }
+        if (record.expiresAt && this.clock.now().getTime() > Date.parse(record.expiresAt)) {
+          this.registry.updateCostApproval(record.id, { status: "EXPIRED" });
+          throw new SkillMcpError("POLICY_DENIED", `Cost approval ${approvalId} has expired`);
+        }
+        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "APPROVED", approvalId });
+      }
+      if (record.status === "REJECTED" || record.status === "EXPIRED" || record.status === "CONSUMED") {
+        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "REJECTED" });
+      }
+    }
+    const open = this.registry.findOpenCostApproval(operation, metadata.provider, metadata.service);
+    if (open?.status === "APPROVED" && open.method === "local_interactive") {
+      if (open.expiresAt && this.clock.now().getTime() > Date.parse(open.expiresAt)) {
+        this.registry.updateCostApproval(open.id, { status: "EXPIRED" });
+      } else {
+        return this.costDetector.evaluate(operation, metadata, { approvalStatus: "APPROVED", approvalId: open.id });
+      }
+    }
+    if (open?.status === "REJECTED") {
+      return this.costDetector.evaluate(operation, metadata, { approvalStatus: "REJECTED" });
+    }
+    return this.costDetector.evaluate(operation, metadata);
+  }
 }
+
 
 export function createGateway(opts?: GatewayOptions): SkillTrustGateway {
   return new SkillTrustGateway(opts);

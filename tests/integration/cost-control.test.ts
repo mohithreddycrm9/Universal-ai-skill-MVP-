@@ -130,9 +130,9 @@ describe("cost control integration", () => {
       wait: false,
       requestId: "r1",
     })) as { approvalId: string };
-    const rejected = gw.rejectPaidOperation({
+    const rejected = gw.rejectLocalInteractive({
       approvalId: pending.approvalId,
-      approver: "human",
+      actor: "human",
       requestId: "r2",
     }) as { approval: { status: string } };
     expect(rejected.approval.status).toBe("REJECTED");
@@ -150,7 +150,7 @@ describe("cost control integration", () => {
       wait: false,
       requestId: "r4",
     })) as { approvalId: string };
-    gw.approvePaidOperation({ approvalId: again.approvalId, approver: "human", requestId: "r5" });
+    gw.approveLocalInteractive({ approvalId: again.approvalId, actor: "human", requestId: "r5" });
     const acquired = (await gw.acquire({
       repositoryUrl: pkg.repositoryUrl,
       wait: true,

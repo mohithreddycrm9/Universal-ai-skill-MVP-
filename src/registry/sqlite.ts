@@ -3,7 +3,7 @@ import type { SQLInputValue } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import type { DatabaseAdapter, QueryResult } from "./database.js";
-import { SCHEMA_SQL } from "./schema.js";
+import { SCHEMA_MIGRATE_SQL, SCHEMA_SQL } from "./schema.js";
 
 export class SqliteAdapter implements DatabaseAdapter {
   readonly driver = "sqlite" as const;
@@ -17,6 +17,15 @@ export class SqliteAdapter implements DatabaseAdapter {
     this.db.exec("PRAGMA foreign_keys = ON");
     this.db.exec("PRAGMA journal_mode = WAL");
     this.db.exec(SCHEMA_SQL);
+    for (const statement of SCHEMA_MIGRATE_SQL.split(";")
+      .map((s) => s.trim())
+      .filter(Boolean)) {
+      try {
+        this.db.exec(statement);
+      } catch {
+        // Column already exists on newer schemas — ignore.
+      }
+    }
   }
 
   exec(sql: string): void {

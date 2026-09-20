@@ -30,15 +30,19 @@ describe("capability firewall", () => {
     expect(effective).toEqual(["filesystem.read"]);
   });
 
-  it("elevated capability needs an explicit grant path (approver)", () => {
+  it("elevated capability needs trusted local_interactive proof (not raw approver string)", () => {
     expect(() => fw.request("shell.execute", { risk: "HIGH", current: ["filesystem.read"] })).toThrow(
       SkillMcpError,
     );
     const next = fw.request("shell.execute", {
       risk: "HIGH",
       current: ["filesystem.read"],
-      approver: "human",
+      trustedApproval: { approvalId: "cap_test", method: "local_interactive" },
     });
     expect(next).toContain("shell.execute");
+  });
+
+  it("filesystem.read baseline unchanged without approval", () => {
+    expect(fw.decide("filesystem.read", { risk: "LOW" })).toBe("ALLOW");
   });
 });

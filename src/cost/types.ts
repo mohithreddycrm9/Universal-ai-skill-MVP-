@@ -1,3 +1,5 @@
+import type { ApprovalMethod } from "../approvals/types.js";
+
 export const PRICING_MODELS = ["free", "freemium", "paid", "usage_based", "unknown"] as const;
 export type PricingModel = (typeof PRICING_MODELS)[number];
 
@@ -9,7 +11,7 @@ export const COST_POLICIES = [
 ] as const;
 export type CostPolicyName = (typeof COST_POLICIES)[number];
 
-export const COST_APPROVAL_STATES = ["PENDING", "APPROVED", "REJECTED"] as const;
+export const COST_APPROVAL_STATES = ["PENDING", "APPROVED", "REJECTED", "EXPIRED", "CONSUMED"] as const;
 export type CostApprovalState = (typeof COST_APPROVAL_STATES)[number];
 
 export interface CostMetadata {
@@ -57,8 +59,12 @@ export interface CostApproval {
   provider: string;
   service: string;
   status: CostApprovalState;
+  /** Display label only — never proof of authorization. */
   approver: string | null;
+  method: ApprovalMethod | null;
   review: CostReview;
+  expiresAt: string | null;
+  approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

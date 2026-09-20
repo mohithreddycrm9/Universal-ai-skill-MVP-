@@ -17,6 +17,7 @@ import { assertTransition, normalizeLifecycle } from "../skills/lifecycle.js";
 import type { Clock } from "../util/clock.js";
 import { iso } from "../util/clock.js";
 import type { CostApproval, CostApprovalState, CostReview } from "../cost/types.js";
+import type { ApprovalMethod, ApprovalStatus, CapabilityApproval } from "../approvals/types.js";
 
 interface SkillRow {
   id: string;
@@ -437,8 +438,8 @@ export class SkillRegistry {
 
   insertCostApproval(record: CostApproval): void {
     this.db.run(
-      `INSERT INTO cost_approvals (id, operation, provider, service, status, approver, review_json, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO cost_approvals (id, operation, provider, service, status, approver, method, review_json, expires_at, approved_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         record.id,
         record.operation,
@@ -446,7 +447,10 @@ export class SkillRegistry {
         record.service,
         record.status,
         record.approver,
+        record.method,
         JSON.stringify(record.review),
+        record.expiresAt,
+        record.approvedAt,
         record.createdAt,
         record.updatedAt,
       ],
@@ -454,32 +458,12 @@ export class SkillRegistry {
   }
 
   getCostApproval(id: string): CostApproval | undefined {
-    const row = this.db.get<{
-      id: string;
-      operation: string;
-      provider: string;
-      service: string;
-      status: CostApprovalState;
-      approver: string | null;
-      review_json: string;
-      created_at: string;
-      updated_at: string;
-    }>(`SELECT * FROM cost_approvals WHERE id = ?`, [id]);
+    const row = this.db.get<CostApprovalRow>(`SELECT * FROM cost_approvals WHERE id = ?`, [id]);
     return row ? mapCost(row) : undefined;
   }
 
   findOpenCostApproval(operation: string, provider: string, service: string): CostApproval | undefined {
-    const row = this.db.get<{
-      id: string;
-      operation: string;
-      provider: string;
-      service: string;
-      status: CostApprovalState;
-      approver: string | null;
-      review_json: string;
-      created_at: string;
-      updated_at: string;
-    }>(
+    const row = this.db.get<CostApprovalRow>(
       `SELECT * FROM cost_approvals WHERE operation = ? AND provider = ? AND service = ? AND status IN ('PENDING','APPROVED') ORDER BY created_at DESC LIMIT 1`,
       [operation, provider, service],
     );
@@ -488,44 +472,100 @@ export class SkillRegistry {
 
   listCostApprovals(status?: CostApprovalState): CostApproval[] {
     const rows = status
-      ? this.db.all<{
-          id: string;
-          operation: string;
-          provider: string;
-          service: string;
-          status: CostApprovalState;
-          approver: string | null;
-          review_json: string;
-          created_at: string;
-          updated_at: string;
-        }>(`SELECT * FROM cost_approvals WHERE status = ? ORDER BY created_at DESC`, [status])
-      : this.db.all<{
-          id: string;
-          operation: string;
-          provider: string;
-          service: string;
-          status: CostApprovalState;
-          approver: string | null;
-          review_json: string;
-          created_at: string;
-          updated_at: string;
-        }>(`SELECT * FROM cost_approvals ORDER BY created_at DESC LIMIT 100`);
+      ? this.db.all<CostApprovalRow>(`SELECT * FROM cost_approvals WHERE status = ? ORDER BY created_at DESC`, [status])
+      : this.db.all<CostApprovalRow>(`SELECT * FROM cost_approvals ORDER BY created_at DESC LIMIT 100`);
     return rows.map(mapCost);
   }
 
-  updateCostApproval(id: string, status: CostApprovalState, approver: string): CostApproval {
+  updateCostApproval(
+    id: string,
+    patch: {
+      status: CostApprovalState;
+      approver?: string | null;
+      method?: ApprovalMethod | null;
+      approvedAt?: string | null;
+      expiresAt?: string | null;
+    },
+  ): CostApproval {
     const current = this.getCostApproval(id);
     if (!current) {
       throw new SkillMcpError("NOT_FOUND", `Cost approval ${id} not found`);
     }
     const updatedAt = iso(this.clock);
-    this.db.run(`UPDATE cost_approvals SET status=?, approver=?, updated_at=? WHERE id=?`, [
+    const status = patch.status;
+    const approver = patch.approver !== undefined ? patch.approver : current.approver;
+    const method = patch.method !== undefined ? patch.method : current.method;
+    const approvedAt = patch.approvedAt !== undefined ? patch.approvedAt : current.approvedAt;
+    const expiresAt = patch.expiresAt !== undefined ? patch.expiresAt : current.expiresAt;
+    this.db.run(
+      `UPDATE cost_approvals SET status=?, approver=?, method=?, approved_at=?, expires_at=?, updated_at=? WHERE id=?`,
+      [status, approver, method, approvedAt, expiresAt, updatedAt, id],
+    );
+    return { ...current, status, approver, method, approvedAt, expiresAt, updatedAt };
+  }
+
+  insertCapabilityApproval(record: CapabilityApproval): void {
+    this.db.run(
+      `INSERT INTO capability_approvals (id, skill_id, repository, commit_sha, fingerprint, capability, status, method, expires_at, approved_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        record.id,
+        record.skillId,
+        record.repository,
+        record.commitSha,
+        record.fingerprint,
+        record.capability,
+        record.status,
+        record.method,
+        record.expiresAt,
+        record.approvedAt,
+        record.createdAt,
+        record.updatedAt,
+      ],
+    );
+  }
+
+  getCapabilityApproval(id: string): CapabilityApproval | undefined {
+    const row = this.db.get<CapabilityApprovalRow>(`SELECT * FROM capability_approvals WHERE id = ?`, [id]);
+    return row ? mapCapabilityApproval(row) : undefined;
+  }
+
+  listCapabilityApprovals(status?: ApprovalStatus): CapabilityApproval[] {
+    const rows = status
+      ? this.db.all<CapabilityApprovalRow>(
+          `SELECT * FROM capability_approvals WHERE status = ? ORDER BY created_at DESC`,
+          [status],
+        )
+      : this.db.all<CapabilityApprovalRow>(
+          `SELECT * FROM capability_approvals ORDER BY created_at DESC LIMIT 100`,
+        );
+    return rows.map(mapCapabilityApproval);
+  }
+
+  updateCapabilityApproval(
+    id: string,
+    patch: {
+      status: ApprovalStatus;
+      method?: ApprovalMethod | null;
+      approvedAt?: string | null;
+    },
+  ): CapabilityApproval {
+    const current = this.getCapabilityApproval(id);
+    if (!current) {
+      throw new SkillMcpError("NOT_FOUND", `Capability approval ${id} not found`);
+    }
+    const updatedAt = iso(this.clock);
+    const status = patch.status;
+    const method = patch.method !== undefined ? patch.method : current.method;
+    const approvedAt = patch.approvedAt !== undefined ? patch.approvedAt : current.approvedAt;
+    this.db.run(`UPDATE capability_approvals SET status=?, method=?, approved_at=?, updated_at=? WHERE id=?`, [
       status,
-      approver,
+      method,
+      approvedAt,
       updatedAt,
       id,
     ]);
-    return { ...current, status, approver, updatedAt };
+    return { ...current, status, method, approvedAt, updatedAt };
   }
 }
 
@@ -567,17 +607,22 @@ function mapJob(row: JobRow): JobRecord {
   };
 }
 
-function mapCost(row: {
+interface CostApprovalRow {
   id: string;
   operation: string;
   provider: string;
   service: string;
   status: CostApprovalState;
   approver: string | null;
+  method?: ApprovalMethod | null;
   review_json: string;
+  expires_at?: string | null;
+  approved_at?: string | null;
   created_at: string;
   updated_at: string;
-}): CostApproval {
+}
+
+function mapCost(row: CostApprovalRow): CostApproval {
   return {
     id: row.id,
     operation: row.operation,
@@ -585,7 +630,42 @@ function mapCost(row: {
     service: row.service,
     status: row.status,
     approver: row.approver,
+    method: row.method ?? null,
     review: JSON.parse(row.review_json) as CostReview,
+    expiresAt: row.expires_at ?? null,
+    approvedAt: row.approved_at ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+interface CapabilityApprovalRow {
+  id: string;
+  skill_id: string;
+  repository: string;
+  commit_sha: string;
+  fingerprint: string;
+  capability: string;
+  status: ApprovalStatus;
+  method: ApprovalMethod | null;
+  expires_at: string;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function mapCapabilityApproval(row: CapabilityApprovalRow): CapabilityApproval {
+  return {
+    id: row.id,
+    skillId: row.skill_id,
+    repository: row.repository,
+    commitSha: row.commit_sha,
+    fingerprint: row.fingerprint,
+    capability: row.capability,
+    status: row.status,
+    method: row.method,
+    expiresAt: row.expires_at,
+    approvedAt: row.approved_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

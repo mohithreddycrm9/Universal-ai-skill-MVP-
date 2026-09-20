@@ -85,7 +85,25 @@ CREATE TABLE IF NOT EXISTS cost_approvals (
   service TEXT NOT NULL,
   status TEXT NOT NULL,
   approver TEXT,
+  method TEXT,
   review_json TEXT NOT NULL,
+  expires_at TEXT,
+  approved_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS capability_approvals (
+  id TEXT PRIMARY KEY,
+  skill_id TEXT NOT NULL,
+  repository TEXT NOT NULL,
+  commit_sha TEXT NOT NULL,
+  fingerprint TEXT NOT NULL,
+  capability TEXT NOT NULL,
+  status TEXT NOT NULL,
+  method TEXT,
+  expires_at TEXT NOT NULL,
+  approved_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -94,4 +112,13 @@ CREATE INDEX IF NOT EXISTS idx_skills_lifecycle ON skills(lifecycle);
 CREATE INDEX IF NOT EXISTS idx_skills_name ON skills(name);
 CREATE INDEX IF NOT EXISTS idx_jobs_state ON jobs(state);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_capability_approvals_skill ON capability_approvals(skill_id);
+CREATE INDEX IF NOT EXISTS idx_capability_approvals_status ON capability_approvals(status);
+`;
+
+/** Best-effort column adds for older SQLite files (CREATE IF NOT EXISTS will not alter). */
+export const SCHEMA_MIGRATE_SQL = `
+ALTER TABLE cost_approvals ADD COLUMN method TEXT;
+ALTER TABLE cost_approvals ADD COLUMN expires_at TEXT;
+ALTER TABLE cost_approvals ADD COLUMN approved_at TEXT;
 `;

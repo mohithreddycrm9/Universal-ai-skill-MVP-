@@ -1,6 +1,7 @@
 import type { Capability, FirewallDecision, RiskLevel } from "../types.js";
 import { isCapability } from "../types.js";
 import { SkillMcpError } from "../errors.js";
+import type { TrustedApprovalDecision } from "../approvals/types.js";
 
 const DANGEROUS: Capability[] = [
   "filesystem.write",
@@ -12,21 +13,36 @@ const DANGEROUS: Capability[] = [
   "production.deploy",
 ];
 
+export function isHighRiskCapability(capability: Capability): boolean {
+  return DANGEROUS.includes(capability);
+}
+
 export class CapabilityFirewall {
-  decide(capability: Capability, opts: { approver?: string; risk: RiskLevel }): FirewallDecision {
+  /**
+   * Authorization uses a gateway-verified TrustedApprovalDecision only.
+   * Raw MCP `approver` / `humanApproved` strings must never reach here as proof.
+   */
+  decide(
+    capability: Capability,
+    opts: { risk: RiskLevel; trustedApproval?: TrustedApprovalDecision },
+  ): FirewallDecision {
     if (!isCapability(capability)) {
       return "DENY";
     }
     if (capability === "filesystem.read") {
       return "ALLOW";
     }
+    const trusted =
+      opts.trustedApproval?.method === "local_interactive" && Boolean(opts.trustedApproval.approvalId);
     if (DANGEROUS.includes(capability)) {
-      if (opts.approver) {
-        return opts.risk === "CRITICAL" && capability === "production.deploy" ? "REQUIRE_USER_APPROVAL" : "ALLOW";
+      if (trusted) {
+        return opts.risk === "CRITICAL" && capability === "production.deploy"
+          ? "REQUIRE_USER_APPROVAL"
+          : "ALLOW";
       }
       return "DENY";
     }
-    return opts.approver ? "ALLOW" : "REQUIRE_USER_APPROVAL";
+    return trusted ? "ALLOW" : "REQUIRE_USER_APPROVAL";
   }
 
   /**
@@ -47,19 +63,30 @@ export class CapabilityFirewall {
     return [...result];
   }
 
-  request(capability: string, opts: { approver?: string; risk: RiskLevel; current: Capability[] }): Capability[] {
+  request(
+    capability: string,
+    opts: {
+      risk: RiskLevel;
+      current: Capability[];
+      trustedApproval?: TrustedApprovalDecision;
+    },
+  ): Capability[] {
     if (!isCapability(capability)) {
       throw new SkillMcpError("INVALID_INPUT", `Unknown capability ${capability}`);
     }
     const decision = this.decide(capability, opts);
     if (decision === "DENY") {
-      throw new SkillMcpError("POLICY_DENIED", `Capability ${capability} denied. Skills cannot self-grant permissions.`, {
-        capability,
-        decision,
-      });
+      throw new SkillMcpError(
+        "POLICY_DENIED",
+        `Capability ${capability} denied. Skills cannot self-grant permissions. Use CLI skill-mcp approve <id> after request_capability creates a PENDING record.`,
+        {
+          capability,
+          decision,
+        },
+      );
     }
-    if (decision === "REQUIRE_USER_APPROVAL" && !opts.approver) {
-      throw new SkillMcpError("POLICY_DENIED", `Capability ${capability} requires user approval`, {
+    if (decision === "REQUIRE_USER_APPROVAL" && !opts.trustedApproval) {
+      throw new SkillMcpError("POLICY_DENIED", `Capability ${capability} requires user approval via local interactive CLI`, {
         capability,
         decision,
       });

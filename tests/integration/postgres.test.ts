@@ -17,6 +17,9 @@ describe.skipIf(!url)("postgres live (DATABASE_URL)", () => {
         service: "smoke",
         status: "PENDING",
         approver: null,
+        method: null,
+        expiresAt: null,
+        approvedAt: null,
         review: {
           operation: "discover_skill",
           provider: "local",
