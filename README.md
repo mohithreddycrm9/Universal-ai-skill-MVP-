@@ -109,7 +109,7 @@ Postgres live tests run only when `DATABASE_URL` is set.
 
 ## Configuration
 
-Security-sensitive policy lives in `config/` (`trust-policy.yaml`, `security-policy.yaml`, `sandbox-policy.yaml`, `scanner-policy.yaml`, `registry.yaml`, `cost-policy.yaml`). Empty official/verified lists mean **no publisher is official**. Default cost policy is `ASK_BEFORE_ANY_PAID_OPERATION`.
+Security-sensitive policy lives in `config/` (`trust-policy.yaml`, `security-policy.yaml`, `sandbox-policy.yaml`, `scanner-policy.yaml`, `registry.yaml`, `cost-policy.yaml`). Empty official/verified lists mean **no publisher is official**. Default cost policy is `ALLOW_FREE_ONLY` ($0 — paid/unknown denied).
 
 Discovery sources are config-driven allowlists (YAML). Core does not hard-code product vendors. The MCP registry adapter is fixture-backed by default; unknown-cost remotes fail closed.
 

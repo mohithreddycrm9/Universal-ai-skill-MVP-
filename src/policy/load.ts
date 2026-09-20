@@ -109,7 +109,7 @@ const registrySchema = z.object({
 });
 
 const costSchema = z.object({
-  policy: z.enum(COST_POLICIES).default("ASK_BEFORE_ANY_PAID_OPERATION"),
+  policy: z.enum(COST_POLICIES).default("ALLOW_FREE_ONLY"),
   currency: z.string().default("USD"),
   allowUpToAmount: z.number().default(0),
   preferFreeAlternatives: z.boolean().default(true),

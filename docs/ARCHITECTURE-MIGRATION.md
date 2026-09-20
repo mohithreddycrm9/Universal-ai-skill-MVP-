@@ -140,4 +140,4 @@ Product framing: **Universal Skills MCP** — skills are HOW, not execution. Ser
 | `CostDetector`, `config/cost-policy.yaml`, approval store, OSS binary scanners, cost MCP tools | **NEW** |
 | `docs/COST_POLICY.md`, `docs/LOCAL_SETUP.md`, `docs/SCANNER_ADAPTERS.md` | **NEW** |
 
-Default policy: `ASK_BEFORE_ANY_PAID_OPERATION`. Core clone-and-run uses only free local components.
+Default policy: `ALLOW_FREE_ONLY` ($0). Core clone-and-run uses only free local components.

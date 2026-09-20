@@ -21,7 +21,7 @@ describe("CLI", () => {
     });
     expect(costs.status).toBe(0);
     expect(costs.stdout).toMatch(/github_public/);
-    expect(costs.stdout).toMatch(/neverAutoPaidFallback|ASK_BEFORE_ANY_PAID_OPERATION/);
+    expect(costs.stdout).toMatch(/neverAutoPaidFallback|ALLOW_FREE_ONLY|ASK_BEFORE_ANY_PAID_OPERATION/);
     const approvals = spawnSync(process.execPath, ["--experimental-sqlite", tsx, "src/index.ts", "approvals", "--json"], {
       encoding: "utf8",
       timeout: 20_000,

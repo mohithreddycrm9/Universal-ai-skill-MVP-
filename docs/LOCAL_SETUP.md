@@ -9,7 +9,7 @@ npm run build
 npx skill-mcp serve
 ```
 
-You do **not** need a cloud account, SaaS key, paid scanner, or LLM. Data defaults to `./data` (gitignored SQLite). Config defaults to `./config`.
+Default cost policy is **`ALLOW_FREE_ONLY` ($0)**. You do **not** need a cloud account, SaaS key, paid scanner, or LLM. Paid/unknown-cost adapters are denied unless you change `config/cost-policy.yaml`. Data defaults to `./data` (gitignored SQLite). Config defaults to `./config`.
 
 ```bash
 npx skill-mcp costs --json

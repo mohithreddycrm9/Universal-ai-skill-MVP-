@@ -1,6 +1,6 @@
 # Cost policy
 
-The Universal Skills MCP core is **free/open-source-first**. Clone and run it with local SQLite, local/OSS scanners, and local sandbox. No cloud account, paid API, paid LLM, or commercial scanner is required.
+The Universal Skills MCP core is **free/open-source-first** and defaults to **$0 cost** (`ALLOW_FREE_ONLY`). Clone and run it with local SQLite, local/OSS scanners, and local sandbox. No cloud account, paid API, paid LLM, or commercial scanner is required.
 
 This MCP delivers **skills** (how to work with a technology). It does **not** execute Terraform, AWS, ServiceNow, or similar. Execution stays with other tools.
 
@@ -14,8 +14,8 @@ Unknown cost is **not** treated as free. Paid fallbacks are **never** automatic 
 
 | Policy | Behavior |
 | --- | --- |
-| `ASK_BEFORE_ANY_PAID_OPERATION` | **Default.** Free proceeds. Paid/unknown require an explicit human approval record. |
-| `ALLOW_FREE_ONLY` | Deny paid/unknown. |
+| `ALLOW_FREE_ONLY` | **Default ($0).** Deny paid/unknown. Free local path only. |
+| `ASK_BEFORE_ANY_PAID_OPERATION` | Free proceeds. Paid/unknown require an explicit human approval record. |
 | `DENY_ALL_PAID_SERVICES` | Deny paid/unknown. |
 | `ALLOW_UP_TO_AMOUNT` | Numeric estimates at or below `allowUpToAmount` may proceed. **Unknown still requires approval.** |
 

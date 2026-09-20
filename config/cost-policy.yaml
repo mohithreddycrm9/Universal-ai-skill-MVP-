@@ -1,11 +1,12 @@
-# Cost control. Default asks before any paid or unknown-cost operation.
-# Core remains usable with zero paid services.
+# Cost control — $0 / free-only by default.
+# Core remains usable with zero paid services. Paid adapters stay off
+# unless you deliberately change this policy (not recommended for $0).
 
-policy: ASK_BEFORE_ANY_PAID_OPERATION
+policy: ALLOW_FREE_ONLY
 currency: USD
 allowUpToAmount: 0
 preferFreeAlternatives: true
 neverAutoPaidFallback: true
 
-# Explicit human approval is required when cost is unknown.
+# Even if policy is relaxed later, unknown cost must never be assumed free.
 unknownCostRequiresApproval: true
