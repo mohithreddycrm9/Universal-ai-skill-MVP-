@@ -31,7 +31,7 @@ After publication, install **Universal Skill Trust Gateway** from [Customize](ht
 
 ## MCP configuration
 
-`mcp.json` starts the gateway via `scripts/cursor-mcp-serve.mjs`, which installs dependencies and builds `dist/` if missing. Config and data directories default to `${CURSOR_PLUGIN_ROOT}/config` and `${CURSOR_PLUGIN_ROOT}/data`.
+`mcp.json` starts the gateway via `scripts/plugin-mcp-serve.mjs`, which installs dependencies and builds `dist/` if missing. Config and data directories default to `${CURSOR_PLUGIN_ROOT}/config` and `${CURSOR_PLUGIN_ROOT}/data`.
 
 For manual MCP setup without the plugin, see `examples/mcp-clients/cursor.json`.
 

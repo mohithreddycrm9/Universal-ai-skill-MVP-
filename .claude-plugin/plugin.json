@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "universal-skill-trust",
+  "displayName": "Universal Skill Trust Gateway",
+  "version": "0.1.0",
+  "description": "Discover, acquire, verify, and serve third-party agent skills via MCP. OSS-first scanners, quarantine lifecycle, capability firewall, and compact skill delivery.",
+  "author": {
+    "name": "Universal Skills MCP",
+    "url": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-"
+  },
+  "homepage": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+  "repository": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+  "license": "Apache-2.0",
+  "keywords": [
+    "mcp",
+    "skills",
+    "security",
+    "trust",
+    "supply-chain",
+    "discovery",
+    "verification"
+  ],
+  "mcpServers": ".mcp.json"
+}

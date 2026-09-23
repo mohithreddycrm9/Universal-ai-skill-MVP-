@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
+  "name": "universal-skill-trust",
+  "owner": {
+    "name": "Raj Mohith Reddy"
+  },
+  "metadata": {
+    "description": "Universal Skill Trust Gateway — MCP skill discovery, verification, and delivery for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "universal-skill-trust",
+      "source": "./",
+      "description": "Discover, acquire, verify, and serve third-party agent skills via MCP. OSS-first scanners, quarantine lifecycle, capability firewall, and compact skill delivery.",
+      "author": {
+        "name": "Universal Skills MCP"
+      },
+      "homepage": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+      "repository": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+      "license": "Apache-2.0",
+      "category": "Developer Tools",
+      "keywords": ["mcp", "skills", "security", "trust", "supply-chain"],
+      "tags": ["mcp", "skills", "security"]
+    }
+  ]
+}

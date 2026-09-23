@@ -75,12 +75,20 @@ npx skill-mcp costs --json
 npx skill-mcp approvals --json
 ```
 
+## Claude Code plugin
+
+Install as a Claude Code plugin (MCP + skill bundled):
+
+- Manifest: `.claude-plugin/plugin.json` and `marketplace.json`
+- MCP: `.mcp.json` (uses `${CLAUDE_PLUGIN_ROOT}` via `scripts/plugin-mcp-serve.mjs`)
+- Install: [docs/claude-code-plugin.md](./docs/claude-code-plugin.md)
+
 ## Cursor plugin
 
 Install as a Cursor Plugin (MCP + skill bundled):
 
 - Manifest: `.cursor-plugin/plugin.json`
-- MCP: `mcp.json` (uses `${CURSOR_PLUGIN_ROOT}` and auto-build via `scripts/cursor-mcp-serve.mjs`)
+- MCP: `mcp.json` (uses `${CURSOR_PLUGIN_ROOT}` and auto-build via `scripts/plugin-mcp-serve.mjs`)
 - Local test and publish steps: [docs/cursor-plugin.md](./docs/cursor-plugin.md)
 
 ## Connect a client
