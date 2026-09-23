@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "universal-skill-trust": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/plugin-mcp-serve.mjs"],
+      "env": {
+        "SKILL_MCP_CONFIG_DIR": "${CLAUDE_PLUGIN_ROOT}/config",
+        "SKILL_MCP_DATA_DIR": "${CLAUDE_PLUGIN_ROOT}/data"
+      }
+    }
+  }
+}

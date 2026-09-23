@@ -42,7 +42,7 @@ describe("cursor plugin manifests", () => {
     const server = mcp.mcpServers["universal-skill-trust"];
     expect(server).toBeDefined();
     expect(server!.command).toBe("node");
-    expect(server!.args[0]).toContain("cursor-mcp-serve.mjs");
+    expect(server!.args[0]).toContain("plugin-mcp-serve.mjs");
     expect(server!.env.SKILL_MCP_CONFIG_DIR).toContain("CURSOR_PLUGIN_ROOT");
   });
 });

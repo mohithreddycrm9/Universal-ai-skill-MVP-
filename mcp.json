@@ -2,7 +2,7 @@
   "mcpServers": {
     "universal-skill-trust": {
       "command": "node",
-      "args": ["${CURSOR_PLUGIN_ROOT}/scripts/cursor-mcp-serve.mjs"],
+      "args": ["${CURSOR_PLUGIN_ROOT}/scripts/plugin-mcp-serve.mjs"],
       "env": {
         "SKILL_MCP_CONFIG_DIR": "${CURSOR_PLUGIN_ROOT}/config",
         "SKILL_MCP_DATA_DIR": "${CURSOR_PLUGIN_ROOT}/data"

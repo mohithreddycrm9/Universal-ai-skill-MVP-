@@ -15,7 +15,7 @@ Alternate path (documented in [cursor/plugin-template](https://github.com/cursor
 | License | Apache-2.0 |
 | GitHub repository | `https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-` |
 | Plugin manifest | `.cursor-plugin/plugin.json` |
-| MCP config | `mcp.json` (stdio via `scripts/cursor-mcp-serve.mjs`) |
+| MCP config | `mcp.json` (stdio via `scripts/plugin-mcp-serve.mjs`) |
 | Skill | `skills/universal-skill-trust/SKILL.md` |
 | Logo (1:1 SVG, background plate) | `assets/logo.svg` |
 | **Logo URL** (paste in form) | `https://raw.githubusercontent.com/mohithreddycrm9/Universal-ai-skill-MVP-/main/assets/logo.svg` |
