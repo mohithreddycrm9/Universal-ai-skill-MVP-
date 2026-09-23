@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Universal Skill Trust Gateway">
+  <rect width="512" height="512" rx="96" fill="#0f1419"/>
+  <path fill="#1a2332" d="M256 48 96 128v128c0 88 68 168 160 208 92-40 160-120 160-208V128L256 48z"/>
+  <path fill="none" stroke="#5eead4" stroke-width="20" stroke-linejoin="round" d="M256 88 136 156v92c0 72 56 138 120 172 64-34 120-100 120-172v-92L256 88z"/>
+  <path fill="none" stroke="#a7f3d0" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" d="M208 260l32 32 64-72"/>
+  <circle cx="256" cy="200" r="28" fill="#2dd4bf"/>
+  <path fill="#0f766e" d="M256 188c-6.6 0-12 5.4-12 12s5.4 12 12 12 12-5.4 12-12-5.4-12-12-12zm0 48c-33 0-60-12-60-28v-12l60 28 60-28v12c0 16-27 28-60 28z"/>
+</svg>
