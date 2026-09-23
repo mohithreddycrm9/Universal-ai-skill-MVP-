@@ -8,10 +8,10 @@ describe("claude code plugin manifests", () => {
   it("plugin.json is valid", () => {
     const manifest = JSON.parse(
       readFileSync(join(root, ".claude-plugin", "plugin.json"), "utf8"),
-    ) as { name: string; version: string; mcpServers: string };
+    ) as { name: string; version: string };
     expect(manifest.name).toBe("universal-skill-trust");
     expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(manifest.mcpServers).toBe(".mcp.json");
+    expect(readFileSync(join(root, ".mcp.json"), "utf8")).toContain("universal-skill-trust");
   });
 
   it(".mcp.json references the plugin launcher", () => {
