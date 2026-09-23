@@ -1,0 +1,35 @@
+name: Continuous security watch
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  security-watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Run security watch (repo + safe HTTP self-check if URL set)
+        env:
+          WATCH_URL: ${{ vars.SECURITY_WATCH_URL }}
+        run: |
+          ARGS="--report-dir security-reports --json"
+          if [ -n "$WATCH_URL" ]; then
+            ARGS="$ARGS --url $WATCH_URL"
+          fi
+          npx skill-mcp security-watch . $ARGS || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-watch-reports
+          path: security-reports/

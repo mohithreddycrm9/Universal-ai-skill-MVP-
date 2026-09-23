@@ -21,6 +21,12 @@ import { PromptInjectionScanner } from "./scanners/prompt-injection.js";
 import { SuspiciousFilesScanner } from "./scanners/suspicious-files.js";
 import { DependencyScanner } from "./scanners/dependency.js";
 import { LicenseScanner } from "./scanners/license.js";
+import { CodeHealthScanner } from "./scanners/code-health.js";
+import { loadWorkspaceAsPackage } from "./health/workspace.js";
+import {
+  CODE_HEALTH_REQUIRED_SCANNER_IDS,
+  CODE_HEALTH_SCANNER_IDS,
+} from "./health/profile.js";
 import { StrixScanner } from "./scanners/strix.js";
 import { SnykScanner } from "./scanners/snyk.js";
 import { OssBinaryScanner } from "./scanners/oss-binary.js";
@@ -146,6 +152,7 @@ export class SkillTrustGateway {
       new SuspiciousFilesScanner(this.clock),
       new DependencyScanner(this.clock),
       new LicenseScanner(this.clock),
+      new CodeHealthScanner(this.clock),
       new StrixScanner(this.clock),
       new OssBinaryScanner("semgrep", "adapter-1.0.0", COST_CATALOG.semgrep, "semgrep", this.clock),
       new OssBinaryScanner("gitleaks", "adapter-1.0.0", COST_CATALOG.gitleaks, "gitleaks", this.clock),
@@ -375,6 +382,65 @@ export class SkillTrustGateway {
       await this.processJobs(20);
     }
     return this.getSkillSecurity({ skillId: input.skillId, requestId: input.requestId });
+  }
+
+  async runCodeHealthCheck(input: {
+    path: string;
+    requestId: string;
+    includeOssCli?: boolean;
+  }): Promise<unknown> {
+    const loaded = loadWorkspaceAsPackage(input.path);
+    const scanId = newId("health");
+    const target = {
+      skillId: scanId,
+      package: loaded.package,
+      quarantinePath: loaded.rootPath,
+    };
+    const only: string[] = [...CODE_HEALTH_SCANNER_IDS];
+    if (input.includeOssCli) {
+      only.push("semgrep", "gitleaks", "trivy", "osv");
+    }
+    const result = await this.orchestrator.scan(target, "LOW", {
+      onlyScannerIds: only,
+      requiredScannerIds: CODE_HEALTH_REQUIRED_SCANNER_IDS,
+      forceScannerIds: ["code_health"],
+    });
+    this.audit.record({
+      requestId: input.requestId,
+      actor: "agent",
+      action: "code_health_check",
+      detail: {
+        path: loaded.rootPath,
+        filesScanned: loaded.filesScanned,
+        status: result.status,
+      },
+    });
+    const codeHealthRun = result.scanners.find((run) => run.scannerId === "code_health");
+    return {
+      scanId,
+      path: loaded.rootPath,
+      filesScanned: loaded.filesScanned,
+      skipped: loaded.skipped,
+      status: result.status,
+      claim: result.claim,
+      requiredMissing: result.requiredMissing,
+      scanners: result.scanners.map((run) => ({
+        scannerId: run.scannerId,
+        status: run.status,
+        findingCount: run.findings.length,
+        findings: run.findings.slice(0, 12),
+        notes: run.notes,
+      })),
+      codeHealthSummary: codeHealthRun
+        ? {
+            status: codeHealthRun.status,
+            topFindings: codeHealthRun.findings.slice(0, 20),
+          }
+        : null,
+      securityNotice: SECURITY_NOTICE,
+      agentGuidance:
+        "Summarize FAIL/INCONCLUSIVE items for the user. Do not claim universal safety. Suggest fixes and optional OSS tools (semgrep, gitleaks, trivy) when includeOssCli was false.",
+    };
   }
 
   getSkill(input: {

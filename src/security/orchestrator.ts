@@ -17,6 +17,12 @@ export interface FederatedSecurityResult {
 export interface OrchestratorScanOptions {
   /** Commercial scanners never run unless their ids are listed here. */
   allowPaidScannerIds?: string[];
+  /** When set, only these scanner ids are executed (still subject to enabled config). */
+  onlyScannerIds?: readonly string[];
+  /** When set, overrides config.security.requiredScanners for federate (e.g. workspace health). */
+  requiredScannerIds?: readonly string[];
+  /** Run these scanners even when disabled in scanner-policy (health-watch profile). */
+  forceScannerIds?: readonly string[];
 }
 
 export class SecurityOrchestrator {
@@ -27,8 +33,16 @@ export class SecurityOrchestrator {
   ) {}
 
   async scan(target: ScanTarget, risk: RiskLevel, options: OrchestratorScanOptions = {}): Promise<FederatedSecurityResult> {
+    const only = options.onlyScannerIds ? new Set(options.onlyScannerIds) : null;
+    const force = options.forceScannerIds ? new Set(options.forceScannerIds) : null;
     const enabled = this.scanners.filter((scanner) => {
+      if (only && !only.has(scanner.id)) {
+        return false;
+      }
       const cfg = this.config.scanners.scanners[scanner.id];
+      if (force?.has(scanner.id)) {
+        return true;
+      }
       return cfg?.enabled !== false;
     });
     const allowPaid = new Set(options.allowPaidScannerIds ?? []);
@@ -71,8 +85,14 @@ export class SecurityOrchestrator {
       }
     });
     const runs = await mapPool(tasks, concurrency);
-    return federate(runs, risk, this.config);
+    return federate(runs, risk, this.config, {
+      requiredScannerIds: options.requiredScannerIds,
+    });
   }
+}
+
+export interface FederateOptions {
+  requiredScannerIds?: readonly string[];
 }
 
 /**
@@ -87,9 +107,16 @@ export class SecurityOrchestrator {
  * - Commercial / $0-blocked scanners stay NOT_RUN (never PASS).
  * - Disabled scanners are omitted from runs and have no effect.
  */
-export function federate(runs: ScannerRun[], risk: RiskLevel, config: AppConfig): FederatedSecurityResult {
-  const required = new Set(config.security.requiredScanners);
-  if (isStrixRequired(risk, config.security)) {
+export function federate(
+  runs: ScannerRun[],
+  risk: RiskLevel,
+  config: AppConfig,
+  options: FederateOptions = {},
+): FederatedSecurityResult {
+  const required = new Set(
+    options.requiredScannerIds ?? config.security.requiredScanners,
+  );
+  if (!options.requiredScannerIds && isStrixRequired(risk, config.security)) {
     required.add("strix");
   }
   // optionalScanners: may execute and contribute to the aggregate, but their

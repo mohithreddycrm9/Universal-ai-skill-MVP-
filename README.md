@@ -71,6 +71,8 @@ npx skill-mcp acquire "csv-normalize" --wait --json
 npx skill-mcp list --json
 npx skill-mcp status skl_…
 npx skill-mcp audit --json
+npx skill-mcp health-check . --json   # local security + code hygiene (any directory)
+npx skill-mcp security-watch . --report-dir ./security-reports   # CI/cron/Docker continuous watch
 npx skill-mcp costs --json
 npx skill-mcp approvals --json
 ```
@@ -126,6 +128,8 @@ Postgres live tests run only when `DATABASE_URL` is set.
 | [docs/COST_POLICY.md](docs/COST_POLICY.md) | Free-first + human cost approval |
 | [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md) | Clone-and-run without payment |
 | [docs/SCANNER_ADAPTERS.md](docs/SCANNER_ADAPTERS.md) | OSS vs commercial scanners |
+| [docs/CODE_HEALTH_AGENT.md](docs/CODE_HEALTH_AGENT.md) | Workspace security & hygiene agent |
+| [docs/CONTINUOUS_SECURITY.md](docs/CONTINUOUS_SECURITY.md) | CI/Docker/K8s continuous security watch |
 | [docs/local-development.md](docs/local-development.md) | Dev setup |
 | [docs/production-deployment.md](docs/production-deployment.md) | Production notes |
 

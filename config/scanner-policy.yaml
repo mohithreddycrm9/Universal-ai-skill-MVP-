@@ -10,6 +10,10 @@ scanners:
     typosquatDistance: 1
   license:
     enabled: true
+  code_health:
+    # Workspace health-check profile only (run_code_health_check / security-watch).
+    # Off for skill quarantine so small fixtures without lockfiles are not rejected.
+    enabled: false
     allowed:
       - MIT
       - Apache-2.0

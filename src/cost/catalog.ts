@@ -27,6 +27,10 @@ export const COST_CATALOG = {
   suspicious_files: localFree("Built-in suspicious-file scanner", "Pattern scan of quarantined files"),
   dependency: localFree("Built-in dependency/SBOM scanner", "Parse manifests and emit a compact SBOM summary"),
   license: localFree("Built-in license scanner", "Compare declared licenses to policy"),
+  code_health: localFree(
+    "Built-in code health scanner",
+    "Deterministic hygiene checks (lockfiles, .env, risky patterns)",
+  ),
   // Software is OSS (https://github.com/usestrix/strix, Apache-2.0). Runtime uses an LLM
   // provider you configure — that provider may charge. Adapter classifies STRIX_LLM before
   // `strix --target` and blocks under ALLOW_FREE_ONLY unless the LLM is proven local/free.
