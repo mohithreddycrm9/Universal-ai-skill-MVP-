@@ -24,6 +24,7 @@
     "bench": "tsx --experimental-sqlite tests/perf/benchmark.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "validate": "npm run typecheck && npm run build && npm test",
+    "validate:claude-plugin": "npx -y @anthropic-ai/claude-code@2.1.280 plugin validate .",
     "validate:docker": "npm run validate && node --experimental-sqlite ./node_modules/vitest/vitest.mjs run tests/e2e/mvp-lifecycle.test.ts -t 'L — Docker'"
   },
   "keywords": [

@@ -2,6 +2,12 @@
 
 This repository is a **Claude Code plugin** (manifest in `.claude-plugin/plugin.json`) with bundled MCP (`.mcp.json`) and skill (`skills/universal-skill-trust/`).
 
+## Submit to the Claude plugin directory
+
+Community marketplace submission (Console or claude.ai form): [docs/CLAUDE_MARKETPLACE_SUBMISSION.md](./CLAUDE_MARKETPLACE_SUBMISSION.md)
+
+Run `npm run validate:claude-plugin` before submitting.
+
 ## Install from GitHub
 
 In Claude Code:

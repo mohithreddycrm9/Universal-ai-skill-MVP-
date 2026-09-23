@@ -82,6 +82,7 @@ Install as a Claude Code plugin (MCP + skill bundled):
 - Manifest: `.claude-plugin/plugin.json` and `marketplace.json`
 - MCP: `.mcp.json` (uses `${CLAUDE_PLUGIN_ROOT}` via `scripts/plugin-mcp-serve.mjs`)
 - Install: [docs/claude-code-plugin.md](./docs/claude-code-plugin.md)
+- Community directory submit: [docs/CLAUDE_MARKETPLACE_SUBMISSION.md](./docs/CLAUDE_MARKETPLACE_SUBMISSION.md)
 
 ## Cursor plugin
 

@@ -19,6 +19,5 @@
     "supply-chain",
     "discovery",
     "verification"
-  ],
-  "mcpServers": ".mcp.json"
+  ]
 }
