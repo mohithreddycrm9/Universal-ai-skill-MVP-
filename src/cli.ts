@@ -3,6 +3,7 @@ import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { Command } from "commander";
 import { createGateway } from "./gateway.js";
+import { runSecurityWatch } from "./security/watch-runner.js";
 import { serveHttp, serveStdio } from "./mcp/http.js";
 import { Logger } from "./observability/log.js";
 
@@ -81,6 +82,61 @@ export async function main(argv = process.argv): Promise<void> {
     .option("--json", "JSON output")
     .action((skillId: string, opts: { json?: boolean }) => {
       print(withGw().getSkillStatus({ skillId }), opts.json);
+    });
+
+  program
+    .command("security-watch")
+    .description("Continuous security watch: code health + optional HTTP surface probes (for CI, cron, Docker)")
+    .argument("[path]", "Repository root to scan", process.cwd())
+    .option("--url <url>", "Authorized staging/production base URL to probe (GET-only)")
+    .option("--interval <sec>", "Repeat every N seconds (omit for single run)", "0")
+    .option("--report-dir <dir>", "Write timestamped JSON + Markdown reports")
+    .option("--apply-safe", "Apply safe fixes (.gitignore for .env)")
+    .option("--oss-cli", "Include local semgrep/gitleaks/trivy/osv when installed")
+    .option("--json", "JSON output")
+    .action(async (path: string, opts: { url?: string; interval: string; reportDir?: string; applySafe?: boolean; ossCli?: boolean; json?: boolean }) => {
+      const intervalSec = Number(opts.interval);
+      const runOnce = async () => {
+        const gw = withGw();
+        const out = await runSecurityWatch(gw, {
+          path,
+          url: opts.url,
+          includeOssCli: Boolean(opts.ossCli),
+          applySafeFixes: Boolean(opts.applySafe),
+          reportDir: opts.reportDir,
+          requestId: "cli-watch",
+        });
+        print(out, opts.json);
+        if (out.aggregateStatus === "FAIL") {
+          process.exitCode = 2;
+        } else if (out.aggregateStatus === "INCONCLUSIVE") {
+          process.exitCode = 1;
+        }
+        return out;
+      };
+      if (!intervalSec || intervalSec <= 0) {
+        await runOnce();
+        return;
+      }
+      process.stderr.write(`security-watch: interval ${intervalSec}s on ${path}${opts.url ? ` url=${opts.url}` : ""}\n`);
+      for (;;) {
+        await runOnce();
+        await new Promise((r) => setTimeout(r, intervalSec * 1000));
+      }
+    });
+
+  program
+    .command("health-check")
+    .argument("[path]", "Directory to scan", process.cwd())
+    .option("--json", "JSON output")
+    .option("--oss-cli", "Include optional local OSS CLIs (semgrep, gitleaks, trivy, osv)")
+    .action(async (path: string, opts: { json?: boolean; ossCli?: boolean }) => {
+      const out = await withGw().runCodeHealthCheck({
+        path,
+        requestId: "cli",
+        includeOssCli: Boolean(opts.ossCli),
+      });
+      print(out, opts.json);
     });
 
   program

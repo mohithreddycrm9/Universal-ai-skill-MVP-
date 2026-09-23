@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "universal-skills": {
+      "command": "node",
+      "args": ["--experimental-sqlite", "/absolute/path/to/universal-skills-mcp/dist/index.js", "serve"],
+      "env": {
+        "SKILL_MCP_CONFIG_DIR": "/absolute/path/to/universal-skills-mcp/config"
+      }
+    }
+  },
+  "instructions": "You are a cybersecurity and code health assistant. Prefer run_code_health_check on the user's workspace before suggesting large refactors. Never claim PASS means universally safe."
+}

@@ -21,6 +21,36 @@ services:
     mem_limit: 512m
     cpus: "1.0"
 
+  security-watch:
+    build:
+      context: .
+      dockerfile: deploy/security-watch.Dockerfile
+    profiles: ["security"]
+    command:
+      [
+        "/scan-target",
+        "--interval",
+        "3600",
+        "--report-dir",
+        "/reports",
+        "--apply-safe",
+      ]
+    volumes:
+      - ./config:/app/config:ro
+      - ./:/scan-target:ro
+      - security-reports:/reports
+    environment:
+      SKILL_MCP_CONFIG_DIR: /app/config
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 768m
+    cpus: "1.0"
+
   sandbox-worker:
     image: busybox:1.36
     command: ["sh", "-c", "echo sandbox worker placeholder; sleep infinity"]
@@ -36,3 +66,4 @@ services:
 
 volumes:
   skill-data:
+  security-reports:

@@ -34,6 +34,7 @@ Evidence is truncated. Secret values are redacted.
 | `secret` | Pattern detection for keys/tokens/PEMs. Real logic. |
 | `dependency` | Lock/manifest parse, compact SBOM, postinstall, typosquat heuristics. |
 | `prompt_injection` | Instruction-hijack / exfil / security-disable patterns. |
+| `code_health` | Hygiene: lockfiles, committed `.env`, risky APIs (`eval`, weak crypto), missing README. |
 | `suspicious_files` | Dangerous names, encoded payloads, destructive/reverse-shell *strings* (fixtures are non-destructive). |
 | `license` | License identification vs policy. |
 | `strix` | Invokes STRIX if a binary/API is configured. If unavailable: `ERROR`/`NOT_RUN`, **never** `PASS`. |

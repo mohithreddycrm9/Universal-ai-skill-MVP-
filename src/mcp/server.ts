@@ -97,6 +97,23 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
   );
 
   server.registerTool(
+    "run_code_health_check",
+    {
+      title: "Code health & security check",
+      description:
+        "Scan a local workspace directory with built-in security and hygiene scanners. Does not upload code. Not a universal safety claim.",
+      inputSchema: z.object({
+        path: z.string().min(1).max(4096),
+        includeOssCli: z
+          .boolean()
+          .optional()
+          .describe("Also run locally installed semgrep/gitleaks/trivy/osv if present"),
+      }),
+    },
+    async (args) => wrap((requestId) => gateway.runCodeHealthCheck({ ...args, requestId })),
+  );
+
+  server.registerTool(
     "scan_skill",
     {
       title: "Scan skill",
@@ -274,6 +291,7 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
 }
 
 export const GATEWAY_TOOL_NAMES = [
+  "run_code_health_check",
   "discover_skill",
   "search_skills",
   "get_skill",
