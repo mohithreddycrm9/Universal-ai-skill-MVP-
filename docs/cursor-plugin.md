@@ -15,11 +15,12 @@ After publication, install **Universal Skill Trust Gateway** from [Customize](ht
    npm run build
    ```
 
-2. Symlink the repo into Cursor’s local plugins folder:
+2. Copy or clone into Cursor’s local plugins folder (symlinks to paths **outside** `~/.cursor/plugins/local` are ignored by Cursor):
 
    ```bash
    mkdir -p ~/.cursor/plugins/local
-   ln -s "$(pwd)" ~/.cursor/plugins/local/universal-skill-trust
+   rsync -a --exclude node_modules --exclude dist --exclude data ./ ~/.cursor/plugins/local/universal-skill-trust/
+   cd ~/.cursor/plugins/local/universal-skill-trust && npm install && npm run build
    ```
 
 3. Reload the Cursor window (**Developer: Reload Window**).

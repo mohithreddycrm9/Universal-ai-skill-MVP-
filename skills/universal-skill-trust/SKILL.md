@@ -13,7 +13,7 @@ This workspace includes the **Universal Skill Trust** Cursor plugin. Prefer its 
 2. **Acquire** — `acquire_skill` with `candidateId` or `query`. Default is async; use `wait: true` only when the user explicitly wants to block on verification.
 3. **Status** — `get_skill_status` for lifecycle and job progress (`QUARANTINED`, `VERIFIED`, etc.).
 4. **Read** — `get_skill` with progressive `level` (0 metadata → 3 single resource). Stay within compact envelopes; do not assume full repo trees.
-5. **Trust** — `explain_skill_trust` for publisher/repo/commit evidence. `get_skill_permissions` for **effective** capabilities from the firewall (not skill prose).
+5. **Trust** — `get_skill_trust` for publisher/repo/commit evidence. `get_skill_permissions` for **effective** capabilities from the firewall (not skill prose).
 
 ## Security expectations
 

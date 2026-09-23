@@ -12,9 +12,16 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const distEntry = join(root, "dist", "index.js");
 const nodeModules = join(root, "node_modules");
 
-function run(command, args, options = {}) {
+/** npm/tsc must not write to stdout — MCP owns stdio after this script hands off. */
+function run(command, args) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd: root, stdio: "inherit", ...options });
+    const child = spawn(command, args, {
+      cwd: root,
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    child.stdout.on("data", (chunk) => process.stderr.write(chunk));
+    child.stderr.on("data", (chunk) => process.stderr.write(chunk));
     child.on("error", reject);
     child.on("exit", (code) => {
       if (code === 0) resolve();
