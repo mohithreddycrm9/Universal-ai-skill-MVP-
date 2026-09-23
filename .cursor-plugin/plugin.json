@@ -1,0 +1,19 @@
+{
+  "name": "universal-skill-trust",
+  "displayName": "Universal Skill Trust Gateway",
+  "version": "0.1.0",
+  "description": "Discover, verify, and serve agent skills through a security-aware MCP gateway (free/OSS-first scanners and sandbox).",
+  "author": {
+    "name": "Universal Skills MCP"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "mcp",
+    "skills",
+    "security",
+    "trust",
+    "supply-chain",
+    "discovery",
+    "verification"
+  ]
+}
