@@ -75,11 +75,19 @@ npx skill-mcp costs --json
 npx skill-mcp approvals --json
 ```
 
+## Cursor plugin
+
+Install as a Cursor Plugin (MCP + skill bundled):
+
+- Manifest: `.cursor-plugin/plugin.json`
+- MCP: `mcp.json` (uses `${CURSOR_PLUGIN_ROOT}` and auto-build via `scripts/cursor-mcp-serve.mjs`)
+- Local test and publish steps: [docs/cursor-plugin.md](./docs/cursor-plugin.md)
+
 ## Connect a client
 
 Examples: `examples/mcp-clients/cursor.json`, `claude-desktop.json`, `codex.toml`.
 
-Point `command` at `node --experimental-sqlite /abs/path/dist/index.js serve`.
+For Cursor, prefer the plugin above. For raw MCP config, point `command` at `node --experimental-sqlite /abs/path/dist/index.js serve` (or the plugin launcher script).
 
 ## Tests
 
