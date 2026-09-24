@@ -18,6 +18,15 @@ scanners:
       - ISC
       - Unlicense
       - 0BSD
+  skillspector:
+    # https://github.com/NVIDIA/SkillSpector — pip install git+https://github.com/NVIDIA/skillspector.git
+    # Set enabled: true after `skillspector` is on PATH.
+    enabled: true
+    binary: skillspector
+    useLlm: false
+    failOpen: false
+    # timeoutMs: 180000
+    # baselinePath: .skillspector-baseline.yaml
   strix:
     # Official OSS: https://github.com/usestrix/strix (Apache-2.0, PyPI strix-agent)
     # Invokes: strix --target <quarantinePath>  — never `strix cloud`

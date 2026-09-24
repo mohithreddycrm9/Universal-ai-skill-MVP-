@@ -126,6 +126,7 @@ Postgres live tests run only when `DATABASE_URL` is set.
 | [docs/COST_POLICY.md](docs/COST_POLICY.md) | Free-first + human cost approval |
 | [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md) | Clone-and-run without payment |
 | [docs/SCANNER_ADAPTERS.md](docs/SCANNER_ADAPTERS.md) | OSS vs commercial scanners |
+| [docs/SKILLSPECTOR.md](docs/SKILLSPECTOR.md) | NVIDIA SkillSpector scanner adapter |
 | [docs/local-development.md](docs/local-development.md) | Dev setup |
 | [docs/production-deployment.md](docs/production-deployment.md) | Production notes |
 
