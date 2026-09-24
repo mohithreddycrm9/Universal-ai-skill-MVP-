@@ -13,6 +13,7 @@ requiredScanners:
 optionalScanners:
   - license
   - strix
+  - skillspector
 
 strixRequiredForRisk:
   - HIGH
