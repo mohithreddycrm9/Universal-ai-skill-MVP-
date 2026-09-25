@@ -40,14 +40,16 @@ Hard limits: 32 KiB encoded JSON (truncation recorded in `warnings`). Never incl
 
 ### `get_build_suggestions` (Cursor build hints)
 
-Call while Agent is active. Input (all optional except typical use includes `agentState`):
+Call while Agent is active with **live build context** (otherwise `suggestions` is empty and `emptyReason` explains what to pass):
 
-- `agentState`: `running` | `waiting_for_user` | `idle` | `failed`
-- `goal`: user task summary (enables skill discovery hints when `includeSkillHints` is true)
-- `recentEvents`: `{ kind, summary?, files?, serverName? }` — e.g. `shell_pending`, `test_failed`, `mcp_auth_error`, `multi_file_diff`
-- `filesChangedCount`, `lastCommandExitCode`, `limit` (1–12), `includeSkillHints` (default true)
+- `goal` — what the user is building (required for meaningful chips)
+- `activeStep` — current plan step
+- `changedFiles` — paths touched this run
+- `lastCommand` / `lastCommandExitCode` — last shell step in this build
+- `recentEvents`: `{ kind, summary?, files?, serverName? }` — e.g. `test_failed`, `shell_pending`, `lint_failed`, `typecheck_failed`, `build_failed`, `mcp_auth_error`, `multi_file_diff`, `cost_approval_pending`, `skill_gap`, `acquire_job_failed`
+- `agentState`, `filesChangedCount`, `limit` (1–12), `includeSkillHints` (skill chips only on skill-gap events or token-matched local skills)
 
-Response `data.suggestions[]` items include `label`, `action` (`insert_prompt` | `invoke_tool` | `cursor_setting` | `note`), optional `prompt`, `toolName` / `toolArgs`, `priority`, `confidence`, and `uiHint` for host rendering. Hosts must not auto-send prompts without user confirmation.
+Response includes `buildContextUsed`, per-suggestion `because`, and `uiHint`. No generic queue/steer chips.
 
 ## Errors
 

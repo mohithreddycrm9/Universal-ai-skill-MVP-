@@ -9,7 +9,7 @@ This workspace includes the **Universal Skill Trust** Cursor plugin. Prefer its 
 
 ## Workflow
 
-1. **Build hints (Cursor)** — While Agent is running, call `get_build_suggestions` with `agentState`, optional `goal`, and `recentEvents` (e.g. `shell_pending`, `test_failed`, `mcp_auth_error`). Render returned `suggestions` as chips above the composer; use `insert_prompt` / `invoke_tool` actions only after user confirmation.
+1. **Build hints (Cursor)** — While Agent is running, call `get_build_suggestions` with **`goal`**, **`activeStep`**, **`changedFiles`**, **`lastCommand`**, and **`recentEvents`** from the *current* build (e.g. `test_failed`, `shell_pending`, `lint_failed`, `cost_approval_pending`). Do not call without that context — the tool returns empty otherwise. Render `suggestions` (each has a `because` field) as chips; never auto-send.
 2. **Discover** — `discover_skill` with a short capability query (e.g. "csv normalization"). Results are candidates only; nothing is downloaded into chat context.
 3. **Acquire** — `acquire_skill` with `candidateId` or `query`. Default is async; use `wait: true` only when the user explicitly wants to block on verification.
 4. **Status** — `get_skill_status` for lifecycle and job progress (`QUARANTINED`, `VERIFIED`, etc.).

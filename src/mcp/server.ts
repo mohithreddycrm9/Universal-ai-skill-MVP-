@@ -282,10 +282,13 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
     {
       title: "Build suggestions",
       description:
-        "Proactive chips for Cursor Agent UI while a run is active: ranked prompts and safe tool actions from heuristics plus local skill/approval context. Does not auto-steer the agent.",
+        "Build-scoped chips for Cursor Agent: pass goal, activeStep, changedFiles, lastCommand, and recentEvents from the live run. Returns empty when context is missing. Skill hints only on skill_gap / acquire failures or token-matched local skills.",
       inputSchema: z.object({
         agentState: z.enum(["running", "waiting_for_user", "idle", "failed"]).optional(),
         goal: z.string().max(500).optional(),
+        activeStep: z.string().max(300).optional(),
+        changedFiles: z.array(z.string().max(260)).max(24).optional(),
+        lastCommand: z.string().max(500).optional(),
         recentEvents: z.array(agentEventHintSchema).max(24).optional(),
         filesChangedCount: z.number().int().min(0).max(10_000).optional(),
         lastCommandExitCode: z.number().int().optional(),

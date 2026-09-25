@@ -77,6 +77,9 @@ import { isHighRiskCapability } from "./capabilities/firewall.js";
 import {
   computeBuildSuggestions,
   mergeGatewayEnrichment,
+  hasSkillGapEvent,
+  shouldOfferSkillHints,
+  skillMatchesGoal,
   type AgentEventHint,
   type AgentRunState,
 } from "./agent/build-suggestions.js";
@@ -437,6 +440,9 @@ export class SkillTrustGateway {
     requestId: string;
     agentState?: AgentRunState;
     goal?: string;
+    activeStep?: string;
+    changedFiles?: string[];
+    lastCommand?: string;
     recentEvents?: AgentEventHint[];
     filesChangedCount?: number;
     lastCommandExitCode?: number;
@@ -446,6 +452,9 @@ export class SkillTrustGateway {
     const base = computeBuildSuggestions({
       agentState: input.agentState,
       goal: input.goal,
+      activeStep: input.activeStep,
+      changedFiles: input.changedFiles,
+      lastCommand: input.lastCommand,
       recentEvents: input.recentEvents,
       filesChangedCount: input.filesChangedCount,
       lastCommandExitCode: input.lastCommandExitCode,
@@ -461,39 +470,56 @@ export class SkillTrustGateway {
         name: string;
         label: string;
         prompt: string;
+        relevance: "high" | "medium";
       }>,
-      discoveryHints: [] as Array<{ name: string; label: string; prompt: string }>,
+      discoveryHints: [] as Array<{ name: string; label: string; prompt: string; relevance: "high" | "medium" }>,
     };
 
-    if (input.includeSkillHints !== false && input.goal?.trim()) {
-      const query = input.goal.trim().slice(0, 200);
+    const goal = input.goal?.trim();
+    const events = input.recentEvents ?? [];
+    const wantSkills = input.includeSkillHints !== false && shouldOfferSkillHints(goal, events);
+
+    if (wantSkills && goal) {
+      const query = goal.slice(0, 200);
       const local = this.registry
-        .searchSkills(query, 2)
-        .filter((skill) => normalizeLifecycle(skill.lifecycle) === "AVAILABLE");
-      for (const skill of local) {
+        .searchSkills(query, 4)
+        .filter((skill) => normalizeLifecycle(skill.lifecycle) === "AVAILABLE")
+        .filter((skill) =>
+          skillMatchesGoal(goal, skill.name, skill.manifest.metadata.description),
+        );
+      for (const skill of local.slice(0, 2)) {
         enrichment.localSkillHints.push({
           skillId: skill.id,
           name: skill.name,
-          label: `Load verified skill: ${skill.name}`,
-          prompt: `Use get_skill for ${skill.id} at level 1 and follow its instructions.`,
+          label: `Use skill for this build: ${skill.name}`,
+          prompt: `For "${goal}", load get_skill ${skill.id} level 1 and apply only what this build needs.`,
+          relevance: "high",
         });
       }
-      if (enrichment.localSkillHints.length === 0) {
+      if (enrichment.localSkillHints.length === 0 && hasSkillGapEvent(events)) {
         const discovered = (await this.discover({ query, limit: 2, requestId: input.requestId })) as {
-          candidates?: Array<{ name?: string }>;
+          candidates?: Array<{ name?: string; description?: string }>;
         };
         for (const candidate of discovered.candidates ?? []) {
           const name = candidate.name ?? "skill";
+          if (!skillMatchesGoal(goal, name, candidate.description)) {
+            continue;
+          }
           enrichment.discoveryHints.push({
             name,
-            label: `Acquire skill: ${name}`,
-            prompt: `Queue acquire_skill for "${name}" (wait:false) and poll get_skill_status.`,
+            label: `Acquire skill for build: ${name}`,
+            prompt: `For "${goal}", acquire_skill "${name}" (wait:false) then get_skill_status.`,
+            relevance: "medium",
           });
         }
       }
     }
 
-    const merged = mergeGatewayEnrichment(base, enrichment, input.limit ?? 5);
+    const merged = mergeGatewayEnrichment(base, enrichment, input.limit ?? 5, {
+      goal,
+      recentEvents: events,
+      includeSkillHints: wantSkills,
+    });
     this.audit.record({
       requestId: input.requestId,
       actor: "agent",
@@ -504,7 +530,7 @@ export class SkillTrustGateway {
       securityNotice: SECURITY_NOTICE,
       ...merged,
       uiHint:
-        "Render as dismissible chips above the Agent composer. insert_prompt pre-fills text; invoke_tool uses toolName/toolArgs. Do not auto-send without user confirmation.",
+        "Only show chips tied to buildContextUsed / because. Pass goal + events from the active run. Do not auto-send without user confirmation.",
     };
   }
 
