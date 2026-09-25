@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/session-build-hints.sh",
+        "timeout": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": ".cursor/hooks/build-hints.sh",
+        "matcher": "Shell|Write|StrReplace",
+        "timeout": 30
+      }
+    ]
+  }
+}

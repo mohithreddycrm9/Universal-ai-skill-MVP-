@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { createGateway } from "./gateway.js";
 import { serveHttp, serveStdio } from "./mcp/http.js";
 import { Logger } from "./observability/log.js";
+import { formatSuggestionsForTerminal } from "./cli/format-suggestions.js";
 
 /**
  * Trusted approval channel:
@@ -55,6 +56,72 @@ export async function main(argv = process.argv): Promise<void> {
     });
 
   const withGw = () => createGateway();
+
+  program
+    .command("suggest")
+    .description("Show build-hint chips in the terminal (same as get_build_suggestions MCP)")
+    .option("--goal <goal>", "What you are building")
+    .option("--step <step>", "Current step")
+    .option("--files <paths>", "Comma-separated changed files")
+    .option("--command <cmd>", "Last shell command")
+    .option("--exit-code <n>", "Last command exit code", (v) => Number(v))
+    .option("--event <kind>", "Repeatable build event kind", (v, prev: string[]) => [...prev, v], [])
+    .option("--demo", "Run a sample scenario (no args needed)")
+    .option("--json", "JSON output")
+    .action(
+      async (opts: {
+        goal?: string;
+        step?: string;
+        files?: string;
+        command?: string;
+        exitCode?: number;
+        event: string[];
+        demo?: boolean;
+        json?: boolean;
+      }) => {
+        const gw = withGw();
+        const useDemo = opts.demo || (!opts.goal && opts.event.length === 0);
+        const payload = useDemo
+          ? {
+              requestId: "cli-demo",
+              agentState: "running" as const,
+              goal: "Real-time build suggestions in Cursor via MCP",
+              activeStep: "wire get_build_suggestions",
+              changedFiles: ["src/agent/build-suggestions.ts", "src/mcp/server.ts"],
+              lastCommand: "npm test",
+              lastCommandExitCode: 1,
+              recentEvents: [
+                { kind: "test_failed", summary: "build-suggestions.test.ts" },
+                { kind: "shell_pending", summary: "npm test" },
+              ],
+              limit: 6,
+            }
+          : {
+              requestId: "cli",
+              agentState: "running" as const,
+              goal: opts.goal,
+              activeStep: opts.step,
+              changedFiles: opts.files?.split(",").map((f) => f.trim()).filter(Boolean),
+              lastCommand: opts.command,
+              lastCommandExitCode: opts.exitCode,
+              recentEvents: opts.event.map((kind) => ({ kind })),
+              limit: 6,
+            };
+        const raw = (await gw.getBuildSuggestions(payload)) as {
+          suggestions: import("./agent/build-suggestions.js").BuildSuggestionsResult["suggestions"];
+          emptyReason?: string;
+          buildContextUsed?: import("./agent/build-suggestions.js").BuildSuggestionsResult["buildContextUsed"];
+        };
+        if (opts.json) {
+          print(raw, true);
+          return;
+        }
+        process.stdout.write(`${formatSuggestionsForTerminal(raw)}\n`);
+        if (useDemo) {
+          process.stderr.write("\nTip: pass --goal \"your task\" --event test_failed --command \"npm test\" --exit-code 1\n");
+        }
+      },
+    );
 
   program
     .command("discover")

@@ -74,6 +74,15 @@ import {
   type TrustedApprovalDecision,
 } from "./approvals/types.js";
 import { isHighRiskCapability } from "./capabilities/firewall.js";
+import {
+  computeBuildSuggestions,
+  mergeGatewayEnrichment,
+  hasSkillGapEvent,
+  shouldOfferSkillHints,
+  skillMatchesGoal,
+  type AgentEventHint,
+  type AgentRunState,
+} from "./agent/build-suggestions.js";
 
 export interface GatewayOptions {
   config?: AppConfig;
@@ -424,6 +433,104 @@ export class SkillTrustGateway {
   searchSkills(input: { query: string; limit?: number }): unknown {
     return {
       items: this.registry.searchSkills(input.query, Math.min(input.limit ?? 20, 50)).map((skill) => this.cardMeta(skill)),
+    };
+  }
+
+  async getBuildSuggestions(input: {
+    requestId: string;
+    agentState?: AgentRunState;
+    goal?: string;
+    activeStep?: string;
+    changedFiles?: string[];
+    lastCommand?: string;
+    recentEvents?: AgentEventHint[];
+    filesChangedCount?: number;
+    lastCommandExitCode?: number;
+    limit?: number;
+    includeSkillHints?: boolean;
+  }): Promise<unknown> {
+    const base = computeBuildSuggestions({
+      agentState: input.agentState,
+      goal: input.goal,
+      activeStep: input.activeStep,
+      changedFiles: input.changedFiles,
+      lastCommand: input.lastCommand,
+      recentEvents: input.recentEvents,
+      filesChangedCount: input.filesChangedCount,
+      lastCommandExitCode: input.lastCommandExitCode,
+      limit: input.limit,
+    });
+
+    const pending = this.listPendingCostApprovals() as { items: unknown[]; capabilityItems: unknown[] };
+    const enrichment = {
+      pendingCostApprovalCount: pending.items.length,
+      pendingCapabilityApprovalCount: pending.capabilityItems.length,
+      localSkillHints: [] as Array<{
+        skillId?: string;
+        name: string;
+        label: string;
+        prompt: string;
+        relevance: "high" | "medium";
+      }>,
+      discoveryHints: [] as Array<{ name: string; label: string; prompt: string; relevance: "high" | "medium" }>,
+    };
+
+    const goal = input.goal?.trim();
+    const events = input.recentEvents ?? [];
+    const wantSkills = input.includeSkillHints !== false && shouldOfferSkillHints(goal, events);
+
+    if (wantSkills && goal) {
+      const query = goal.slice(0, 200);
+      const local = this.registry
+        .searchSkills(query, 4)
+        .filter((skill) => normalizeLifecycle(skill.lifecycle) === "AVAILABLE")
+        .filter((skill) =>
+          skillMatchesGoal(goal, skill.name, skill.manifest.metadata.description),
+        );
+      for (const skill of local.slice(0, 2)) {
+        enrichment.localSkillHints.push({
+          skillId: skill.id,
+          name: skill.name,
+          label: `Use skill for this build: ${skill.name}`,
+          prompt: `For "${goal}", load get_skill ${skill.id} level 1 and apply only what this build needs.`,
+          relevance: "high",
+        });
+      }
+      if (enrichment.localSkillHints.length === 0 && hasSkillGapEvent(events)) {
+        const discovered = (await this.discover({ query, limit: 2, requestId: input.requestId })) as {
+          candidates?: Array<{ name?: string; description?: string }>;
+        };
+        for (const candidate of discovered.candidates ?? []) {
+          const name = candidate.name ?? "skill";
+          if (!skillMatchesGoal(goal, name, candidate.description)) {
+            continue;
+          }
+          enrichment.discoveryHints.push({
+            name,
+            label: `Acquire skill for build: ${name}`,
+            prompt: `For "${goal}", acquire_skill "${name}" (wait:false) then get_skill_status.`,
+            relevance: "medium",
+          });
+        }
+      }
+    }
+
+    const merged = mergeGatewayEnrichment(base, enrichment, input.limit ?? 5, {
+      goal,
+      recentEvents: events,
+      includeSkillHints: wantSkills,
+    });
+    this.audit.record({
+      requestId: input.requestId,
+      actor: "agent",
+      action: "get_build_suggestions",
+      detail: { count: merged.suggestions.length, agentState: merged.agentState },
+    });
+    return {
+      securityNotice: SECURITY_NOTICE,
+      ...merged,
+      uiHint:
+        "Only show chips tied to buildContextUsed / because. Pass goal + events from the active run. Do not auto-send without user confirmation.",
     };
   }
 

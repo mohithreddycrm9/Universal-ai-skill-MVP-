@@ -35,6 +35,13 @@ After publication, install **Universal Skill Trust Gateway** from [Customize](ht
 
 For manual MCP setup without the plugin, see `examples/mcp-clients/cursor.json`.
 
+## Build hints in Cursor (this repo)
+
+1. Edit `.cursor/build-goal.txt` with what you are building.
+2. **Developer: Reload Window** (loads `.cursor/mcp.json`, rules, and `hooks.json`).
+3. Start a **new Agent** chat. After the agent edits a file or runs a shell command, hooks inject **Build hints** into context — the agent should show them in chat.
+4. Terminal fallback: `npm run suggest`
+
 ## Publish
 
 Submit the public GitHub repository at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Plugins must be open source and are manually reviewed.

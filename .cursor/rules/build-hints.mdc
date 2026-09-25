@@ -1,0 +1,36 @@
+---
+description: Surface MCP build suggestions visibly in every agent reply during implementation
+alwaysApply: true
+---
+
+# Build hints (visible in chat)
+
+Project hooks (`.cursor/hooks.json`) inject a **## Build hints** block via `postToolUse` after `Write` / `Shell`. **Paste that block into every reply** so the user sees suggestions.
+
+Cursor does not render MCP chips above the composer automatically.
+
+While implementing or fixing something (agent run in progress):
+
+1. Call MCP tool **`get_build_suggestions`** with live context from this run:
+   - `goal` — what the user is building
+   - `activeStep` — current step
+   - `changedFiles` — paths touched
+   - `lastCommand` and `lastCommandExitCode` if a shell ran
+   - `recentEvents` — e.g. `test_failed`, `shell_pending`, `lint_failed`
+
+2. If `suggestions` is non-empty, **always** include this block in your reply (do not skip):
+
+```markdown
+## Build hints
+
+| Chip | Why |
+|------|-----|
+| …label… | …because… |
+
+**If you tap a chip (copy the prompt):**
+1. …full prompt text…
+```
+
+3. If the tool returns `emptyReason`, say what context is missing and ask once for goal or failing step.
+
+4. Never auto-send prompts; user confirms in the composer.

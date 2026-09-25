@@ -25,7 +25,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "validate": "npm run typecheck && npm run build && npm test",
     "validate:claude-plugin": "npx -y @anthropic-ai/claude-code@2.1.280 plugin validate .",
-    "validate:docker": "npm run validate && node --experimental-sqlite ./node_modules/vitest/vitest.mjs run tests/e2e/mvp-lifecycle.test.ts -t 'L — Docker'"
+    "validate:docker": "npm run validate && node --experimental-sqlite ./node_modules/vitest/vitest.mjs run tests/e2e/mvp-lifecycle.test.ts -t 'L — Docker'",
+    "demo:build-suggestions": "npm run build && node --experimental-sqlite scripts/demo-build-suggestions.mjs",
+    "suggest": "npm run build && node --experimental-sqlite dist/index.js suggest --demo"
   },
   "keywords": [
     "mcp",

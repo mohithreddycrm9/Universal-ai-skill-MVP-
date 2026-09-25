@@ -36,6 +36,20 @@ Hard limits: 32 KiB encoded JSON (truncation recorded in `warnings`). Never incl
 | `get_skill_permissions` | Effective permissions from the firewall, not from skill prose. |
 | `request_capability` | Ask the firewall for an additional capability (user/policy). |
 | `release_skill` | Drop session/temporary materialization. |
+| `get_build_suggestions` | Ranked proactive chips for Agent UI (heuristics + optional local skill / approval hints). |
+
+### `get_build_suggestions` (Cursor build hints)
+
+Call while Agent is active with **live build context** (otherwise `suggestions` is empty and `emptyReason` explains what to pass):
+
+- `goal` — what the user is building (required for meaningful chips)
+- `activeStep` — current plan step
+- `changedFiles` — paths touched this run
+- `lastCommand` / `lastCommandExitCode` — last shell step in this build
+- `recentEvents`: `{ kind, summary?, files?, serverName? }` — e.g. `test_failed`, `shell_pending`, `lint_failed`, `typecheck_failed`, `build_failed`, `mcp_auth_error`, `multi_file_diff`, `cost_approval_pending`, `skill_gap`, `acquire_job_failed`
+- `agentState`, `filesChangedCount`, `limit` (1–12), `includeSkillHints` (skill chips only on skill-gap events or token-matched local skills)
+
+Response includes `buildContextUsed`, per-suggestion `because`, and `uiHint`. No generic queue/steer chips.
 
 ## Errors
 
