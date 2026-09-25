@@ -1,0 +1,12 @@
+# Template — replace with your orgs/publishers before public/market deployment.
+allowUnknownPublisherScan: true
+allowUnknownPublisherApprove: false
+treatArchivedAsUntrusted: true
+
+officialOrganizations: []
+verifiedPublishers: []
+trustedCommunityPublishers: []
+untrustedPublishers: []
+
+officialDomainSuffixes: []
+requireSignedReleaseForOfficial: false

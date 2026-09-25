@@ -64,6 +64,12 @@ Results are **PASSED_CONFIGURED_CHECKS** for that run only — never “universa
 
 See also [SCANNER_ADAPTERS.md](./SCANNER_ADAPTERS.md) and [COST_POLICY.md](./COST_POLICY.md).
 
+## Real-world / market-ready role
+
+Use STRIX when skills are **HIGH or CRITICAL** risk (install scripts, entrypoints, broad capabilities). For **LOW** documentation skills, the gateway may **PASS** without STRIX if other scanners pass — STRIX outages on LOW risk do not block the gate.
+
+Pair STRIX with **SkillSpector** (static skill patterns) and built-in scanners. None of these execute skill malware on the host; see [MARKET_READY.md](./MARKET_READY.md).
+
 ## Limitations (not absolute safety)
 
 - A STRIX `PASS` means the local OSS CLI exited 0 for this pinned quarantine path with a cost-allowed LLM — **not** that the skill is malware-free or safe in all environments.

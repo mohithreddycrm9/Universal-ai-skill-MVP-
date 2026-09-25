@@ -1,0 +1,31 @@
+revalidationHours: 168
+
+requiredScanners:
+  - secret
+  - prompt_injection
+  - suspicious_files
+  - dependency
+
+optionalScanners:
+  - license
+  - skillspector
+  - strix
+  - semgrep
+  - gitleaks
+
+strixRequiredForRisk:
+  - HIGH
+  - CRITICAL
+
+failOnSeverity:
+  - CRITICAL
+  - HIGH
+
+inconclusiveRequiredIsNotPass: true
+denyApproveOnInconclusive: true
+denyApproveOnFail: true
+
+maxFindingEvidenceChars: 480
+maxFindingsPerScanner: 50
+maxConcurrentScanners: 6
+scannerTimeoutMs: 180000

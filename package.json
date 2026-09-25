@@ -25,6 +25,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "validate": "npm run typecheck && npm run build && npm test",
     "validate:claude-plugin": "npx -y @anthropic-ai/claude-code@2.1.280 plugin validate .",
+    "check:market-ready": "bash scripts/check-market-ready.sh",
     "validate:docker": "npm run validate && node --experimental-sqlite ./node_modules/vitest/vitest.mjs run tests/e2e/mvp-lifecycle.test.ts -t 'L — Docker'"
   },
   "keywords": [

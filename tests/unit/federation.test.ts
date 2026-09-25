@@ -45,15 +45,24 @@ describe("scanner federation — every executed scanner contributes", () => {
     expect(result.status).toBe("FAIL");
   });
 
-  it("non-required ERROR → aggregate INCONCLUSIVE", () => {
+  it("non-required ERROR on LOW risk → aggregate PASS (optional outage is not blocking)", () => {
     expect(federate([...requiredPass(config), run("license", "ERROR")], "LOW", config).status).toBe(
-      "INCONCLUSIVE",
+      "PASS",
     );
   });
 
-  it("non-required TIMEOUT → aggregate INCONCLUSIVE", () => {
+  it("non-required TIMEOUT on LOW risk → aggregate PASS", () => {
     expect(federate([...requiredPass(config), run("strix", "TIMEOUT")], "LOW", config).status).toBe(
-      "INCONCLUSIVE",
+      "PASS",
+    );
+  });
+
+  it("STRIX required for HIGH risk: ERROR → INCONCLUSIVE", () => {
+    expect(
+      federate([...requiredPass(config), run("strix", "ERROR")], "HIGH", config).status,
+    ).toBe("INCONCLUSIVE");
+    expect(federate([...requiredPass(config), run("strix", "ERROR")], "HIGH", config).requiredMissing).toEqual(
+      [],
     );
   });
 

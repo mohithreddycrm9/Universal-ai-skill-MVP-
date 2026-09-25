@@ -10,6 +10,15 @@ Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sand
 
 Trust is not authorization. `INCONCLUSIVE` is not `PASS`. Freemium adapters are not auto-free unless a free tier is proven (`estimatedCost` exactly `"0"`). API keys and env attestations cannot bypass `ALLOW_FREE_ONLY` for STRIX/Snyk/cloud/private. The MCP never claims a skill is universally “safe.”
 
+## Market-ready production
+
+Controlled production (trust allowlists, STRIX for HIGH/CRITICAL risk, SkillSpector, optional Postgres):
+
+- [docs/MARKET_READY.md](./docs/MARKET_READY.md)
+- `./scripts/use-market-ready-config.sh` then `./scripts/check-market-ready.sh`
+
+**STRIX:** yes for real-world **local OSS** use (`strix` + Docker + local/free LLM under `ALLOW_FREE_ONLY`). Not Strix Cloud. See [docs/STRIX.md](./docs/STRIX.md).
+
 ## Fast path
 
 ```bash

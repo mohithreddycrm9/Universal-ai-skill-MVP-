@@ -78,12 +78,13 @@ export class SecurityOrchestrator {
 /**
  * Federate scanner runs into a single gate status.
  *
- * - Every executed scanner (status !== NOT_RUN) contributes to the aggregate.
- * - FAIL or findings at/above failOnSeverity → aggregate FAIL.
- * - ERROR / TIMEOUT / INCONCLUSIVE → aggregate INCONCLUSIVE (unless already FAIL).
- * - requiredScanners (+ strix when risk requires it) are coverage only:
- *   missing / NOT_RUN required → incomplete → INCONCLUSIVE (never PASS).
- * - optionalScanners may run and contribute when executed; absence is not a gap.
+ * - Every executed scanner is recorded; FAIL or fail-severity findings always fail the gate.
+ * - ERROR / TIMEOUT / INCONCLUSIVE count toward the aggregate only when that scanner
+ *   is **required for this risk** (including STRIX when `strixRequiredForRisk` matches).
+ * - Optional scanners that errored but are not required may still run; their soft failures
+ *   do not block LOW-risk skills (market-ready default: STRIX for HIGH/CRITICAL only).
+ * - requiredScanners (+ strix when risk requires it): missing / NOT_RUN → INCONCLUSIVE.
+ * - optionalScanners absence is not a coverage gap.
  * - Commercial / $0-blocked scanners stay NOT_RUN (never PASS).
  * - Disabled scanners are omitted from runs and have no effect.
  */
@@ -111,12 +112,12 @@ export function federate(runs: ScannerRun[], risk: RiskLevel, config: AppConfig)
     }
   }
 
-  // Every *executed* scanner contributes (required, optional, or ad-hoc).
-  // Commercial/$0 blocked scanners remain NOT_RUN and do not count as PASS.
+  // Executed scanners: hard failures always count; soft failures only when required for risk.
   for (const run of runs) {
     if (run.status === "NOT_RUN") {
       continue;
     }
+    const coverageRequired = required.has(run.scannerId);
     switch (run.status) {
       case "FAIL":
         fail = true;
@@ -124,7 +125,9 @@ export function federate(runs: ScannerRun[], risk: RiskLevel, config: AppConfig)
       case "INCONCLUSIVE":
       case "ERROR":
       case "TIMEOUT":
-        inconclusive = true;
+        if (coverageRequired) {
+          inconclusive = true;
+        }
         break;
       case "PASS":
         break;

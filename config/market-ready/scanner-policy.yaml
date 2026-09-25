@@ -1,0 +1,51 @@
+# Production-oriented scanner profile (copy via scripts/use-market-ready-config.sh)
+scanners:
+  secret:
+    enabled: true
+  prompt_injection:
+    enabled: true
+  suspicious_files:
+    enabled: true
+  dependency:
+    enabled: true
+    typosquatDistance: 1
+  license:
+    enabled: true
+    allowed:
+      - MIT
+      - Apache-2.0
+      - BSD-2-Clause
+      - BSD-3-Clause
+      - ISC
+      - Unlicense
+      - 0BSD
+  skillspector:
+    enabled: true
+    binary: skillspector
+    useLlm: false
+    failOpen: false
+  strix:
+    enabled: true
+    binary: strix
+    failOpen: false
+  semgrep:
+    enabled: true
+    binary: semgrep
+    rulesPath: semgrep-local.yml
+  gitleaks:
+    enabled: true
+    binary: gitleaks
+  trivy:
+    enabled: false
+    binary: trivy
+  clamav:
+    enabled: false
+    binary: clamscan
+  osv:
+    enabled: false
+    binary: osv-scanner
+  syft:
+    enabled: false
+    binary: syft
+  snyk:
+    enabled: false
