@@ -47,7 +47,6 @@ describe("SkillSpector scanner", () => {
     };
     const run = await new SkillspectorScanner(undefined, spawn).scan(target(secretPackage()), {
       binary: "skillspector",
-      useLlm: false,
     });
     expect(run.status).toBe("PASS");
     expect(run.findings).toHaveLength(0);
@@ -65,22 +64,10 @@ describe("SkillSpector scanner", () => {
     };
     const run = await new SkillspectorScanner(undefined, spawn).scan(target(injectionPackage()), {
       binary: "skillspector",
-      useLlm: false,
     });
     expect(run.status).toBe("FAIL");
     expect(run.findings.length).toBeGreaterThan(0);
     expect(scanArgs).toContain("--no-llm");
   });
 
-  it("blocks LLM scan under ALLOW_FREE_ONLY without approval", async () => {
-    const spawn: SpawnFn = (cmd, args) => {
-      if (args[0] === "--version") return { status: 0, stdout: "skillspector 2.12.0\n", stderr: "" };
-      return { status: 0, stdout: benignJson, stderr: "" };
-    };
-    const run = await new SkillspectorScanner(undefined, spawn).scan(target(secretPackage()), {
-      binary: "skillspector",
-      useLlm: true,
-    });
-    expect(run.status).toBe("NOT_RUN");
-  });
 });

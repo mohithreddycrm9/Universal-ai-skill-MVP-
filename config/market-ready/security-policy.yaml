@@ -1,5 +1,7 @@
 revalidationHours: 168
 
+extendedScanningEnabled: true
+
 requiredScanners:
   - secret
   - prompt_injection

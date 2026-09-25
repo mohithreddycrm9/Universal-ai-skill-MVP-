@@ -26,7 +26,7 @@ describe("cost detector", () => {
 
   it("requires approval for paid operations", () => {
     const detector = new CostDetector(ask);
-    const decision = detector.evaluate("scan", COST_CATALOG.snyk);
+    const decision = detector.evaluate("scan", COST_CATALOG.cloud_sandbox);
     expect(decision.proceed).toBe(false);
     expect(decision.kind).toBe("NEEDS_APPROVAL");
     if (decision.kind === "NEEDS_APPROVAL") {
@@ -54,28 +54,15 @@ describe("cost detector", () => {
 
   it("stops after a human reject", () => {
     const detector = new CostDetector(ask);
-    const decision = detector.evaluate("scan", COST_CATALOG.snyk, { approvalStatus: "REJECTED" });
+    const decision = detector.evaluate("scan", COST_CATALOG.cloud_sandbox, { approvalStatus: "REJECTED" });
     expect(decision.kind).toBe("DENIED");
     expect(decision.proceed).toBe(false);
   });
 
   it("denies paid work under ALLOW_FREE_ONLY", () => {
     const detector = new CostDetector({ ...ask, policy: "ALLOW_FREE_ONLY" });
-    const decision = detector.evaluate("scan", COST_CATALOG.snyk);
+    const decision = detector.evaluate("scan", COST_CATALOG.cloud_sandbox);
     expect(decision.kind).toBe("DENIED");
   });
 });
 
-describe("SkillSpector LLM catalog", () => {
-  it("denies skillspector_llm under ALLOW_FREE_ONLY", () => {
-    const detector = new CostDetector({
-      policy: "ALLOW_FREE_ONLY",
-      currency: "USD",
-      allowUpToAmount: 0,
-      preferFreeAlternatives: true,
-      neverAutoPaidFallback: true,
-      unknownCostRequiresApproval: true,
-    });
-    expect(detector.evaluate("scan_skill:skillspector_llm", COST_CATALOG.skillspector_llm).proceed).toBe(false);
-  });
-});

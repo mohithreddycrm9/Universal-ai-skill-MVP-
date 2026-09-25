@@ -100,12 +100,10 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
     "scan_skill",
     {
       title: "Scan skill",
-      description: "Enqueue configured scanners. Absence of a scanner is not PASS. Paid scanners never auto-run.",
+      description: "Enqueue configured scanners. Absence of a scanner is not PASS.",
       inputSchema: z.object({
         skillId: z.string(),
         wait: z.boolean().optional(),
-        includePaidScanners: z.boolean().optional(),
-        approvalId: z.string().optional(),
       }),
     },
     async (args) => wrap((requestId) => gateway.scan({ ...args, requestId })),

@@ -31,7 +31,6 @@ These are **adapters only**. They are not required for core. Do not assume they 
 
 | Id | Provider | Pricing | Default |
 | --- | --- | --- | --- |
-| `snyk` | Snyk CLI / mcp-scan | paid / cost unknown | disabled; skipped unless `includePaidScanners` **and** approval |
 | `github_private_or_unknown` | Private or non-public GitHub API | unknown | blocked until approval |
 | Unimplemented remote registries | unspecified | unknown | blocked until approval |
 
@@ -39,7 +38,7 @@ Public GitHub REST for public repos is documented as **freemium with a $0 free t
 
 Local Docker/Podman is OSS compute on the operator’s machine, not a cloud bill. Cloud-hosted runners are out of scope for this adapter.
 
-There is **no** built-in paid LLM path. Optional SkillSpector `useLlm: true` is blocked under `ALLOW_FREE_ONLY` (`NOT_RUN`, no outbound request). Keep `useLlm: false` for enterprise-friendly static scans.
+There is **no** built-in paid LLM or commercial scanner path in the default gateway.
 
 ## Tools / CLI
 
@@ -50,9 +49,9 @@ There is **no** built-in paid LLM path. Optional SkillSpector `useLlm: true` is 
 
 ## Freemium and bypass resistance
 
-- **Freemium is not auto-free.** `isClearlyFree` accepts freemium only when `freeTier` is true **and** `estimatedCost` is exactly `"0"` (proven free tier). Narratives like `"0 for … when …"` are **not** treated as free (e.g. `skillspector_llm` stays approval-gated).
+- **Freemium is not auto-free.** `isClearlyFree` accepts freemium only when `freeTier` is true **and** `estimatedCost` is exactly `"0"` (proven free tier). Narratives like `"0 for … when …"` are **not** treated as free.
 - **API keys never imply free.** An `OPENAI_API_KEY` / `LLM_API_KEY` without a proven local model is classified external/chargeable.
-- **`ALLOW_FREE_ONLY` cannot be bypassed** by approval ids for Snyk/cloud/private/`skillspector_llm`.
+- **`ALLOW_FREE_ONLY` cannot be bypassed** by approval ids for cloud/private/unknown-cost operations.
 - **Human approval** under `ASK_BEFORE_ANY_PAID_OPERATION` requires the **CLI local-interactive** path (`method=local_interactive`). MCP `approver:"human"` never proves approval. Under `ALLOW_FREE_ONLY` / `DENY_ALL_PAID_SERVICES`, approval does not unlock paid paths.
 
 These controls reduce accidental spend. They are **not** a guarantee that every future adapter is free or that operators cannot misconfigure a local-looking endpoint that still bills.

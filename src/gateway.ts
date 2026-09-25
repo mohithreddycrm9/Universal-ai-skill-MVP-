@@ -16,14 +16,7 @@ import { AllowlistTrustProvider, TrustBroker } from "./trust/broker.js";
 import { TrustGraph } from "./trust/graph.js";
 import { describeTrustTier, type TrustDecision } from "./trust/publisher.js";
 import { SecurityOrchestrator } from "./security/orchestrator.js";
-import { SecretScanner } from "./scanners/secret.js";
-import { PromptInjectionScanner } from "./scanners/prompt-injection.js";
-import { SuspiciousFilesScanner } from "./scanners/suspicious-files.js";
-import { DependencyScanner } from "./scanners/dependency.js";
-import { LicenseScanner } from "./scanners/license.js";
-import { SkillspectorScanner } from "./scanners/skillspector.js";
-import { SnykScanner } from "./scanners/snyk.js";
-import { OssBinaryScanner } from "./scanners/oss-binary.js";
+import { buildSecurityScanners } from "./security/scanners-factory.js";
 import { InProcessSandbox } from "./sandbox/in-process.js";
 import type { SandboxProvider } from "./sandbox/provider.js";
 import { CapabilityFirewall } from "./capabilities/firewall.js";
@@ -140,21 +133,7 @@ export class SkillTrustGateway {
         ...(githubEnabled ? [github] : []),
         ...sourcesFromRegistry(this.config.registry, this.config.configDir),
       ];
-    const securityScanners = [
-      new SecretScanner(this.clock),
-      new PromptInjectionScanner(this.clock),
-      new SuspiciousFilesScanner(this.clock),
-      new DependencyScanner(this.clock),
-      new LicenseScanner(this.clock),
-      new SkillspectorScanner(this.clock),
-      new OssBinaryScanner("semgrep", "adapter-1.0.0", COST_CATALOG.semgrep, "semgrep", this.clock),
-      new OssBinaryScanner("gitleaks", "adapter-1.0.0", COST_CATALOG.gitleaks, "gitleaks", this.clock),
-      new OssBinaryScanner("trivy", "adapter-1.0.0", COST_CATALOG.trivy, "trivy", this.clock),
-      new OssBinaryScanner("clamav", "adapter-1.0.0", COST_CATALOG.clamav, "clamscan", this.clock),
-      new OssBinaryScanner("osv", "adapter-1.0.0", COST_CATALOG.osv, "osv-scanner", this.clock),
-      new OssBinaryScanner("syft", "adapter-1.0.0", COST_CATALOG.syft, "syft", this.clock),
-      new SnykScanner(this.clock),
-    ];
+    const securityScanners = buildSecurityScanners(this.config, this.clock);
     const materialScanners: ScannerImplementationIdentity[] = collectMaterialScannerImplementations(
       securityScanners,
       this.config.scanners.scanners,
@@ -345,32 +324,9 @@ export class SkillTrustGateway {
     return this.getSkillTrust(input);
   }
 
-  async scan(input: {
-    skillId: string;
-    wait?: boolean;
-    includePaidScanners?: boolean;
-    approvalId?: string;
-    requestId: string;
-  }): Promise<unknown> {
+  async scan(input: { skillId: string; wait?: boolean; requestId: string }): Promise<unknown> {
     const skill = this.registry.requireSkill(input.skillId);
-    if (input.includePaidScanners) {
-      const decision = this.evaluateCost("scan_skill:snyk", COST_CATALOG.snyk, input.approvalId);
-      if (!decision.proceed) {
-        if (decision.kind === "DENIED") {
-          throw new SkillMcpError("POLICY_DENIED", decision.reason);
-        }
-        const pending = this.ensurePending("scan_skill:snyk", COST_CATALOG.snyk, decision.review);
-        return {
-          status: "NEEDS_COST_APPROVAL",
-          approvalId: pending.id,
-          review: pending.review,
-          note: "Commercial scanners are not an automatic fallback. Free/OSS scanners still run.",
-        };
-      }
-    }
-    this.enqueue("SECURITY_SCAN", skill.id, skill.fingerprint, {
-      includePaidScanners: Boolean(input.includePaidScanners),
-    });
+    this.enqueue("SECURITY_SCAN", skill.id, skill.fingerprint, {});
     if (input.wait) {
       await this.processJobs(20);
     }
@@ -865,8 +821,7 @@ export class SkillTrustGateway {
         if (type === "ACQUIRE" || type === "PROVENANCE_CHECK" || type === "TRUST_REFRESH") {
           await this.runPipeline(skill, pkg);
         } else if (type === "SECURITY_SCAN" || type === "FULL_RESCAN" || type === "DEPENDENCY_REFRESH") {
-          const allowPaid = job.payload.includePaidScanners === true ? ["snyk"] : [];
-          await this.runScanStage(this.registry.requireSkill(job.skillId), pkg, allowPaid);
+          await this.runScanStage(this.registry.requireSkill(job.skillId), pkg);
           await this.runSandboxAndPolicy(this.registry.requireSkill(job.skillId), pkg);
         } else if (type === "SANDBOX_TEST") {
           await this.runSandboxAndPolicy(skill, pkg);

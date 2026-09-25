@@ -18,15 +18,11 @@ scanners:
       - ISC
       - Unlicense
       - 0BSD
+  # Extended scanning (SkillSpector, Semgrep, …) requires extendedScanningEnabled: true
   skillspector:
-    # https://github.com/NVIDIA/SkillSpector — pip install git+https://github.com/NVIDIA/skillspector.git
-    # Set enabled: true after `skillspector` is on PATH.
-    enabled: true
+    enabled: false
     binary: skillspector
-    useLlm: false
     failOpen: false
-    # timeoutMs: 180000
-    # baselinePath: .skillspector-baseline.yaml
   semgrep:
     enabled: false
     binary: semgrep
@@ -46,6 +42,3 @@ scanners:
   syft:
     enabled: false
     binary: syft
-  snyk:
-    enabled: false
-    # Commercial. Never an automatic fallback. Requires cost approval even if enabled.

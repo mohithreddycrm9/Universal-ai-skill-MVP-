@@ -22,7 +22,6 @@ scanners:
   skillspector:
     enabled: true
     binary: skillspector
-    useLlm: false
     failOpen: false
   semgrep:
     enabled: true
@@ -43,5 +42,3 @@ scanners:
   syft:
     enabled: false
     binary: syft
-  snyk:
-    enabled: false

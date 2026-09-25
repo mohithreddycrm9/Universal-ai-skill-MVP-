@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { testConfig, testGateway, benignPackage, secretPackage } from "../helpers.js";
 import type { SkillPackage } from "../../src/types.js";
 import type { SkillSource } from "../../src/discovery/skill-source.js";
+import { COST_CATALOG } from "../../src/cost/catalog.js";
 import type { CostMetadata } from "../../src/cost/types.js";
 import { createGateway } from "../../src/gateway.js";
 import { LocalSource } from "../../src/discovery/local-source.js";
 import { Logger } from "../../src/observability/log.js";
-import { SnykScanner } from "../../src/scanners/snyk.js";
+import type { SecurityScanner } from "../../src/scanners/types.js";
 import { SecretScanner } from "../../src/scanners/secret.js";
 import { SecurityOrchestrator } from "../../src/security/orchestrator.js";
 import { InProcessSandbox } from "../../src/sandbox/in-process.js";
@@ -161,11 +162,24 @@ describe("cost control integration", () => {
   });
 
   it("never auto-runs a paid scanner when a free scanner fails", async () => {
+    const paidStub: SecurityScanner = {
+      id: "vendor_paid_stub",
+      version: "1",
+      cost: COST_CATALOG.cloud_sandbox,
+      scan: async () => ({
+        scannerId: "vendor_paid_stub",
+        scannerVersion: "1",
+        status: "PASS",
+        findings: [],
+        startedAt: "",
+        finishedAt: "",
+      }),
+    };
     const config = testConfig((cfg) => {
-      cfg.scanners.scanners.snyk = { enabled: true };
+      cfg.scanners.scanners.vendor_paid_stub = { enabled: true };
     });
     const orchestrator = new SecurityOrchestrator(
-      [new SecretScanner(), new SnykScanner()],
+      [new SecretScanner(), paidStub],
       config,
       { now: () => new Date("2020-01-01T00:00:00.000Z") },
     );
@@ -173,10 +187,10 @@ describe("cost control integration", () => {
       { skillId: "skl_x", package: secretPackage(), quarantinePath: "/tmp/q" },
       "LOW",
     );
-    const snyk = result.scanners.find((run) => run.scannerId === "snyk");
-    expect(snyk?.status).toBe("NOT_RUN");
-    expect(snyk?.notes ?? "").toMatch(/not an automatic paid fallback/i);
-    expect(snyk?.status).not.toBe("PASS");
+    const paid = result.scanners.find((run) => run.scannerId === "vendor_paid_stub");
+    expect(paid?.status).toBe("NOT_RUN");
+    expect(paid?.notes ?? "").toMatch(/not an automatic paid fallback/i);
+    expect(paid?.status).not.toBe("PASS");
     const secret = result.scanners.find((run) => run.scannerId === "secret");
     expect(secret?.status).toBe("FAIL");
   });

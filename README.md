@@ -8,14 +8,12 @@ A software-agnostic **MCP** that lets an agent discover, acquire, verify, cache,
 
 Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sandbox. No cloud account or paid API is required. Any potentially billable adapter needs **explicit human approval**. Paid scanners never run as a silent fallback.
 
-Trust is not authorization. `INCONCLUSIVE` is not `PASS`. Freemium adapters are not auto-free unless a free tier is proven (`estimatedCost` exactly `"0"`). API keys cannot bypass `ALLOW_FREE_ONLY` for SkillSpector LLM / Snyk / cloud / private APIs. The MCP never claims a skill is universally “safe.”
+Trust is not authorization. `INCONCLUSIVE` is not `PASS`. The default gateway ships **organization-approved built-in scanners only** (no commercial tools, no LLM scanners, no external CLIs until you opt in). See [docs/ORG_APPROVED.md](./docs/ORG_APPROVED.md).
 
-## Market-ready production
+## Production
 
-Enterprise-friendly profile: static scanners only (built-ins + **SkillSpector** `--no-llm`, Semgrep, Gitleaks), trust allowlists, optional Postgres:
-
-- [docs/MARKET_READY.md](./docs/MARKET_READY.md)
-- `./scripts/use-market-ready-config.sh` then `./scripts/check-market-ready.sh`
+- Default: [docs/ORG_APPROVED.md](./docs/ORG_APPROVED.md) + `./scripts/check-market-ready.sh`
+- Optional OSS (SkillSpector, Semgrep, Gitleaks): [docs/MARKET_READY.md](./docs/MARKET_READY.md) + `./scripts/use-market-ready-config.sh`
 
 ## Fast path
 
@@ -53,7 +51,7 @@ npx skill-mcp reject <approvalId>
 | --- | --- | --- |
 | Docker or Podman | Isolated verification sandbox | `INCONCLUSIVE` |
 | `pg` + `DATABASE_URL` | PostgreSQL registry | SQLite stays default |
-| [SkillSpector](https://github.com/NVIDIA/SkillSpector), Semgrep, Gitleaks, Trivy, ClamAV, OSV-Scanner, Syft | Extra OSS scans (keep SkillSpector `useLlm: false` for org-friendly static-only) | `ERROR` / `NOT_RUN` |
+| [SkillSpector](https://github.com/NVIDIA/SkillSpector), Semgrep, Gitleaks, … | Only when `extendedScanningEnabled: true` | `ERROR` / `NOT_RUN` if enabled but missing |
 
 Local Docker is treated as free. Cloud/hosted sandboxes stay **off** and approval-gated.
 

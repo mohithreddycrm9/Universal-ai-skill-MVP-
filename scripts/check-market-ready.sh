@@ -13,11 +13,8 @@ check() {
   fi
 }
 
-echo "=== Universal Skill Trust — market-ready preflight ==="
+echo "=== Universal Skill Trust — org-approved preflight ==="
 check node "Node.js 20.11+ required"
-check skillspector "pip install git+https://github.com/NVIDIA/skillspector.git"
-check semgrep "optional SAST (enabled in market-ready profile)"
-check gitleaks "optional secrets scan"
 
 if [[ ! -d dist ]]; then
   echo "MISS dist/ — run: npm run build"
@@ -26,9 +23,18 @@ else
   echo "OK  dist/"
 fi
 
+if grep -q 'extendedScanningEnabled: true' "${SKILL_MCP_CONFIG_DIR:-$ROOT/config}/security-policy.yaml" 2>/dev/null; then
+  echo "Extended scanning enabled — checking optional CLIs"
+  check skillspector "pip install git+https://github.com/NVIDIA/skillspector.git"
+  check semgrep "optional SAST"
+  check gitleaks "optional secrets scan"
+else
+  echo "OK  built-in scanners only (extendedScanningEnabled: false)"
+fi
+
 if [[ $FAIL -eq 0 ]]; then
-  echo "=== Preflight passed (warnings may still apply) ==="
+  echo "=== Preflight passed ==="
   exit 0
 fi
-echo "=== Preflight failed — fix MISS items for full market-ready stack ==="
+echo "=== Preflight failed ==="
 exit 1

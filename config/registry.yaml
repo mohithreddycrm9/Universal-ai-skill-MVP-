@@ -8,7 +8,7 @@ database:
 
 sources:
   - id: github
-    enabled: true
+    enabled: false
     kind: github
     apiBase: https://api.github.com
   - id: mcp_registry

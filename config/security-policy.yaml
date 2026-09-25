@@ -1,6 +1,9 @@
-# Security gate. Default favors reject/quarantine.
+# Security gate — org-approved default (built-in scanners only).
 
 revalidationHours: 168
+
+# When false (default), gateway registers only built-in static scanners.
+extendedScanningEnabled: false
 
 requiredScanners:
   - secret
@@ -10,17 +13,12 @@ requiredScanners:
 
 optionalScanners:
   - license
-  - skillspector
-  - semgrep
-  - gitleaks
 
 failOnSeverity:
   - CRITICAL
   - HIGH
 
 inconclusiveRequiredIsNotPass: true
-
-# Never auto-approve when a required scanner is missing or errors.
 denyApproveOnInconclusive: true
 denyApproveOnFail: true
 

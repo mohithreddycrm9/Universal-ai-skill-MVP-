@@ -40,7 +40,7 @@ Missing tools are `ERROR` / `NOT_RUN` / `INCONCLUSIVE`, **never `PASS`**.
 | Binary | Purpose |
 | --- | --- |
 | Docker or Podman | Isolated verification sandbox (`SKILL_MCP_SANDBOX=docker`, default). Image pull is off; missing image ⇒ `INCONCLUSIVE`. |
-| `skillspector` | Optional [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) (`useLlm: false` recommended) |
+| `skillspector` | Optional [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) static-only; requires `extendedScanningEnabled: true` |
 | `semgrep` | Local SAST using `config/semgrep-local.yml` (offline; not `--config auto`) |
 | `gitleaks` | Local secret scan |
 | `trivy` | Offline fs scan (`--skip-db-update`) |

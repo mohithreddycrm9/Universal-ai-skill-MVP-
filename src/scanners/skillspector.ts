@@ -7,18 +7,7 @@ import type { Finding, FindingSeverity, ScanTarget, ScannerRun, SecurityStatus }
 import type { ScannerConfig, SecurityScanner } from "./types.js";
 import { finding, runEnvelope } from "./helpers.js";
 import { COST_CATALOG } from "../cost/catalog.js";
-import { CostDetector } from "../cost/detector.js";
-import type { CostPolicy } from "../cost/types.js";
 import { defaultSpawn, missingBinary, type SpawnFn } from "../util/spawn.js";
-
-const DEFAULT_FREE_ONLY: CostPolicy = {
-  policy: "ALLOW_FREE_ONLY",
-  currency: "USD",
-  allowUpToAmount: 0,
-  preferFreeAlternatives: true,
-  neverAutoPaidFallback: true,
-  unknownCostRequiresApproval: true,
-};
 
 type SkillspectorReport = {
   risk_assessment?: {
@@ -38,27 +27,23 @@ type SkillspectorReport = {
 
 /**
  * Adapter for NVIDIA SkillSpector (https://github.com/NVIDIA/SkillSpector, Apache-2.0).
- * Invokes: `skillspector scan <path> --format json` (+ `--no-llm` by default).
- * Missing binary → ERROR, never PASS.
+ * Static only: `skillspector scan <path> --no-llm --format json`. No LLM path in this MCP.
  */
 export class SkillspectorScanner implements SecurityScanner {
   readonly id = "skillspector";
-  readonly version = "adapter-1.0.0-nvidia-skillspector";
+  readonly version = "adapter-1.1.0-static-only";
   readonly cost = COST_CATALOG.skillspector;
   private readonly clock: Clock;
   private readonly spawn: SpawnFn;
-  private readonly defaultCostPolicy: CostPolicy;
 
-  constructor(clock?: Clock, spawn?: SpawnFn, costPolicy?: CostPolicy) {
+  constructor(clock?: Clock, spawn?: SpawnFn) {
     this.clock = clock ?? systemClock;
     this.spawn = spawn ?? defaultSpawn;
-    this.defaultCostPolicy = costPolicy ?? DEFAULT_FREE_ONLY;
   }
 
   async scan(target: ScanTarget, configuration: ScannerConfig): Promise<ScannerRun> {
     const binary = typeof configuration.binary === "string" ? configuration.binary : "skillspector";
     const failOpen = configuration.failOpen === true;
-    const useLlm = configuration.useLlm === true;
     const scanRoot = materializeTarget(target);
 
     const found = this.spawn(binary, ["--version"], { timeout: 4000 });
@@ -84,37 +69,7 @@ export class SkillspectorScanner implements SecurityScanner {
     }
     const cliVersion = found.stdout.trim().split("\n")[0] || this.version;
 
-    if (useLlm) {
-      const policy =
-        configuration.costPolicy && typeof configuration.costPolicy === "object"
-          ? (configuration.costPolicy as CostPolicy)
-          : this.defaultCostPolicy;
-      const detector = new CostDetector(policy);
-      const approvalStatus = configuration.costApprovalStatus;
-      const approvalId =
-        typeof configuration.costApprovalId === "string" ? configuration.costApprovalId : undefined;
-      const decision = detector.evaluate(
-        "scan_skill:skillspector_llm",
-        COST_CATALOG.skillspector_llm,
-        approvalStatus === "APPROVED" && approvalId
-          ? { approvalStatus: "APPROVED", approvalId }
-          : approvalStatus === "REJECTED"
-            ? { approvalStatus: "REJECTED" }
-            : {},
-      );
-      if (!decision.proceed) {
-        const note =
-          decision.kind === "NEEDS_APPROVAL"
-            ? "SkillSpector LLM analysis requires explicit approval under current cost policy. No LLM request was made. Use useLlm:false for static-only scan. NOT_RUN ≠ PASS."
-            : `SkillSpector LLM blocked by cost policy: ${decision.reason} NOT_RUN ≠ PASS.`;
-        return runEnvelope(this.id, cliVersion, this.clock, "NOT_RUN", [], note);
-      }
-    }
-
-    const args = ["scan", scanRoot, "--format", "json"];
-    if (!useLlm) {
-      args.push("--no-llm");
-    }
+    const args = ["scan", scanRoot, "--format", "json", "--no-llm"];
     const baseline =
       typeof configuration.baselinePath === "string" && configuration.baselinePath.length > 0
         ? configuration.baselinePath
@@ -179,7 +134,7 @@ export class SkillspectorScanner implements SecurityScanner {
     }
 
     const notes = [
-      `SkillSpector static=${!useLlm} score=${score ?? "n/a"} recommendation=${recommendation || "n/a"}.`,
+      `SkillSpector static score=${score ?? "n/a"} recommendation=${recommendation || "n/a"}.`,
       "Configured SkillSpector check only; not a universal safety claim.",
     ].join(" ");
 

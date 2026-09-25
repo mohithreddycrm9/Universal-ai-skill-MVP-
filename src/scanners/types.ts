@@ -7,7 +7,7 @@ export interface ScannerConfig {
   timeoutMs?: number;
   failOpen?: boolean;
   binary?: string;
-  /** Injected by orchestrator — used by LLM-gated scanners (e.g. SkillSpector useLlm). */
+  /** Injected by orchestrator — used for cost policy on gated operations. */
   costPolicy?: unknown;
   /** Explicit local/free LLM attestation (reserved for future LLM-gated scanners). */
   llmIsLocalFree?: boolean;

@@ -87,7 +87,7 @@ instructions: read only
     expect(maxRisk("HIGH", "LOW")).toBe("HIGH");
     expect(maxRisk("LOW", "CRITICAL")).toBe("CRITICAL");
     const config = loadConfig("config");
-    expect(config.security.optionalScanners).toContain("skillspector");
-    expect(config.security.optionalScanners).not.toContain("strix");
+    expect(config.security.extendedScanningEnabled).toBe(false);
+    expect(config.security.optionalScanners).not.toContain("skillspector");
   });
 });

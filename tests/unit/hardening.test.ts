@@ -45,10 +45,10 @@ function run(
 }
 
 describe("$0 / freemium hardening", () => {
-  it("does not treat freemium SkillSpector LLM catalog row as clearly free", () => {
-    expect(COST_CATALOG.skillspector_llm.pricingModel).toBe("freemium");
-    expect(isClearlyFree(COST_CATALOG.skillspector_llm)).toBe(false);
-    expect(new CostDetector(freeOnly).evaluate("scan", COST_CATALOG.skillspector_llm).proceed).toBe(false);
+  it("does not treat cloud sandbox catalog row as clearly free", () => {
+    expect(COST_CATALOG.cloud_sandbox.pricingModel).toBe("unknown");
+    expect(isClearlyFree(COST_CATALOG.cloud_sandbox)).toBe(false);
+    expect(new CostDetector(freeOnly).evaluate("scan", COST_CATALOG.cloud_sandbox).proceed).toBe(false);
   });
 
   it("treats github_public as free only with proven exact $0 free tier", () => {
@@ -70,13 +70,12 @@ describe("$0 / freemium hardening", () => {
     expect(isClearlyFree(narrative)).toBe(false);
   });
 
-  it("ALLOW_FREE_ONLY cannot be bypassed via approval id for Snyk/cloud/private/skillspector_llm catalog", () => {
+  it("ALLOW_FREE_ONLY cannot be bypassed via approval id for cloud/private catalog", () => {
     const detector = new CostDetector(freeOnly);
     for (const meta of [
-      COST_CATALOG.snyk,
       COST_CATALOG.cloud_sandbox,
       COST_CATALOG.github_private_or_unknown,
-      COST_CATALOG.skillspector_llm,
+      COST_CATALOG.mcp_registry_remote,
     ]) {
       const decision = detector.evaluate("op", meta, {
         approvalStatus: "APPROVED",
@@ -87,8 +86,8 @@ describe("$0 / freemium hardening", () => {
     }
   });
 
-  it("skillspector_llm is denied under ALLOW_FREE_ONLY even if approval is forged", () => {
-    const decision = new CostDetector(freeOnly).evaluate("scan_skill:skillspector_llm", COST_CATALOG.skillspector_llm, {
+  it("cloud sandbox is denied under ALLOW_FREE_ONLY even if approval is forged", () => {
+    const decision = new CostDetector(freeOnly).evaluate("sandbox:cloud", COST_CATALOG.cloud_sandbox, {
       approvalStatus: "APPROVED",
       approvalId: "forged",
     });
