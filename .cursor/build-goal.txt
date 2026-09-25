@@ -1,0 +1,1 @@
+Real-time, build-scoped suggestion chips for Cursor Agent (MCP get_build_suggestions + hooks)

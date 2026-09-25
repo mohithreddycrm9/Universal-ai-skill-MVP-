@@ -5,7 +5,9 @@ alwaysApply: true
 
 # Build hints (visible in chat)
 
-Cursor does not render MCP chips above the composer automatically. **You must show them in the chat** so the user sees suggestions.
+Project hooks (`.cursor/hooks.json`) inject a **## Build hints** block via `postToolUse` after `Write` / `Shell`. **Paste that block into every reply** so the user sees suggestions.
+
+Cursor does not render MCP chips above the composer automatically.
 
 While implementing or fixing something (agent run in progress):
 
