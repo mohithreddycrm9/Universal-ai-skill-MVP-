@@ -9,13 +9,8 @@ requiredScanners:
 optionalScanners:
   - license
   - skillspector
-  - strix
   - semgrep
   - gitleaks
-
-strixRequiredForRisk:
-  - HIGH
-  - CRITICAL
 
 failOnSeverity:
   - CRITICAL

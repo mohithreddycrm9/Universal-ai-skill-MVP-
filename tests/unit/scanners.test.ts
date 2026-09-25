@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SecretScanner } from "../../src/scanners/secret.js";
 import { PromptInjectionScanner } from "../../src/scanners/prompt-injection.js";
-import { StrixScanner } from "../../src/scanners/strix.js";
 import { federate } from "../../src/security/orchestrator.js";
 import { loadConfig } from "../../src/policy/load.js";
 import { injectionPackage, secretPackage } from "../helpers.js";
@@ -21,13 +20,6 @@ describe("scanners", () => {
   it("flags prompt injection in SKILL.md", async () => {
     const run = await new PromptInjectionScanner().scan(target(injectionPackage()), { enabled: true });
     expect(run.status).toBe("FAIL");
-  });
-
-  it("records STRIX unavailability as ERROR, never PASS", async () => {
-    const run = await new StrixScanner().scan(target(secretPackage()), { binary: "strix-not-installed-xyz", failOpen: false });
-    expect(run.status).toBe("ERROR");
-    expect(run.status).not.toBe("PASS");
-    expect(run.notes ?? "").toMatch(/not PASS/i);
   });
 
   it("does not convert INCONCLUSIVE required scanners into PASS", () => {

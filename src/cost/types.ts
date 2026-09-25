@@ -87,7 +87,7 @@ export function isClearlyFree(metadata: CostMetadata): boolean {
     return false;
   }
   // Freemium is NOT auto-free unless the free tier is proven as exact "0".
-  // Narratives like "0 for … when …" are not proof (STRIX LLM may still bill).
+  // Narratives like "0 for … when …" are not proof (optional LLM scanners may still bill).
   if (metadata.pricingModel === "freemium") {
     return metadata.estimatedCost === "0";
   }

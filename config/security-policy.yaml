@@ -8,16 +8,11 @@ requiredScanners:
   - suspicious_files
   - dependency
 
-# STRIX is pluggable. If the binary is missing it must NOT be recorded as PASS.
-# Required only for HIGH/CRITICAL risk skills.
 optionalScanners:
   - license
-  - strix
   - skillspector
-
-strixRequiredForRisk:
-  - HIGH
-  - CRITICAL
+  - semgrep
+  - gitleaks
 
 failOnSeverity:
   - CRITICAL

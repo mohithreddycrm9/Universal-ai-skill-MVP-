@@ -56,4 +56,4 @@ Canonical form: UTF-8 JSON with recursively sorted object keys, no insignificant
 
 - **Final risk = max(heuristic, declared)**. Declared risk may **raise** only — never lower a HIGH/CRITICAL heuristic to LOW.
 - Malformed declared values are ignored.
-- Final HIGH/CRITICAL drives `strixRequiredForRisk` (STRIX becomes a required coverage scanner).
+- Final HIGH/CRITICAL affects risk reporting; required scanners are configured in `security-policy.yaml` only.

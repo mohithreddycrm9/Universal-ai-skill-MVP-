@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { inferRisk, maxRisk } from "../../src/skills/manifest.js";
-import { isStrixRequired, loadConfig } from "../../src/policy/load.js";
+import { loadConfig } from "../../src/policy/load.js";
 import { benignPackage } from "../helpers.js";
 import type { SkillPackage } from "../../src/types.js";
 
@@ -83,12 +83,11 @@ instructions: read only
     expect(inferRisk(pkg)).toBe("LOW");
   });
 
-  it("HIGH/CRITICAL final risk triggers STRIX requirement", () => {
-    const config = loadConfig("config");
-    expect(isStrixRequired("HIGH", config.security)).toBe(true);
-    expect(isStrixRequired("CRITICAL", config.security)).toBe(true);
-    expect(isStrixRequired("LOW", config.security)).toBe(false);
+  it("aggregates declared and inferred risk with maxRisk", () => {
     expect(maxRisk("HIGH", "LOW")).toBe("HIGH");
     expect(maxRisk("LOW", "CRITICAL")).toBe("CRITICAL");
+    const config = loadConfig("config");
+    expect(config.security.optionalScanners).toContain("skillspector");
+    expect(config.security.optionalScanners).not.toContain("strix");
   });
 });

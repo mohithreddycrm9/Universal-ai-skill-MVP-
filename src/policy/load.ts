@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
-import { RISK_LEVELS, type RiskLevel } from "../types.js";
+import { RISK_LEVELS } from "../types.js";
 import { canonicalize } from "../util/canonical.js";
 import { sha256 } from "../util/hash.js";
 import type { ScannerImplementationIdentity } from "../cache/scanner-identity.js";
@@ -24,8 +24,7 @@ const trustSchema = z.object({
 const securitySchema = z.object({
   revalidationHours: z.number().nonnegative().default(168),
   requiredScanners: z.array(z.string()).default(["secret", "prompt_injection", "suspicious_files", "dependency"]),
-  optionalScanners: z.array(z.string()).default(["license", "strix"]),
-  strixRequiredForRisk: z.array(z.enum(RISK_LEVELS)).default(["HIGH", "CRITICAL"]),
+  optionalScanners: z.array(z.string()).default(["license", "skillspector"]),
   failOnSeverity: z.array(z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"])).default(["CRITICAL", "HIGH"]),
   inconclusiveRequiredIsNotPass: z.boolean().default(true),
   denyApproveOnInconclusive: z.boolean().default(true),
@@ -174,7 +173,6 @@ export function securityConfigurationHash(
     canonicalize({
       requiredScanners: config.security.requiredScanners,
       optionalScanners: config.security.optionalScanners,
-      strixRequiredForRisk: config.security.strixRequiredForRisk,
       failOnSeverity: config.security.failOnSeverity,
       scannerEnabled: config.scanners.scanners,
       materialScannerImplementations,
@@ -182,6 +180,3 @@ export function securityConfigurationHash(
   );
 }
 
-export function isStrixRequired(risk: RiskLevel, policy: SecurityPolicy): boolean {
-  return policy.strixRequiredForRisk.includes(risk);
-}

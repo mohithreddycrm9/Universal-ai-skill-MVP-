@@ -8,16 +8,14 @@ A software-agnostic **MCP** that lets an agent discover, acquire, verify, cache,
 
 Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sandbox. No cloud account or paid API is required. Any potentially billable adapter needs **explicit human approval**. Paid scanners never run as a silent fallback.
 
-Trust is not authorization. `INCONCLUSIVE` is not `PASS`. Freemium adapters are not auto-free unless a free tier is proven (`estimatedCost` exactly `"0"`). API keys and env attestations cannot bypass `ALLOW_FREE_ONLY` for STRIX/Snyk/cloud/private. The MCP never claims a skill is universally “safe.”
+Trust is not authorization. `INCONCLUSIVE` is not `PASS`. Freemium adapters are not auto-free unless a free tier is proven (`estimatedCost` exactly `"0"`). API keys cannot bypass `ALLOW_FREE_ONLY` for SkillSpector LLM / Snyk / cloud / private APIs. The MCP never claims a skill is universally “safe.”
 
 ## Market-ready production
 
-Controlled production (trust allowlists, STRIX for HIGH/CRITICAL risk, SkillSpector, optional Postgres):
+Enterprise-friendly profile: static scanners only (built-ins + **SkillSpector** `--no-llm`, Semgrep, Gitleaks), trust allowlists, optional Postgres:
 
 - [docs/MARKET_READY.md](./docs/MARKET_READY.md)
 - `./scripts/use-market-ready-config.sh` then `./scripts/check-market-ready.sh`
-
-**STRIX:** yes for real-world **local OSS** use (`strix` + Docker + local/free LLM under `ALLOW_FREE_ONLY`). Not Strix Cloud. See [docs/STRIX.md](./docs/STRIX.md).
 
 ## Fast path
 
@@ -29,7 +27,7 @@ npm run validate          # typecheck + build + test (includes e2e)
 npx skill-mcp serve
 ```
 
-E2E lifecycle scenarios A–N (local fixtures): `npm run test:e2e` — see [docs/E2E.md](./docs/E2E.md). Docker/network optional; live GitHub/STRIX are NOT_EXECUTED unless you run them yourself.
+E2E lifecycle scenarios A–N (local fixtures): `npm run test:e2e` — see [docs/E2E.md](./docs/E2E.md). Docker/network optional; live GitHub fetches are NOT_EXECUTED unless you run them yourself.
 
 Optional HTTP:
 
@@ -55,7 +53,7 @@ npx skill-mcp reject <approvalId>
 | --- | --- | --- |
 | Docker or Podman | Isolated verification sandbox | `INCONCLUSIVE` |
 | `pg` + `DATABASE_URL` | PostgreSQL registry | SQLite stays default |
-| [STRIX](https://github.com/usestrix/strix), Semgrep, Gitleaks, Trivy, ClamAV, OSV-Scanner, Syft | Extra OSS scans (STRIX needs Docker + LLM; see `docs/STRIX.md`) | `ERROR` / `NOT_RUN` |
+| [SkillSpector](https://github.com/NVIDIA/SkillSpector), Semgrep, Gitleaks, Trivy, ClamAV, OSV-Scanner, Syft | Extra OSS scans (keep SkillSpector `useLlm: false` for org-friendly static-only) | `ERROR` / `NOT_RUN` |
 
 Local Docker is treated as free. Cloud/hosted sandboxes stay **off** and approval-gated.
 

@@ -6,7 +6,7 @@ Use this before calling a release “ready for a security review”. Passing the
 
 - [ ] No user-facing string says “safe”, “zero risk”, “no malware”, or equivalent.
 - [ ] `INCONCLUSIVE` / scanner `ERROR` cannot become `PASS`.
-- [ ] STRIX absence is recorded as not-run/error, never pass.
+- [ ] Optional OSS scanner absence is recorded as not-run/error, never pass (when that scanner is required).
 
 ## Gate and lifecycle
 
@@ -42,4 +42,4 @@ Use this before calling a release “ready for a security review”. Passing the
 - [ ] Prompt injection fixture quarantined
 - [ ] Secret fixture redacted
 - [ ] Postinstall fixture fails/quarantines
-- [ ] STRIX-missing does not pass that scanner
+- [ ] Missing optional scanners do not fake PASS

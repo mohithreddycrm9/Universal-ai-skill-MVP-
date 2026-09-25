@@ -25,8 +25,6 @@ describe("gateway pipeline", () => {
       scanners: Array<{ scannerId: string; status: string }>;
     };
     expect(security.claim).toBe("PASSED_CONFIGURED_CHECKS");
-    const strix = security.scanners.find((item) => item.scannerId === "strix");
-    expect(strix?.status).not.toBe("PASS");
   });
 
   it("hits the verification cache on a second acquire of the same fingerprint", async () => {
@@ -53,7 +51,7 @@ describe("gateway pipeline", () => {
     expect(["QUARANTINED", "REJECTED"]).toContain(leak.lifecycle);
   });
 
-  it("rejects install-hook skills (HIGH risk + STRIX missing stays INCONCLUSIVE/FAIL closed)", async () => {
+  it("rejects install-hook skills (HIGH risk stays quarantined/rejected)", async () => {
     const gw = testGateway([postinstallPackage()]);
     const result = (await gw.acquire({
       repositoryUrl: postinstallPackage().repositoryUrl,

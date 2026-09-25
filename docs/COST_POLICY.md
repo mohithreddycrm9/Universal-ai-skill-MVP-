@@ -39,7 +39,7 @@ Public GitHub REST for public repos is documented as **freemium with a $0 free t
 
 Local Docker/Podman is OSS compute on the operator’s machine, not a cloud bill. Cloud-hosted runners are out of scope for this adapter.
 
-There is **no** built-in paid LLM path. The optional STRIX OSS adapter may call an operator-configured LLM: under `ALLOW_FREE_ONLY` that LLM must be **proven local/free** before `strix --target` (see [STRIX.md](./STRIX.md)); external/unknown LLMs are blocked with `NOT_RUN` and no outbound request.
+There is **no** built-in paid LLM path. Optional SkillSpector `useLlm: true` is blocked under `ALLOW_FREE_ONLY` (`NOT_RUN`, no outbound request). Keep `useLlm: false` for enterprise-friendly static scans.
 
 ## Tools / CLI
 
@@ -50,9 +50,9 @@ There is **no** built-in paid LLM path. The optional STRIX OSS adapter may call 
 
 ## Freemium and bypass resistance
 
-- **Freemium is not auto-free.** `isClearlyFree` accepts freemium only when `freeTier` is true **and** `estimatedCost` is exactly `"0"` (proven free tier). Narratives like `"0 for … when …"` are **not** treated as free (this is why the static STRIX catalog row is not free — the runtime LLM gate decides).
+- **Freemium is not auto-free.** `isClearlyFree` accepts freemium only when `freeTier` is true **and** `estimatedCost` is exactly `"0"` (proven free tier). Narratives like `"0 for … when …"` are **not** treated as free (e.g. `skillspector_llm` stays approval-gated).
 - **API keys never imply free.** An `OPENAI_API_KEY` / `LLM_API_KEY` without a proven local model is classified external/chargeable.
-- **`ALLOW_FREE_ONLY` cannot be bypassed** by approval ids, env flags alone, or config attestation for STRIX/Snyk/cloud/private. Explicit `SKILL_MCP_STRIX_LLM_IS_FREE` only helps when the model/provider string is also proven local (e.g. ollama/lmstudio/localhost); it cannot rebrand OpenAI/Anthropic/mystery hosts as free.
+- **`ALLOW_FREE_ONLY` cannot be bypassed** by approval ids for Snyk/cloud/private/`skillspector_llm`.
 - **Human approval** under `ASK_BEFORE_ANY_PAID_OPERATION` requires the **CLI local-interactive** path (`method=local_interactive`). MCP `approver:"human"` never proves approval. Under `ALLOW_FREE_ONLY` / `DENY_ALL_PAID_SERVICES`, approval does not unlock paid paths.
 
 These controls reduce accidental spend. They are **not** a guarantee that every future adapter is free or that operators cannot misconfigure a local-looking endpoint that still bills.

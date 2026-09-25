@@ -21,7 +21,6 @@ import { PromptInjectionScanner } from "./scanners/prompt-injection.js";
 import { SuspiciousFilesScanner } from "./scanners/suspicious-files.js";
 import { DependencyScanner } from "./scanners/dependency.js";
 import { LicenseScanner } from "./scanners/license.js";
-import { StrixScanner } from "./scanners/strix.js";
 import { SkillspectorScanner } from "./scanners/skillspector.js";
 import { SnykScanner } from "./scanners/snyk.js";
 import { OssBinaryScanner } from "./scanners/oss-binary.js";
@@ -147,7 +146,6 @@ export class SkillTrustGateway {
       new SuspiciousFilesScanner(this.clock),
       new DependencyScanner(this.clock),
       new LicenseScanner(this.clock),
-      new StrixScanner(this.clock),
       new SkillspectorScanner(this.clock),
       new OssBinaryScanner("semgrep", "adapter-1.0.0", COST_CATALOG.semgrep, "semgrep", this.clock),
       new OssBinaryScanner("gitleaks", "adapter-1.0.0", COST_CATALOG.gitleaks, "gitleaks", this.clock),

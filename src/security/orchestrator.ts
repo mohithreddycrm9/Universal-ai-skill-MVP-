@@ -1,5 +1,4 @@
 import type { AppConfig } from "../policy/load.js";
-import { isStrixRequired } from "../policy/load.js";
 import type { SecurityScanner } from "../scanners/types.js";
 import type { Clock } from "../util/clock.js";
 import { iso } from "../util/clock.js";
@@ -80,19 +79,16 @@ export class SecurityOrchestrator {
  *
  * - Every executed scanner is recorded; FAIL or fail-severity findings always fail the gate.
  * - ERROR / TIMEOUT / INCONCLUSIVE count toward the aggregate only when that scanner
- *   is **required for this risk** (including STRIX when `strixRequiredForRisk` matches).
+ *   is **required for this risk** (listed in requiredScanners for that deployment).
  * - Optional scanners that errored but are not required may still run; their soft failures
- *   do not block LOW-risk skills (market-ready default: STRIX for HIGH/CRITICAL only).
- * - requiredScanners (+ strix when risk requires it): missing / NOT_RUN → INCONCLUSIVE.
+ *   do not block acquisition when other required scanners pass.
+ * - requiredScanners: missing / NOT_RUN → INCONCLUSIVE.
  * - optionalScanners absence is not a coverage gap.
  * - Commercial / $0-blocked scanners stay NOT_RUN (never PASS).
  * - Disabled scanners are omitted from runs and have no effect.
  */
-export function federate(runs: ScannerRun[], risk: RiskLevel, config: AppConfig): FederatedSecurityResult {
+export function federate(runs: ScannerRun[], _risk: RiskLevel, config: AppConfig): FederatedSecurityResult {
   const required = new Set(config.security.requiredScanners);
-  if (isStrixRequired(risk, config.security)) {
-    required.add("strix");
-  }
   // optionalScanners: may execute and contribute to the aggregate, but their
   // absence / NOT_RUN never creates a coverage gap (unlike requiredScanners).
   const optional = new Set(config.security.optionalScanners);

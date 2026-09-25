@@ -52,17 +52,8 @@ describe("scanner federation — every executed scanner contributes", () => {
   });
 
   it("non-required TIMEOUT on LOW risk → aggregate PASS", () => {
-    expect(federate([...requiredPass(config), run("strix", "TIMEOUT")], "LOW", config).status).toBe(
+    expect(federate([...requiredPass(config), run("semgrep", "TIMEOUT")], "LOW", config).status).toBe(
       "PASS",
-    );
-  });
-
-  it("STRIX required for HIGH risk: ERROR → INCONCLUSIVE", () => {
-    expect(
-      federate([...requiredPass(config), run("strix", "ERROR")], "HIGH", config).status,
-    ).toBe("INCONCLUSIVE");
-    expect(federate([...requiredPass(config), run("strix", "ERROR")], "HIGH", config).requiredMissing).toEqual(
-      [],
     );
   });
 
@@ -89,7 +80,7 @@ describe("scanner federation — every executed scanner contributes", () => {
   });
 
   it("deterministic strongest result: FAIL beats INCONCLUSIVE", () => {
-    const runs = [...requiredPass(config), run("license", "ERROR"), run("strix", "FAIL")];
+    const runs = [...requiredPass(config), run("license", "ERROR"), run("skillspector", "FAIL")];
     expect(federate(runs, "LOW", config).status).toBe("FAIL");
   });
 

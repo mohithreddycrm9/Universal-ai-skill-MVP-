@@ -16,7 +16,7 @@
 | Human operator | Trusted for capability approvals and policy edits. |
 | Skill publisher | Untrusted until configured evidence says otherwise. |
 | Skill content | Hostile until the gate completes. Includes README, comments, docs, issues, commit messages. |
-| Scanner / STRIX | Trusted for *its own findings*, not for a universal “safe” verdict. |
+| Scanners | Trusted for *their own findings*, not for a universal “safe” verdict. |
 | Worker / sandbox | Least privilege. Disposable. No host credentials. |
 
 ## Trust boundaries

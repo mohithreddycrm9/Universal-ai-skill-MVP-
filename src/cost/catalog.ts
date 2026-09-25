@@ -27,22 +27,6 @@ export const COST_CATALOG = {
   suspicious_files: localFree("Built-in suspicious-file scanner", "Pattern scan of quarantined files"),
   dependency: localFree("Built-in dependency/SBOM scanner", "Parse manifests and emit a compact SBOM summary"),
   license: localFree("Built-in license scanner", "Compare declared licenses to policy"),
-  // Software is OSS (https://github.com/usestrix/strix, Apache-2.0). Runtime uses an LLM
-  // provider you configure — that provider may charge. Adapter classifies STRIX_LLM before
-  // `strix --target` and blocks under ALLOW_FREE_ONLY unless the LLM is proven local/free.
-  // Strix Cloud / Enterprise are out of scope and never invoked by this adapter.
-  strix: {
-    provider: "usestrix/strix",
-    service: "Local STRIX OSS CLI (strix-agent)",
-    pricingModel: "freemium" as const,
-    freeTier: true,
-    // Static catalog row is NOT clearly free: freemium + LLM may bill.
-    // Runtime inspectStrixLlm + CostDetector gate before `strix --target`.
-    estimatedCost: "unknown",
-    requiresApproval: true,
-    purpose: "Optional local AI pentest scan of quarantined skill content via usestrix/strix",
-    freeAlternative: "Built-in scanners (secret, injection, dependency) + Semgrep/Gitleaks/Trivy",
-  },
   skillspector: localFree(
     "NVIDIA SkillSpector CLI (static)",
     "Skill-focused static scan via skillspector scan --no-llm (https://github.com/NVIDIA/SkillSpector)",

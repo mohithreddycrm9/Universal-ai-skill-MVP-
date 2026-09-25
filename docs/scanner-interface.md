@@ -36,7 +36,6 @@ Evidence is truncated. Secret values are redacted.
 | `prompt_injection` | Instruction-hijack / exfil / security-disable patterns. |
 | `suspicious_files` | Dangerous names, encoded payloads, destructive/reverse-shell *strings* (fixtures are non-destructive). |
 | `license` | License identification vs policy. |
-| `strix` | Invokes STRIX if a binary/API is configured. If unavailable: `ERROR`/`NOT_RUN`, **never** `PASS`. |
 
 ## Orchestration
 

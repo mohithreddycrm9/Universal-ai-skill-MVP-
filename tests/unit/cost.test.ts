@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CostDetector } from "../../src/cost/detector.js";
 import { COST_CATALOG } from "../../src/cost/catalog.js";
-import { costMetadataForStrixLlm, inspectStrixLlm } from "../../src/cost/strix-llm.js";
 import { isClearlyFree } from "../../src/cost/types.js";
 import type { CostMetadata, CostPolicy } from "../../src/cost/types.js";
 
@@ -67,30 +66,8 @@ describe("cost detector", () => {
   });
 });
 
-describe("STRIX LLM classification", () => {
-  it("classifies ollama/localhost/lmstudio as local_free", () => {
-    expect(inspectStrixLlm({ env: { STRIX_LLM: "ollama/llama3" }, config: {} }).class).toBe("local_free");
-    expect(inspectStrixLlm({ env: { LLM_MODEL: "http://127.0.0.1:1234/v1" }, config: {} }).class).toBe("local_free");
-    expect(inspectStrixLlm({ env: {}, config: { provider: "lmstudio", model: "qwen" } }).class).toBe("local_free");
-  });
-
-  it("classifies openai/anthropic/openrouter as external", () => {
-    expect(inspectStrixLlm({ env: { STRIX_LLM: "openai/gpt-4o" }, config: {} }).class).toBe("external");
-    expect(inspectStrixLlm({ env: { STRIX_LLM: "anthropic/claude-3" }, config: {} }).class).toBe("external");
-    expect(inspectStrixLlm({ env: { STRIX_LLM: "openrouter/meta" }, config: {} }).class).toBe("external");
-  });
-
-  it("treats API key without local proof as external", () => {
-    expect(inspectStrixLlm({ env: { OPENAI_API_KEY: "sk-x" }, config: {} }).class).toBe("external");
-  });
-
-  it("marks mystery models unknown", () => {
-    expect(inspectStrixLlm({ env: { STRIX_LLM: "acme-cloud/secret-model" }, config: {} }).class).toBe("unknown");
-  });
-
-  it("CostDetector denies external STRIX LLM under ALLOW_FREE_ONLY", () => {
-    const inspection = inspectStrixLlm({ env: { STRIX_LLM: "openai/gpt-4o" }, config: {} });
-    const meta = costMetadataForStrixLlm(inspection);
+describe("SkillSpector LLM catalog", () => {
+  it("denies skillspector_llm under ALLOW_FREE_ONLY", () => {
     const detector = new CostDetector({
       policy: "ALLOW_FREE_ONLY",
       currency: "USD",
@@ -99,20 +76,6 @@ describe("STRIX LLM classification", () => {
       neverAutoPaidFallback: true,
       unknownCostRequiresApproval: true,
     });
-    expect(detector.evaluate("scan_skill:strix_llm", meta).proceed).toBe(false);
-  });
-
-  it("CostDetector allows local STRIX LLM under ALLOW_FREE_ONLY", () => {
-    const inspection = inspectStrixLlm({ env: { STRIX_LLM: "ollama/llama3" }, config: {} });
-    const meta = costMetadataForStrixLlm(inspection);
-    const detector = new CostDetector({
-      policy: "ALLOW_FREE_ONLY",
-      currency: "USD",
-      allowUpToAmount: 0,
-      preferFreeAlternatives: true,
-      neverAutoPaidFallback: true,
-      unknownCostRequiresApproval: true,
-    });
-    expect(detector.evaluate("scan_skill:strix_llm", meta).kind).toBe("FREE");
+    expect(detector.evaluate("scan_skill:skillspector_llm", COST_CATALOG.skillspector_llm).proceed).toBe(false);
   });
 });

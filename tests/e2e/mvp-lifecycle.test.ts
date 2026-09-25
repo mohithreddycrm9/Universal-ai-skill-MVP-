@@ -1,6 +1,6 @@
 /**
  * E2E validation gate — scenarios A–N via real gateway / MCP classes + local fixtures.
- * Live GitHub / STRIX / Docker: NOT_EXECUTED or INCONCLUSIVE when unavailable (never claimed PASS).
+ * Live GitHub / Docker: NOT_EXECUTED or INCONCLUSIVE when unavailable (never claimed PASS).
  */
 import { describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -82,8 +82,6 @@ describe("E2E MVP lifecycle A–N", () => {
       scanners: Array<{ scannerId: string; status: string }>;
     };
     expect(security.claim).toBe("PASSED_CONFIGURED_CHECKS");
-    const strix = security.scanners.find((s) => s.scannerId === "strix");
-    expect(strix?.status).not.toBe("PASS");
   });
 
   it("B — malicious/untrusted → not approved, no trusted content", async () => {
@@ -150,7 +148,7 @@ describe("E2E MVP lifecycle A–N", () => {
     expect(result.lifecycle).not.toBe("AVAILABLE");
     const skill = gw.registry.requireSkill(result.skillId);
     expect(skill.risk).toBe("HIGH");
-    // STRIX required for HIGH; commercial/unavailable → not PASS aggregate
+    // HIGH-risk install hooks fail built-in / policy checks — not AVAILABLE
     expect(["QUARANTINED", "REJECTED"]).toContain(result.lifecycle);
   });
 
@@ -580,16 +578,10 @@ CHANGED_BODY_E2E
 });
 
 describe("E2E live integrations status (documented)", () => {
-  it("records NOT_EXECUTED for live GitHub and STRIX in this environment", () => {
+  it("records NOT_EXECUTED for live GitHub in this environment", () => {
     const githubToken = process.env.GITHUB_TOKEN;
-    const strixBin = spawnSync("strix", ["--version"], { encoding: "utf8", timeout: 3000 });
-    const strixPresent = strixBin.status === 0;
-    // These are environment reports — not failures
     expect(githubToken ? "TOKEN_PRESENT_BUT_LIVE_FETCH_NOT_EXECUTED" : "NOT_EXECUTED").toMatch(
       /NOT_EXECUTED|TOKEN_PRESENT/,
-    );
-    expect(strixPresent ? "STRIX_PRESENT_BUT_LIVE_SCAN_NOT_EXECUTED" : "NOT_EXECUTED").toMatch(
-      /NOT_EXECUTED|STRIX_PRESENT/,
     );
     expect(dockerAvailable() ? "DOCKER_AVAILABLE" : "DOCKER_UNAVAILABLE_INCONCLUSIVE").toBeTruthy();
   });

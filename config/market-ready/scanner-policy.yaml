@@ -24,10 +24,6 @@ scanners:
     binary: skillspector
     useLlm: false
     failOpen: false
-  strix:
-    enabled: true
-    binary: strix
-    failOpen: false
   semgrep:
     enabled: true
     binary: semgrep

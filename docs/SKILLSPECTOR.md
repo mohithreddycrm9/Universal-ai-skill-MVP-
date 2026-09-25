@@ -16,7 +16,7 @@ Ensure `skillspector` is on `PATH` (e.g. `~/.local/bin`).
 `config/scanner-policy.yaml`:
 
 - `useLlm: false` (default) — runs `skillspector scan <quarantine> --no-llm --format json` ($0).
-- `useLlm: true` — semantic analyzers; gated like STRIX under `ALLOW_FREE_ONLY` (`scan_skill:skillspector_llm`).
+- `useLlm: true` — semantic analyzers (off by default); gated under `ALLOW_FREE_ONLY` (`scan_skill:skillspector_llm`). Not recommended for strict enterprise deployments.
 
 `config/security-policy.yaml` lists `skillspector` under `optionalScanners` (missing binary → `ERROR`, not a coverage gap for required scanners).
 

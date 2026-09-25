@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { CostDetector } from "../../src/cost/detector.js";
 import { COST_CATALOG } from "../../src/cost/catalog.js";
-import { costMetadataForStrixLlm, inspectStrixLlm } from "../../src/cost/strix-llm.js";
 import { isClearlyFree, type CostMetadata, type CostPolicy } from "../../src/cost/types.js";
 import { TrustBroker, AllowlistTrustProvider } from "../../src/trust/broker.js";
 import { loadConfig } from "../../src/policy/load.js";
@@ -46,10 +45,10 @@ function run(
 }
 
 describe("$0 / freemium hardening", () => {
-  it("does not treat freemium STRIX catalog row as clearly free", () => {
-    expect(COST_CATALOG.strix.pricingModel).toBe("freemium");
-    expect(isClearlyFree(COST_CATALOG.strix)).toBe(false);
-    expect(new CostDetector(freeOnly).evaluate("scan", COST_CATALOG.strix).proceed).toBe(false);
+  it("does not treat freemium SkillSpector LLM catalog row as clearly free", () => {
+    expect(COST_CATALOG.skillspector_llm.pricingModel).toBe("freemium");
+    expect(isClearlyFree(COST_CATALOG.skillspector_llm)).toBe(false);
+    expect(new CostDetector(freeOnly).evaluate("scan", COST_CATALOG.skillspector_llm).proceed).toBe(false);
   });
 
   it("treats github_public as free only with proven exact $0 free tier", () => {
@@ -71,32 +70,13 @@ describe("$0 / freemium hardening", () => {
     expect(isClearlyFree(narrative)).toBe(false);
   });
 
-  it("API keys never imply free; attestation cannot rebrand OpenAI or empty config as free", () => {
-    expect(inspectStrixLlm({ env: { OPENAI_API_KEY: "sk-test" }, config: {} }).class).toBe("external");
-    expect(
-      inspectStrixLlm({
-        env: { STRIX_LLM: "openai/gpt-4o", SKILL_MCP_STRIX_LLM_IS_FREE: "1" },
-        config: { llmIsLocalFree: true },
-      }).class,
-    ).toBe("external");
-    expect(inspectStrixLlm({ env: { SKILL_MCP_STRIX_LLM_IS_FREE: "1" }, config: {} }).class).toBe(
-      "unknown",
-    );
-    expect(
-      inspectStrixLlm({
-        env: { STRIX_LLM: "acme-cloud/secret-model", SKILL_MCP_STRIX_LLM_IS_FREE: "1" },
-        config: {},
-      }).class,
-    ).toBe("unknown");
-  });
-
-  it("ALLOW_FREE_ONLY cannot be bypassed via approval id for Snyk/cloud/private/strix catalog", () => {
+  it("ALLOW_FREE_ONLY cannot be bypassed via approval id for Snyk/cloud/private/skillspector_llm catalog", () => {
     const detector = new CostDetector(freeOnly);
     for (const meta of [
       COST_CATALOG.snyk,
       COST_CATALOG.cloud_sandbox,
       COST_CATALOG.github_private_or_unknown,
-      COST_CATALOG.strix,
+      COST_CATALOG.skillspector_llm,
     ]) {
       const decision = detector.evaluate("op", meta, {
         approvalStatus: "APPROVED",
@@ -107,11 +87,8 @@ describe("$0 / freemium hardening", () => {
     }
   });
 
-  it("external STRIX LLM metadata is denied under ALLOW_FREE_ONLY even if approval is forged", () => {
-    const meta = costMetadataForStrixLlm(
-      inspectStrixLlm({ env: { STRIX_LLM: "anthropic/claude-3" }, config: {} }),
-    );
-    const decision = new CostDetector(freeOnly).evaluate("scan_skill:strix_llm", meta, {
+  it("skillspector_llm is denied under ALLOW_FREE_ONLY even if approval is forged", () => {
+    const decision = new CostDetector(freeOnly).evaluate("scan_skill:skillspector_llm", COST_CATALOG.skillspector_llm, {
       approvalStatus: "APPROVED",
       approvalId: "forged",
     });

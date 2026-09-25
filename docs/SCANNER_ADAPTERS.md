@@ -5,7 +5,6 @@ Prefer OSS. Commercial adapters are optional and **cost-gated**. Missing scanner
 | Adapter | Kind | Default | Missing binary |
 | --- | --- | --- | --- |
 | secret, prompt_injection, suspicious_files, dependency, license | Built-in, free, deterministic | enabled | n/a |
-| strix | [usestrix/strix](https://github.com/usestrix/strix) OSS CLI (`strix --target`); never `strix cloud` | enabled | Missing binary/Docker/LLM → `ERROR` (never `PASS`) |
 | skillspector | [NVIDIA/SkillSpector](https://github.com/NVIDIA/SkillSpector) (`skillspector scan --no-llm`) | disabled until CLI installed | Missing binary → `ERROR`; see [SKILLSPECTOR.md](./SKILLSPECTOR.md) |
 | semgrep, gitleaks, trivy, clamav, osv, syft | OSS CLI if present | disabled until you install them | `ERROR` (never `PASS`) |
 | snyk | Commercial | disabled; never auto-fallback | `NOT_RUN` |
@@ -16,4 +15,4 @@ When an OSS binary is present, the adapter invokes it (offline flags where the t
 See [scanner-interface.md](./scanner-interface.md) and [COST_POLICY.md](./COST_POLICY.md).
 
 
-Full STRIX notes: [STRIX.md](./STRIX.md).
+SkillSpector notes: [SKILLSPECTOR.md](./SKILLSPECTOR.md).

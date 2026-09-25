@@ -24,7 +24,7 @@ npm run validate:docker   # same as validate; scenario L asserts INCONCLUSIVE wi
 | A | Legitimate skill full flow | `tests/e2e/mvp-lifecycle.test.ts` + LocalSource | PASS |
 | B | Malicious/untrusted → not approved | injection + secret fixtures | PASS |
 | C | Prompt-injection metadata → L0 UNTRUSTED | discovery L0 only | PASS |
-| D | Risk escalation LOW declare + HIGH heuristic | risk fixture + STRIX-required HIGH | PASS |
+| D | Risk escalation LOW declare + HIGH heuristic | risk fixture | PASS / gated |
 | E | Optional scanner FAIL ≠ aggregate PASS | license FAIL (optional) + federation glue | PASS |
 | F | TOCTOU pin A vs tip B | MovingTipSource | PASS |
 | G | Cache hit | second acquire | PASS |
@@ -41,7 +41,6 @@ npm run validate:docker   # same as validate; scenario L asserts INCONCLUSIVE wi
 | Integration | Status in default CI/local validate |
 | --- | --- |
 | Live GitHub fetch | **NOT_EXECUTED** (no network; LocalSource fixtures) |
-| STRIX live scan | **NOT_EXECUTED** (binary/LLM optional; commercial path stays NOT_RUN under ALLOW_FREE_ONLY) |
 | Docker/Podman sandbox | **INCONCLUSIVE** when unavailable (never recorded as PASS) |
 | Paid scanners (Snyk, etc.) | **NOT_EXECUTED** / blocked by cost policy |
 

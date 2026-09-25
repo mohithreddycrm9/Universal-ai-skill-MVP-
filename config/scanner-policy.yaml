@@ -27,17 +27,6 @@ scanners:
     failOpen: false
     # timeoutMs: 180000
     # baselinePath: .skillspector-baseline.yaml
-  strix:
-    # Official OSS: https://github.com/usestrix/strix (Apache-2.0, PyPI strix-agent)
-    # Invokes: strix --target <quarantinePath>  — never `strix cloud`
-    # Needs: Docker + STRIX_LLM / LLM_API_KEY (use free/local LLM for $0)
-    enabled: true
-    binary: strix
-    # If binary/API is absent, status is ERROR/NOT_RUN — never PASS.
-    failOpen: false
-    # Optional override, e.g. ["--target", "/path"] — must not start with "cloud"
-    # args: []
-    # timeoutMs: 120000
   semgrep:
     enabled: false
     binary: semgrep

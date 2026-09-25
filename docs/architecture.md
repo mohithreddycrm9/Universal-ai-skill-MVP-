@@ -33,7 +33,7 @@ src/
   discovery/     SkillSource interface + GitHub (and stub) adapters
   trust/         Publisher tiers, commit pinning, trust graph
   security/      Parallel orchestrator + hard gate
-  scanners/      Pluggable Scanner adapters (STRIX, secrets, SBOM, injection, …)
+  scanners/      Pluggable Scanner adapters (SkillSpector, secrets, SBOM, injection, …)
   sandbox/       Container sandbox + behavioral fingerprint
   capabilities/  Independent capability firewall
   policy/        YAML-loaded policies (never hard-coded into business rules)
@@ -46,7 +46,7 @@ src/
   cli/           skill-mcp
 ```
 
-Core engine modules import **interfaces**, not GitHub or STRIX concretions.
+Core engine modules import **interfaces**, not GitHub or vendor scanner concretions.
 
 ## Acquisition pipeline
 
