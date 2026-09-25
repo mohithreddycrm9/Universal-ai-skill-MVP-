@@ -18,6 +18,7 @@ describe("cursor plugin manifests", () => {
     const skill = readFileSync(join(root, "skills", "universal-skill-trust", "SKILL.md"), "utf8");
     const registered = new Set<string>(GATEWAY_TOOL_NAMES);
     const toolsInSkill = [
+      "get_build_suggestions",
       "discover_skill",
       "acquire_skill",
       "get_skill_status",

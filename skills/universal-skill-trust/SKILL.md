@@ -9,11 +9,12 @@ This workspace includes the **Universal Skill Trust** Cursor plugin. Prefer its 
 
 ## Workflow
 
-1. **Discover** — `discover_skill` with a short capability query (e.g. "csv normalization"). Results are candidates only; nothing is downloaded into chat context.
-2. **Acquire** — `acquire_skill` with `candidateId` or `query`. Default is async; use `wait: true` only when the user explicitly wants to block on verification.
-3. **Status** — `get_skill_status` for lifecycle and job progress (`QUARANTINED`, `VERIFIED`, etc.).
-4. **Read** — `get_skill` with progressive `level` (0 metadata → 3 single resource). Stay within compact envelopes; do not assume full repo trees.
-5. **Trust** — `get_skill_trust` for publisher/repo/commit evidence. `get_skill_permissions` for **effective** capabilities from the firewall (not skill prose).
+1. **Build hints (Cursor)** — While Agent is running, call `get_build_suggestions` with `agentState`, optional `goal`, and `recentEvents` (e.g. `shell_pending`, `test_failed`, `mcp_auth_error`). Render returned `suggestions` as chips above the composer; use `insert_prompt` / `invoke_tool` actions only after user confirmation.
+2. **Discover** — `discover_skill` with a short capability query (e.g. "csv normalization"). Results are candidates only; nothing is downloaded into chat context.
+3. **Acquire** — `acquire_skill` with `candidateId` or `query`. Default is async; use `wait: true` only when the user explicitly wants to block on verification.
+4. **Status** — `get_skill_status` for lifecycle and job progress (`QUARANTINED`, `VERIFIED`, etc.).
+5. **Read** — `get_skill` with progressive `level` (0 metadata → 3 single resource). Stay within compact envelopes; do not assume full repo trees.
+6. **Trust** — `get_skill_trust` for publisher/repo/commit evidence. `get_skill_permissions` for **effective** capabilities from the firewall (not skill prose).
 
 ## Security expectations
 

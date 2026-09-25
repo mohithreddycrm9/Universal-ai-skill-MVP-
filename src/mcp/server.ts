@@ -270,6 +270,32 @@ export function createMcpServer(gateway: SkillTrustGateway): McpServer {
       ),
   );
 
+  const agentEventHintSchema = z.object({
+    kind: z.string().min(1).max(80),
+    summary: z.string().max(500).optional(),
+    files: z.array(z.string().max(260)).max(20).optional(),
+    serverName: z.string().max(120).optional(),
+  });
+
+  server.registerTool(
+    "get_build_suggestions",
+    {
+      title: "Build suggestions",
+      description:
+        "Proactive chips for Cursor Agent UI while a run is active: ranked prompts and safe tool actions from heuristics plus local skill/approval context. Does not auto-steer the agent.",
+      inputSchema: z.object({
+        agentState: z.enum(["running", "waiting_for_user", "idle", "failed"]).optional(),
+        goal: z.string().max(500).optional(),
+        recentEvents: z.array(agentEventHintSchema).max(24).optional(),
+        filesChangedCount: z.number().int().min(0).max(10_000).optional(),
+        lastCommandExitCode: z.number().int().optional(),
+        limit: z.number().int().min(1).max(12).optional(),
+        includeSkillHints: z.boolean().optional(),
+      }),
+    },
+    async (args) => wrap((requestId) => gateway.getBuildSuggestions({ ...args, requestId })),
+  );
+
   return server;
 }
 
@@ -294,4 +320,5 @@ export const GATEWAY_TOOL_NAMES = [
   "list_pending_cost_approvals",
   "approve_paid_operation",
   "reject_paid_operation",
+  "get_build_suggestions",
 ] as const;

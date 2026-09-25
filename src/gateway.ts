@@ -74,6 +74,12 @@ import {
   type TrustedApprovalDecision,
 } from "./approvals/types.js";
 import { isHighRiskCapability } from "./capabilities/firewall.js";
+import {
+  computeBuildSuggestions,
+  mergeGatewayEnrichment,
+  type AgentEventHint,
+  type AgentRunState,
+} from "./agent/build-suggestions.js";
 
 export interface GatewayOptions {
   config?: AppConfig;
@@ -424,6 +430,81 @@ export class SkillTrustGateway {
   searchSkills(input: { query: string; limit?: number }): unknown {
     return {
       items: this.registry.searchSkills(input.query, Math.min(input.limit ?? 20, 50)).map((skill) => this.cardMeta(skill)),
+    };
+  }
+
+  async getBuildSuggestions(input: {
+    requestId: string;
+    agentState?: AgentRunState;
+    goal?: string;
+    recentEvents?: AgentEventHint[];
+    filesChangedCount?: number;
+    lastCommandExitCode?: number;
+    limit?: number;
+    includeSkillHints?: boolean;
+  }): Promise<unknown> {
+    const base = computeBuildSuggestions({
+      agentState: input.agentState,
+      goal: input.goal,
+      recentEvents: input.recentEvents,
+      filesChangedCount: input.filesChangedCount,
+      lastCommandExitCode: input.lastCommandExitCode,
+      limit: input.limit,
+    });
+
+    const pending = this.listPendingCostApprovals() as { items: unknown[]; capabilityItems: unknown[] };
+    const enrichment = {
+      pendingCostApprovalCount: pending.items.length,
+      pendingCapabilityApprovalCount: pending.capabilityItems.length,
+      localSkillHints: [] as Array<{
+        skillId?: string;
+        name: string;
+        label: string;
+        prompt: string;
+      }>,
+      discoveryHints: [] as Array<{ name: string; label: string; prompt: string }>,
+    };
+
+    if (input.includeSkillHints !== false && input.goal?.trim()) {
+      const query = input.goal.trim().slice(0, 200);
+      const local = this.registry
+        .searchSkills(query, 2)
+        .filter((skill) => normalizeLifecycle(skill.lifecycle) === "AVAILABLE");
+      for (const skill of local) {
+        enrichment.localSkillHints.push({
+          skillId: skill.id,
+          name: skill.name,
+          label: `Load verified skill: ${skill.name}`,
+          prompt: `Use get_skill for ${skill.id} at level 1 and follow its instructions.`,
+        });
+      }
+      if (enrichment.localSkillHints.length === 0) {
+        const discovered = (await this.discover({ query, limit: 2, requestId: input.requestId })) as {
+          candidates?: Array<{ name?: string }>;
+        };
+        for (const candidate of discovered.candidates ?? []) {
+          const name = candidate.name ?? "skill";
+          enrichment.discoveryHints.push({
+            name,
+            label: `Acquire skill: ${name}`,
+            prompt: `Queue acquire_skill for "${name}" (wait:false) and poll get_skill_status.`,
+          });
+        }
+      }
+    }
+
+    const merged = mergeGatewayEnrichment(base, enrichment, input.limit ?? 5);
+    this.audit.record({
+      requestId: input.requestId,
+      actor: "agent",
+      action: "get_build_suggestions",
+      detail: { count: merged.suggestions.length, agentState: merged.agentState },
+    });
+    return {
+      securityNotice: SECURITY_NOTICE,
+      ...merged,
+      uiHint:
+        "Render as dismissible chips above the Agent composer. insert_prompt pre-fills text; invoke_tool uses toolName/toolArgs. Do not auto-send without user confirmation.",
     };
   }
 
