@@ -135,14 +135,18 @@ class BuildSuggestionEngine {
                 priority = 58,
             )
         }
-        if ("calc" in input.enabledPluginIds) {
-            add(
-                label = "Quick math",
-                prompt = "I might use /calc for arithmetic—help me set up the expression for a problem I describe.",
-                because = "plugin_calc",
-                priority = 40,
-            )
-        }
+        add(
+            label = "Quick math",
+            prompt = "Use /calc for arithmetic, or ask me to solve a word problem step by step.",
+            because = "builtin_calc",
+            priority = 40,
+        )
+        add(
+            label = "Date & time",
+            prompt = "What is today's date and time in my timezone? (You can also use /time in chat.)",
+            because = "builtin_time",
+            priority = 39,
+        )
         if ("fetch" in input.enabledPluginIds) {
             add(
                 label = "Research a link",

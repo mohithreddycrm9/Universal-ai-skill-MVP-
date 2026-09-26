@@ -33,7 +33,7 @@ fun WelcomeSheet(
             Text(
                 "• Connect any model — OpenAI-compatible, Anthropic, Google AI, Hugging Face, or Ollama\n" +
                     "• Track spend in Usage and set limits in Settings\n" +
-                    "• Extensions: skill packs and plugins like /calc and /time\n" +
+                    "• Built-in /calc, /time, and /units in chat; optional skill packs in Extensions\n" +
                     "• Tap Popular workflows on Chat home for one-tap starters",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

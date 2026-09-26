@@ -29,14 +29,15 @@ Open in Android Studio and run on API 26+.
 | **Chat** | Aurora UI, Fast/Balanced/Deep presets, prompt library, share-to-compose, streaming, drawer (search, pin, rename) |
 | **Models** | Per-provider **Connect** flow: API key, **Google**, **email/password**, or **mobile** (browser sign-in) + paste key; Hugging Face Hub search; Ollama URL |
 | **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
-| **Extensions** | Built-in skill packs, remote catalog, **plugins** (`/calc`, `/time`, …) |
+| **Extensions** | Built-in skill packs, remote catalog; **built-in tools** `/calc`, `/time`, `/units` (always on) |
 | **Settings** | Spend limits (daily/weekly USD), theme, voice, system prompt, sync & backup |
 
 ### Extensions (skills & plugins)
 
 - **Built-in skill packs** — study coach, email, travel, code review, etc. (offline install)
 - **Remote catalog** — install instruction packs from public repositories
-- **Plugins** — enable in Extensions, then use in chat: `/calc`, `/time`, `/units`, `/uuid`, `/words`, `/fetch` (HTTPS only)
+- **Built-in tools** — always in chat: `/calc`, `/time`, `/units`, `/uuid`, `/words` (device time auto-injected when you ask about dates)
+- **Optional** — enable `/fetch` in Extensions for HTTPS page text (HTTPS only)
 
 ### Connecting an LLM
 

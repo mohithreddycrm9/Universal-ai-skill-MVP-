@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.extensions
 
+import com.skillmcp.mentor.plugins.BuiltinToolHints
 import com.skillmcp.mentor.plugins.PluginRunner
 
 class ExtensionOrchestrator(
@@ -12,6 +13,8 @@ class ExtensionOrchestrator(
     ): String {
         val parts = mutableListOf<String>()
         if (skillContext.isNotBlank()) parts += skillContext
+        val hintContext = BuiltinToolHints.extraContextForMessage(userMessage, pluginRunner)
+        if (hintContext.isNotBlank()) parts += hintContext
         val pluginOutput = pluginRunner.runCommands(userMessage, enabledPluginIds)
         if (pluginOutput.isNotBlank()) parts += pluginOutput
         val pluginHelp = pluginRunner.helpText(enabledPluginIds)

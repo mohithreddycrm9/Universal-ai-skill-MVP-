@@ -632,6 +632,7 @@ class MentorViewModel(
     }
 
     fun setPluginEnabled(pluginId: String, enabled: Boolean) {
+        if (BuiltinPlugins.isAlwaysEnabled(pluginId)) return
         viewModelScope.launch {
             prefs.update { p ->
                 val next =

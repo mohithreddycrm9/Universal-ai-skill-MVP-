@@ -24,29 +24,46 @@ class PluginRunner(
         val argLine = trimmed.removePrefix(parts[0]).trim()
 
         return when (command) {
-            "/calc" -> if ("calc" in enabledPluginIds) section("Calculator", safeCalc(argLine)) else ""
-            "/time" -> if ("time" in enabledPluginIds) section("Time", formatTime(argLine)) else ""
-            "/units" -> if ("units" in enabledPluginIds) section("Units", convertUnits(argLine)) else ""
-            "/fetch" -> if ("fetch" in enabledPluginIds) section("Fetched page", fetchUrl(argLine)) else ""
-            "/uuid" -> if ("uuid" in enabledPluginIds) section("UUID", UUID.randomUUID().toString()) else ""
-            "/words" -> if ("wordcount" in enabledPluginIds) section("Word count", countWords(argLine)) else ""
+            "/calc" -> if (isEnabled("calc", enabledPluginIds)) section("Calculator", safeCalc(argLine)) else ""
+            "/time" -> if (isEnabled("time", enabledPluginIds)) section("Time", formatTime(argLine)) else ""
+            "/units" -> if (isEnabled("units", enabledPluginIds)) section("Units", convertUnits(argLine)) else ""
+            "/fetch" -> if (isEnabled("fetch", enabledPluginIds)) section("Fetched page", fetchUrl(argLine)) else ""
+            "/uuid" -> if (isEnabled("uuid", enabledPluginIds)) section("UUID", UUID.randomUUID().toString()) else ""
+            "/words" -> if (isEnabled("wordcount", enabledPluginIds)) section("Word count", countWords(argLine)) else ""
             else -> ""
         }
     }
 
+    fun isEnabled(pluginId: String, enabledPluginIds: Set<String>): Boolean =
+        BuiltinPlugins.isAlwaysEnabled(pluginId) || pluginId in enabledPluginIds
+
+    fun runBuiltInCalc(expression: String): String =
+        safeCalc(expression).takeUnless { it.startsWith("Usage:") || it.startsWith("Only numbers") } ?: ""
+
     fun helpText(enabledPluginIds: Set<String>): String {
-        val lines =
-            BuiltinPlugins.all
-                .filter { it.id in enabledPluginIds }
+        val builtInLines =
+            BuiltinPlugins.builtIn.flatMap { plugin ->
+                listOf("- **${plugin.title}**: ${plugin.description}") +
+                    plugin.commands.take(2).map { cmd -> "  - `$cmd`" }
+            }
+        val optionalLines =
+            BuiltinPlugins.optional
+                .filter { isEnabled(it.id, enabledPluginIds) }
                 .flatMap { plugin ->
                     listOf("- **${plugin.title}**: ${plugin.description}") +
                         plugin.commands.map { cmd -> "  - `$cmd`" }
                 }
-        if (lines.isEmpty()) return ""
-        return "## On-device plugins\n" + lines.joinToString("\n")
+        val sections = mutableListOf<String>()
+        if (builtInLines.isNotEmpty()) {
+            sections += "## Built-in tools (always on)\n" + builtInLines.joinToString("\n")
+        }
+        if (optionalLines.isNotEmpty()) {
+            sections += "## Optional extensions\n" + optionalLines.joinToString("\n")
+        }
+        return sections.joinToString("\n\n")
     }
 
-    private fun section(title: String, body: String): String = "## Plugin: $title\n$body"
+    private fun section(title: String, body: String): String = "## Tool: $title\n$body"
 
     private fun safeCalc(expression: String): String {
         if (expression.isBlank()) return "Usage: /calc 2 + 2"

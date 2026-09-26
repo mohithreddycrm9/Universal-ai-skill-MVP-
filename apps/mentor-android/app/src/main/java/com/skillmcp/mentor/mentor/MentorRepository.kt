@@ -57,14 +57,6 @@ class MentorRepository(
         llmProfileRepository.ensureDefaults()
         ensureDefaultProject()
         seedDefaultPrompts()
-        seedDefaultPluginsIfEmpty()
-    }
-
-    private suspend fun seedDefaultPluginsIfEmpty() {
-        if (userPreferences.current().enabledPluginIds.isNotEmpty()) return
-        userPreferences.update {
-            it.copy(enabledPluginIds = setOf("calc", "time", "uuid", "wordcount"))
-        }
     }
 
     private suspend fun seedDefaultPrompts() {

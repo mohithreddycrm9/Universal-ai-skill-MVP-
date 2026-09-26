@@ -33,6 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.skillmcp.mentor.plugins.BuiltinPlugins
+import com.skillmcp.mentor.plugins.PluginKind
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.GlassCard
@@ -54,7 +56,7 @@ fun SkillsScreen(vm: MentorViewModel) {
             item {
                 ScreenHeader(
                     title = "Extensions",
-                    subtitle = "Skill packs and on-device plugins to extend your assistant.",
+                    subtitle = "Instruction skill packs plus optional network tools. Calculator and date/time are built into chat.",
                 )
             }
             item {
@@ -81,14 +83,35 @@ fun SkillsScreen(vm: MentorViewModel) {
             }
 
             item {
-                Text("On-device plugins", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Built-in tools", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Enable plugins, then use slash commands in chat (e.g. /calc, /time).",
+                    "Always available in chat — no install or toggle.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            items(state.builtinPlugins, key = { it.id }) { plugin ->
+            item {
+                GlassCard {
+                    BuiltinPlugins.builtIn.forEach { tool ->
+                        Text(tool.title, fontWeight = FontWeight.Medium)
+                        Text(
+                            tool.commands.joinToString(" · "),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                    }
+                }
+            }
+            item {
+                Text("Optional extensions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Enable when you need them (network access).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            items(state.builtinPlugins.filter { it.kind == PluginKind.OPTIONAL }, key = { it.id }) { plugin ->
                 val enabled = plugin.id in state.prefs.enabledPluginIds
                 GlassCard {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -98,7 +121,7 @@ fun SkillsScreen(vm: MentorViewModel) {
                             Text(
                                 plugin.commands.joinToString(" · "),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 4.dp),
                             )
                         }
