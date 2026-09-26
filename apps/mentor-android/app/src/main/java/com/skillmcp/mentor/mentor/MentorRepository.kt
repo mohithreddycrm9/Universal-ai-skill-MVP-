@@ -56,7 +56,7 @@ class MentorRepository(
     suspend fun bootstrap() {
         llmProfileRepository.ensureDefaults()
         ensureDefaultProject()
-        seedDefaultPromptsIfEmpty()
+        seedDefaultPrompts()
         seedDefaultPluginsIfEmpty()
     }
 
@@ -67,9 +67,9 @@ class MentorRepository(
         }
     }
 
-    private suspend fun seedDefaultPromptsIfEmpty() {
+    private suspend fun seedDefaultPrompts() {
         val existing = dao.observeSavedPrompts().first()
-        if (existing.isNotEmpty()) return
+        val knownTitles = existing.map { it.title }.toSet()
         val defaults =
             listOf(
                 "Explain this like I'm new to the topic, with a simple example." to "Explain simply",
@@ -80,8 +80,15 @@ class MentorRepository(
                 "Turn my rough notes into a clear outline with headings." to "Outline notes",
                 "Suggest 5 interview questions for a role I describe." to "Interview prep",
                 "Give me a gentle habit I can start today and track for 7 days." to "Small habit",
+                "Help me plan my week with priorities, time blocks, and one stretch goal." to "Plan my week",
+                "Brainstorm 10 creative ideas for a goal I describe." to "Brainstorm",
+                "Compare pros and cons of two options I give you." to "Compare options",
+                "Summarize the key points from our conversation in 5 bullets." to "Summarize chat",
+                "Draft a professional email. Ask me for recipient, tone, and key points." to "Draft email",
+                "Build a 7-day study plan for a subject I name." to "Study plan",
             )
         defaults.forEach { (body, title) ->
+            if (title in knownTitles) return@forEach
             dao.upsertSavedPrompt(
                 SavedPromptEntity(UUID.randomUUID().toString(), title, body, System.currentTimeMillis()),
             )

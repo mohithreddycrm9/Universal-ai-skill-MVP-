@@ -37,7 +37,10 @@ import com.skillmcp.mentor.llm.LlmProviderKind
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.GlassCard
+import com.skillmcp.mentor.mentor.ScreenSuggestions
+import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.ScreenHeader
+import com.skillmcp.mentor.ui.components.TabSuggestions
 import kotlinx.coroutines.delay
 
 @Composable
@@ -67,6 +70,13 @@ fun ModelsScreen(vm: MentorViewModel) {
                 ScreenHeader(
                     title = "Models",
                     subtitle = "Connect cloud APIs, Hugging Face Hub models, or a local runtime.",
+                )
+            }
+            item {
+                TabSuggestions(
+                    title = "Ask about models",
+                    suggestions = ScreenSuggestions.forScreen(SuggestionScreen.MODELS),
+                    onSelect = vm::openChatWithSuggestion,
                 )
             }
             items(state.llmProfiles, key = { it.id }) { profile ->

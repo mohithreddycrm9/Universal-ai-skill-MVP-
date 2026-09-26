@@ -113,7 +113,7 @@ class BuildSuggestionEngine {
         }
 
         if (input.messageCount == 0) {
-            ChatSuggestions.heroStarters.shuffled().take(6).forEach { quick ->
+            ChatSuggestions.heroStarters.forEach { quick ->
                 add(quick.label, quick.prompt, "hero", 62)
             }
             add(
@@ -155,6 +155,6 @@ class BuildSuggestionEngine {
         return raw
             .distinctBy { it.label.lowercase() }
             .sortedByDescending { it.priority }
-            .take(input.limit.coerceIn(4, 14))
+            .take(input.limit.coerceIn(6, 20))
     }
 }

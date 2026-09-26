@@ -58,7 +58,10 @@ import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.ComposerBar
 import com.skillmcp.mentor.ui.components.MessageBubble
 import com.skillmcp.mentor.mentor.ChatSuggestions
+import com.skillmcp.mentor.mentor.ScreenSuggestions
+import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.SuggestionChipRow
+import com.skillmcp.mentor.ui.components.TabSuggestions
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -239,24 +242,10 @@ fun ChatScreen(vm: MentorViewModel) {
                                     textAlign = TextAlign.Center,
                                 )
                                 Spacer(Modifier.height(16.dp))
-                                Text(
-                                    "Try these",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                SuggestionChipRow(
-                                    labels =
-                                        ChatSuggestions.heroStarters.take(8).map { quick ->
-                                            quick.label to { vm.applySuggestion(quick.prompt) }
-                                        },
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                SuggestionChipRow(
-                                    labels =
-                                        ChatSuggestions.heroStarters.drop(8).map { quick ->
-                                            quick.label to { vm.applySuggestion(quick.prompt) }
-                                        },
+                                TabSuggestions(
+                                    title = "Try these",
+                                    suggestions = ScreenSuggestions.forScreen(SuggestionScreen.CHAT),
+                                    onSelect = vm::applySuggestion,
                                 )
                             }
                         }

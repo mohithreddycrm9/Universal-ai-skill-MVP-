@@ -23,7 +23,10 @@ import com.skillmcp.mentor.ui.UsageWindow
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.GlassCard
 import com.skillmcp.mentor.ui.components.ScreenHeader
+import com.skillmcp.mentor.mentor.ScreenSuggestions
+import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.StatCard
+import com.skillmcp.mentor.ui.components.TabSuggestions
 import java.util.Locale
 
 @Composable
@@ -40,6 +43,13 @@ fun UsageScreen(vm: MentorViewModel) {
                 ScreenHeader(
                     title = "Usage",
                     subtitle = "Track requests, tokens, and estimated spend across your models.",
+                )
+            }
+            item {
+                TabSuggestions(
+                    title = "Ask about usage",
+                    suggestions = ScreenSuggestions.forScreen(SuggestionScreen.USAGE),
+                    onSelect = vm::openChatWithSuggestion,
                 )
             }
             item {

@@ -20,7 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.ui.MentorViewModel
+import com.skillmcp.mentor.mentor.ScreenSuggestions
+import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.AppBackground
+import com.skillmcp.mentor.ui.components.TabSuggestions
 import com.skillmcp.mentor.ui.theme.ThemeMode
 
 @Composable
@@ -41,6 +44,12 @@ fun SettingsScreen(vm: MentorViewModel) {
             com.skillmcp.mentor.ui.components.ScreenHeader(
                 title = "Settings",
                 subtitle = "Personalize your assistant, voice, and sync.",
+            )
+
+            TabSuggestions(
+                title = "Ask about settings",
+                suggestions = ScreenSuggestions.forScreen(SuggestionScreen.SETTINGS),
+                onSelect = vm::openChatWithSuggestion,
             )
 
             Text("Response style", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)

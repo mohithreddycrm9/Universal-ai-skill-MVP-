@@ -34,7 +34,10 @@ import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.GlassCard
+import com.skillmcp.mentor.mentor.ScreenSuggestions
+import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.ScreenHeader
+import com.skillmcp.mentor.ui.components.TabSuggestions
 
 @Composable
 fun SkillsScreen(vm: MentorViewModel) {
@@ -49,6 +52,13 @@ fun SkillsScreen(vm: MentorViewModel) {
                 ScreenHeader(
                     title = "Extensions",
                     subtitle = "Skill packs and on-device plugins to extend your assistant.",
+                )
+            }
+            item {
+                TabSuggestions(
+                    title = "Ask about extensions",
+                    suggestions = ScreenSuggestions.forScreen(SuggestionScreen.EXTENSIONS),
+                    onSelect = vm::openChatWithSuggestion,
                 )
             }
 

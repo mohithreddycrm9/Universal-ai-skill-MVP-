@@ -26,7 +26,10 @@ import com.skillmcp.mentor.mentor.BuildSuggestion
 import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.mentor.UiMessage
 import com.skillmcp.mentor.voice.ElevenLabsVoiceClient
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -88,6 +91,9 @@ class MentorViewModel(
     val streamPreview = MutableStateFlow("")
     val skillToggles = MutableStateFlow<Map<String, Boolean>>(emptyMap())
 
+    private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val openChatRequests: SharedFlow<Unit> = openChatRequestsInner.asSharedFlow()
+
     private val sinceMs =
         usageWindow.map { window ->
             System.currentTimeMillis() - TimeUnit.DAYS.toMillis(window.days.toLong())
@@ -134,6 +140,7 @@ class MentorViewModel(
                     messageCount = messageCount,
                     hasInstalledSkills = hasSkills,
                     enabledPluginIds = mentorPrefs.enabledPluginIds,
+                    limit = 16,
                 ),
             )
         }
@@ -301,6 +308,12 @@ class MentorViewModel(
 
     fun applySuggestion(prompt: String) {
         draft.value = prompt
+    }
+
+    fun openChatWithSuggestion(prompt: String) {
+        draft.value = prompt
+        status.value = null
+        openChatRequestsInner.tryEmit(Unit)
     }
 
     fun setUsageWindow(window: UsageWindow) {
