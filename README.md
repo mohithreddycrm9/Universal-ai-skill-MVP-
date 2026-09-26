@@ -10,6 +10,10 @@ Core is **free/open-source-first**: local SQLite, local/OSS scanners, local sand
 
 Trust is not authorization. `INCONCLUSIVE` is not `PASS`. Freemium adapters are not auto-free unless a free tier is proven (`estimatedCost` exactly `"0"`). API keys and env attestations cannot bypass `ALLOW_FREE_ONLY` for STRIX/Snyk/cloud/private. The MCP never claims a skill is universally “safe.”
 
+## Code Mentor (Android)
+
+Personal mobile mentor app (voice, build chips, GitHub skills, encrypted backup): see [apps/mentor-android/README.md](./apps/mentor-android/README.md).
+
 ## Fast path
 
 ```bash
