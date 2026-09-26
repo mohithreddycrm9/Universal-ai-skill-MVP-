@@ -59,7 +59,7 @@ class GitHubSkillImporter(
         val cleaned = url.removeSuffix("/")
         val githubRegex = Regex("""github\.com/([^/]+)/([^/]+)(?:/tree/([^/]+))?""")
         val match = githubRegex.find(cleaned)
-            ?: throw IllegalArgumentException("Use a public GitHub URL like https://github.com/owner/repo")
+            ?: throw IllegalArgumentException("Use a public repository URL (https://…/owner/repo)")
         val owner = match.groupValues[1]
         val repo = match.groupValues[2].removeSuffix(".git")
         val ref = match.groupValues[3].ifBlank { "main" }

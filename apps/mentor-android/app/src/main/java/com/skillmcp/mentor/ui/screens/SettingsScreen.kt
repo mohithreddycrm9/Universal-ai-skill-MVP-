@@ -38,9 +38,12 @@ fun SettingsScreen(vm: MentorViewModel) {
                     .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Settings", style = MaterialTheme.typography.headlineMedium)
+            com.skillmcp.mentor.ui.components.ScreenHeader(
+                title = "Settings",
+                subtitle = "Personalize your assistant, voice, and sync.",
+            )
 
-            Text("Assistant", style = MaterialTheme.typography.titleMedium)
+            Text("Assistant", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = prefs.focusTopic,

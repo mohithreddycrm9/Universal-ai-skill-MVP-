@@ -2,17 +2,23 @@ package com.skillmcp.mentor.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,42 +26,96 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.ui.MentorViewModel
+import com.skillmcp.mentor.ui.components.AppBackground
+import com.skillmcp.mentor.ui.components.GlassCard
+import com.skillmcp.mentor.ui.components.ScreenHeader
 
 @Composable
 fun SkillsScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
-    var repoUrl by remember { mutableStateOf("https://github.com/anthropics/skills") }
+    var sourceUrl by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("GitHub skills", style = MaterialTheme.typography.titleLarge)
-        Text(
-            "Import official SKILL.md repos. Content is verified locally and injected into mentor prompts.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = repoUrl,
-            onValueChange = { repoUrl = it },
-            label = { Text("Repository URL") },
-            singleLine = true,
-        )
-        Button(onClick = { vm.importSkill(repoUrl) }, modifier = Modifier.fillMaxWidth()) {
-            Text("Import skill")
-        }
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(state.skills) { skill ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(skill.title, style = MaterialTheme.typography.titleMedium)
-                        Text("${skill.owner}/${skill.repo} @ ${skill.ref}")
-                        TextButton(onClick = { vm.removeSkill(skill.id) }) {
-                            Text("Remove")
+    AppBackground {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            item {
+                ScreenHeader(
+                    title = "Skills",
+                    subtitle = "Add skill packs from official repositories. They extend what your assistant knows in every chat.",
+                )
+            }
+            item {
+                GlassCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Add skill pack", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = sourceUrl,
+                            onValueChange = { sourceUrl = it },
+                            label = { Text("Skill source URL") },
+                            placeholder = { Text("https://…/owner/repo") },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Outlined.AutoAwesome, contentDescription = null) },
+                            shape = MaterialTheme.shapes.medium,
+                            colors =
+                                OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                ),
+                        )
+                        Button(
+                            onClick = { vm.importSkill(sourceUrl) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        ) {
+                            Text("Install skill")
+                        }
+                    }
+                }
+            }
+            item {
+                Text(
+                    "Installed",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            if (state.skills.isEmpty()) {
+                item {
+                    GlassCard {
+                        Text(
+                            "No skills yet. Install a pack to give your assistant specialized know-how.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            items(state.skills, key = { it.id }) { skill ->
+                GlassCard {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text(skill.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "${skill.owner} · ${skill.repo}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "Active in conversations",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
+                        IconButton(onClick = { vm.removeSkill(skill.id) }) {
+                            Icon(Icons.Outlined.DeleteOutline, contentDescription = "Remove skill")
                         }
                     }
                 }

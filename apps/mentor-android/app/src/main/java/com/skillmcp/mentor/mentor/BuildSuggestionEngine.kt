@@ -83,8 +83,8 @@ class BuildSuggestionEngine {
         }
         if (events.any { it.kind == "skill_gap" || it.kind == "acquire_job_failed" }) {
             add(
-                label = "Add a GitHub skill",
-                prompt = "Recommend an official GitHub repo skill to import for this goal and how to verify it.",
+                label = "Add a skill",
+                prompt = "Recommend a skill pack I should install for this goal and how to use it.",
                 because = "skill_gap",
                 priority = 75,
             )

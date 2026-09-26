@@ -3,18 +3,22 @@ package com.skillmcp.mentor.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.Hub
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -45,11 +49,16 @@ fun MentorApp(container: AppContainer) {
     val current = backStack?.destination?.route ?: MentorTab.Chat.route
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                tonalElevation = 6.dp,
+            ) {
                 MentorTab.entries.forEach { tab ->
+                    val selected = current == tab.route
                     NavigationBarItem(
-                        selected = current == tab.route,
+                        selected = selected,
                         onClick = {
                             nav.navigate(tab.route) {
                                 popUpTo(nav.graph.findStartDestination().id) { saveState = true }
@@ -57,19 +66,16 @@ fun MentorApp(container: AppContainer) {
                                 restoreState = true
                             }
                         },
-                        icon = {
-                            Icon(
-                                when (tab) {
-                                    MentorTab.Chat -> Icons.AutoMirrored.Filled.Chat
-                                    MentorTab.Models -> Icons.Default.Hub
-                                    MentorTab.Usage -> Icons.Default.BarChart
-                                    MentorTab.Skills -> Icons.Default.Extension
-                                    MentorTab.Settings -> Icons.Default.Settings
-                                },
-                                contentDescription = tab.label,
-                            )
-                        },
+                        icon = { Icon(tabIcon(tab), contentDescription = tab.label) },
                         label = { Text(tab.label) },
+                        colors =
+                            NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     )
                 }
             }
@@ -88,3 +94,12 @@ fun MentorApp(container: AppContainer) {
         }
     }
 }
+
+private fun tabIcon(tab: MentorTab): ImageVector =
+    when (tab) {
+        MentorTab.Chat -> Icons.AutoMirrored.Filled.Chat
+        MentorTab.Models -> Icons.Outlined.Hub
+        MentorTab.Usage -> Icons.Outlined.BarChart
+        MentorTab.Skills -> Icons.Outlined.AutoAwesome
+        MentorTab.Settings -> Icons.Outlined.Settings
+    }

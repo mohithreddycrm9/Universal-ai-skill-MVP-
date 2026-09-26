@@ -34,7 +34,7 @@ fun AppBackground(modifier: Modifier = Modifier, content: @Composable () -> Unit
                                     Color.Transparent,
                                 ),
                             center = Offset(0.15f, 0.05f),
-                            radius = 900f,
+                            radius = 1100f,
                         ),
                     ),
         )

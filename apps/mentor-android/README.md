@@ -1,6 +1,6 @@
 # Universal AI (Android)
 
-Personal AI for **any topic** — connect **any LLM** you choose, with premium chat UI, streaming replies, usage dashboard, multi-chat threads, voice, GitHub skills, encrypted backup, and real-time sync.
+Personal AI for **any topic** — connect **any LLM** you choose, with premium chat UI, streaming replies, usage dashboard, multi-chat threads, voice, skills, encrypted backup, and real-time sync.
 
 ## Run the app
 
@@ -18,7 +18,7 @@ Open in Android Studio and run on API 26+.
 | **Chat** | Aurora UI, starter prompts, streaming tokens, conversation drawer |
 | **Models** | OpenAI-compatible, Anthropic, Google Generative API, Ollama + custom providers; test connection |
 | **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
-| **Skills** | Import public GitHub `SKILL.md` repos into context |
+| **Skills** | Install skill packs from official repository URLs |
 | **Settings** | Theme, voice, system prompt, sync & backup |
 
 ## Sync relay (phone ↔ desktop)
