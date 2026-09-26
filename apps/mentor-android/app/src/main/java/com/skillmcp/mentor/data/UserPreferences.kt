@@ -65,7 +65,14 @@ data class MentorPrefs(
 // Composable-only API — use theme from MainActivity with system dark flag instead.
 fun MentorPrefs.resolvedDarkTheme(systemDark: Boolean): Boolean = themeMode.resolvesDark(systemDark)
 
-class UserPreferences(private val context: Context) {
+class UserPreferences(
+    private val context: Context,
+    private val secureStore: LlmSecureStore,
+) {
+    init {
+        migrateSecretsFromDataStore()
+    }
+
     val prefsFlow: Flow<MentorPrefs> =
         context.dataStore.data.map { prefs ->
             MentorPrefs(
@@ -74,7 +81,7 @@ class UserPreferences(private val context: Context) {
                 fontScale = prefs[KEY_FONT_SCALE] ?: 1f,
                 llmBaseUrl = prefs[KEY_LLM_BASE] ?: "https://api.openai.com/v1/",
                 llmModel = prefs[KEY_LLM_MODEL] ?: "gpt-4o-mini",
-                llmApiKey = prefs[KEY_LLM_KEY] ?: "",
+                llmApiKey = "",
                 activeLlmProfileId = prefs[KEY_ACTIVE_LLM] ?: "openai",
                 assistantSystemPrompt =
                     prefs[KEY_ASSISTANT_PROMPT]
@@ -82,12 +89,12 @@ class UserPreferences(private val context: Context) {
                         ?: MentorPrefs.DEFAULT_ASSISTANT_PROMPT,
                 voiceLocaleTag = prefs[KEY_VOICE_LOCALE] ?: Locale.getDefault().toLanguageTag(),
                 speakResponses = prefs[KEY_SPEAK] ?: true,
-                elevenLabsApiKey = prefs[KEY_ELEVEN_KEY] ?: "",
+                elevenLabsApiKey = secureStore.getAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS),
                 elevenLabsVoiceId = prefs[KEY_ELEVEN_VOICE] ?: "",
                 syncWebSocketUrl = prefs[KEY_SYNC_URL] ?: "",
                 syncDeviceId = prefs[KEY_DEVICE_ID] ?: "",
                 backupUploadUrl = prefs[KEY_BACKUP_URL] ?: "",
-                backupBearerToken = prefs[KEY_BACKUP_TOKEN] ?: "",
+                backupBearerToken = secureStore.getAppSecret(LlmSecureStore.SECRET_BACKUP_TOKEN),
                 focusTopic = prefs[KEY_FOCUS_TOPIC] ?: prefs[KEY_BUILD_GOAL] ?: "",
                 activeConversationId = prefs[KEY_CONVERSATION] ?: "default",
                 modelPreset = ModelPreset.entries.find { it.name == prefs[KEY_MODEL_PRESET] } ?: ModelPreset.BALANCED,
@@ -104,23 +111,25 @@ class UserPreferences(private val context: Context) {
 
     suspend fun update(transform: (MentorPrefs) -> MentorPrefs) {
         val next = transform(current())
+        secureStore.setAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS, next.elevenLabsApiKey)
+        secureStore.setAppSecret(LlmSecureStore.SECRET_BACKUP_TOKEN, next.backupBearerToken)
         context.dataStore.edit { prefs ->
             prefs[KEY_THEME] = next.themeMode.name
             prefs[KEY_ACCENT] = next.accentHue
             prefs[KEY_FONT_SCALE] = next.fontScale
             prefs[KEY_LLM_BASE] = next.llmBaseUrl
             prefs[KEY_LLM_MODEL] = next.llmModel
-            prefs[KEY_LLM_KEY] = next.llmApiKey
+            prefs.remove(KEY_LLM_KEY)
             prefs[KEY_ACTIVE_LLM] = next.activeLlmProfileId
             prefs[KEY_ASSISTANT_PROMPT] = next.assistantSystemPrompt
             prefs[KEY_VOICE_LOCALE] = next.voiceLocaleTag
             prefs[KEY_SPEAK] = next.speakResponses
-            prefs[KEY_ELEVEN_KEY] = next.elevenLabsApiKey
+            prefs.remove(KEY_ELEVEN_KEY)
             prefs[KEY_ELEVEN_VOICE] = next.elevenLabsVoiceId
             prefs[KEY_SYNC_URL] = next.syncWebSocketUrl
             prefs[KEY_DEVICE_ID] = next.syncDeviceId
             prefs[KEY_BACKUP_URL] = next.backupUploadUrl
-            prefs[KEY_BACKUP_TOKEN] = next.backupBearerToken
+            prefs.remove(KEY_BACKUP_TOKEN)
             prefs[KEY_FOCUS_TOPIC] = next.focusTopic
             prefs[KEY_BUILD_GOAL] = next.focusTopic
             prefs[KEY_CONVERSATION] = next.activeConversationId
@@ -131,6 +140,27 @@ class UserPreferences(private val context: Context) {
             prefs[KEY_SEEN_WELCOME] = next.hasSeenWelcome
             prefs[KEY_BIOMETRIC] = next.requireBiometricUnlock
             prefs[KEY_DAILY_BRIEF] = next.dailyBriefReminder
+        }
+    }
+
+    private fun migrateSecretsFromDataStore() {
+        runBlocking {
+            val snapshot = context.dataStore.data.first()
+            val legacyEleven = snapshot[KEY_ELEVEN_KEY] ?: ""
+            val legacyBackup = snapshot[KEY_BACKUP_TOKEN] ?: ""
+            if (legacyEleven.isNotBlank() && secureStore.getAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS).isBlank()) {
+                secureStore.setAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS, legacyEleven)
+            }
+            if (legacyBackup.isNotBlank() && secureStore.getAppSecret(LlmSecureStore.SECRET_BACKUP_TOKEN).isBlank()) {
+                secureStore.setAppSecret(LlmSecureStore.SECRET_BACKUP_TOKEN, legacyBackup)
+            }
+            if (legacyEleven.isNotBlank() || legacyBackup.isNotBlank()) {
+                context.dataStore.edit { prefs ->
+                    prefs.remove(KEY_ELEVEN_KEY)
+                    prefs.remove(KEY_BACKUP_TOKEN)
+                    prefs.remove(KEY_LLM_KEY)
+                }
+            }
         }
     }
 

@@ -2,6 +2,7 @@ package com.skillmcp.mentor.data
 
 import android.content.Context
 import androidx.room.Room
+import com.skillmcp.mentor.BuildConfig
 import com.skillmcp.mentor.backup.BackupRepository
 import com.skillmcp.mentor.backup.PayloadEncryptor
 import com.skillmcp.mentor.data.db.MentorDatabase
@@ -21,17 +22,21 @@ import com.skillmcp.mentor.voice.VoiceMentor
 class AppContainer(context: Context) {
     val appContext = context.applicationContext
 
-    val userPreferences = UserPreferences(appContext)
+    val llmSecureStore = LlmSecureStore(appContext)
+    val userPreferences = UserPreferences(appContext, llmSecureStore)
     val shareTextHolder = ShareTextHolder()
     val launchIntentHolder = LaunchIntentHolder()
 
     private val database: MentorDatabase =
         Room.databaseBuilder(appContext, MentorDatabase::class.java, "mentor.db")
-            .fallbackToDestructiveMigration()
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    fallbackToDestructiveMigration()
+                }
+            }
             .build()
 
     val encryptor = PayloadEncryptor(appContext)
-    val llmSecureStore = LlmSecureStore(appContext)
     val multiLlmClient = MultiLlmClient()
     val llmStreaming = LlmStreaming()
     val llmProfileRepository =

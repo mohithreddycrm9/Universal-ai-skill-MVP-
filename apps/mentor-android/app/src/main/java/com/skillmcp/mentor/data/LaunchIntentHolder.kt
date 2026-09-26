@@ -1,7 +1,8 @@
 package com.skillmcp.mentor.data
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 sealed class LaunchAction {
     data class UseCase(val id: String) : LaunchAction()
@@ -12,17 +13,11 @@ sealed class LaunchAction {
 }
 
 class LaunchIntentHolder {
-    private val pending = MutableStateFlow<LaunchAction?>(null)
+    private val pending = MutableSharedFlow<LaunchAction>(extraBufferCapacity = 8)
 
-    val actions: StateFlow<LaunchAction?> = pending
+    val actions: SharedFlow<LaunchAction> = pending.asSharedFlow()
 
     fun push(action: LaunchAction) {
-        pending.value = action
-    }
-
-    fun consume(): LaunchAction? {
-        val value = pending.value
-        pending.value = null
-        return value
+        pending.tryEmit(action)
     }
 }

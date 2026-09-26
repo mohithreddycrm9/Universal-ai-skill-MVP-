@@ -94,7 +94,7 @@ class PluginRunner(
         if (!url.startsWith("https://")) return "Only https:// URLs are allowed."
         return runCatching {
             val host = URL(url).host.lowercase()
-            if (host == "localhost" || host.endsWith(".local")) return "Blocked host."
+            if (com.skillmcp.mentor.util.PrivateNetworkGuards.isBlockedFetchHost(host)) return "Blocked host."
             http.newCall(Request.Builder().url(url).get().build()).execute().use { response ->
                 val raw = response.body?.string() ?: ""
                 if (!response.isSuccessful) return "HTTP ${response.code}"

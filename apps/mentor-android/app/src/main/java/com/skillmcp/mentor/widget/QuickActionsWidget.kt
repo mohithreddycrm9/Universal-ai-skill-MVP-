@@ -26,6 +26,7 @@ class QuickActionsWidget : AppWidgetProvider() {
             Intent(context, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_USE_CASE
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, useCaseId)
+                putExtra(AppLaunch.EXTRA_INTERNAL, true)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(
@@ -41,6 +42,7 @@ class QuickActionsWidget : AppWidgetProvider() {
             Intent(context, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_OPEN_TAB
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, route)
+                putExtra(AppLaunch.EXTRA_INTERNAL, true)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(

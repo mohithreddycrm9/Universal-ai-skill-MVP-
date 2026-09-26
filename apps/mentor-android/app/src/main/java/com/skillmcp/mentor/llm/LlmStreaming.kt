@@ -131,7 +131,7 @@ class LlmStreaming(
         http.newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) {
                 val err = response.body?.string() ?: ""
-                error("Stream HTTP ${response.code}: ${err.take(400)}")
+                error("Stream HTTP ${response.code}")
             }
             val source = response.body?.source()?.buffer() ?: error("Empty stream body")
             while (!source.exhausted()) {

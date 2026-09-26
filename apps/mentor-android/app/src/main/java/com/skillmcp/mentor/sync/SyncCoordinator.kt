@@ -1,6 +1,7 @@
 package com.skillmcp.mentor.sync
 
 import android.content.Context
+import com.skillmcp.mentor.data.LlmSecureStore
 import com.skillmcp.mentor.data.UserPreferences
 import com.skillmcp.mentor.data.db.MentorDao
 import com.skillmcp.mentor.backup.PayloadEncryptor
@@ -26,7 +27,7 @@ class SyncCoordinator(
     context: Context,
     private val dao: MentorDao,
     private val encryptor: PayloadEncryptor,
-    private val userPreferences: UserPreferences = UserPreferences(context),
+    private val userPreferences: UserPreferences = UserPreferences(context, LlmSecureStore(context)),
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val client =

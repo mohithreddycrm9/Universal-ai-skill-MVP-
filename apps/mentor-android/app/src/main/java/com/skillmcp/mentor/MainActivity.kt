@@ -20,8 +20,10 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as MentorApplication).container
-        routeLaunchIntent(intent, container)
-        handleShareIntent(intent, container)
+        if (savedInstanceState == null) {
+            routeLaunchIntent(intent, container)
+            handleShareIntent(intent, container)
+        }
         setContent {
             val prefs by container.userPreferences.prefsFlow.collectAsState(
                 initial = container.userPreferences.current(),
@@ -49,12 +51,14 @@ class MainActivity : FragmentActivity() {
         if (intent == null) return
         when (intent.action) {
             AppLaunch.ACTION_USE_CASE -> {
+                if (!isTrustedInternalIntent(intent)) return
                 val id = intent.getStringExtra(AppLaunch.EXTRA_USE_CASE_ID)
                 if (!id.isNullOrBlank()) {
                     container.launchIntentHolder.push(LaunchAction.UseCase(id))
                 }
             }
             AppLaunch.ACTION_OPEN_TAB -> {
+                if (!isTrustedInternalIntent(intent)) return
                 val tab = intent.getStringExtra(AppLaunch.EXTRA_TAB_ROUTE) ?: "chat"
                 container.launchIntentHolder.push(LaunchAction.OpenTab(tab))
             }
@@ -88,4 +92,7 @@ class MainActivity : FragmentActivity() {
             container.shareTextHolder.push(enriched)
         }
     }
+
+    private fun isTrustedInternalIntent(intent: Intent): Boolean =
+        intent.getBooleanExtra(AppLaunch.EXTRA_INTERNAL, false)
 }

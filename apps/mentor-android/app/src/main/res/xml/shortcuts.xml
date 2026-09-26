@@ -13,6 +13,9 @@
             <extra
                 android:name="use_case_id"
                 android:value="daily-brief" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
         </intent>
     </shortcut>
     <shortcut
@@ -28,6 +31,9 @@
             <extra
                 android:name="use_case_id"
                 android:value="rewrite-message" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
         </intent>
     </shortcut>
     <shortcut
@@ -43,6 +49,9 @@
             <extra
                 android:name="use_case_id"
                 android:value="meal-grocery" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
         </intent>
     </shortcut>
     <shortcut
@@ -58,6 +67,9 @@
             <extra
                 android:name="tab_route"
                 android:value="chat" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
         </intent>
     </shortcut>
 </shortcuts>

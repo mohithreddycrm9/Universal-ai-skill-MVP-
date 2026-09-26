@@ -27,6 +27,7 @@ class DailyBriefWorker(
             Intent(applicationContext, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_USE_CASE
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, "daily-brief")
+                putExtra(AppLaunch.EXTRA_INTERNAL, true)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         val pending =

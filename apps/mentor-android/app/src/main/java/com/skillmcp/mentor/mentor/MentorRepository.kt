@@ -255,7 +255,7 @@ class MentorRepository(
                 )
                 onSuccessChat(projectId, profile, chat, prefs)
             }
-            result.onFailure { err -> onFailureChat(profile, err) }
+            result.onFailure { err -> onFailureChat(projectId, profile, err) }
             result.map { it.content }
         }
 
@@ -279,13 +279,25 @@ class MentorRepository(
         syncCoordinator.publishStateSnapshot()
     }
 
-    private suspend fun onFailureChat(profile: LlmProfile, err: Throwable) {
+    private suspend fun onFailureChat(projectId: String, profile: LlmProfile, err: Throwable) {
+        val userMessage = com.skillmcp.mentor.util.UserFacingErrors.message(err)
+        val stored = com.skillmcp.mentor.util.UserFacingErrors.redactForStorage(err)
+        dao.insertMessage(
+            ChatMessageEntity(
+                UUID.randomUUID().toString(),
+                projectId,
+                "assistant",
+                "⚠️ $userMessage",
+                System.currentTimeMillis(),
+            ),
+        )
         llmProfileRepository.recordUsage(
             profile,
             LlmChatResult("", null, profile.model, 0),
             success = false,
-            errorMessage = err.message,
+            errorMessage = stored,
         )
+        syncCoordinator.publishStateSnapshot()
     }
 
     suspend fun installBundledSkill(pack: BundledSkillPack): SkillEntity {

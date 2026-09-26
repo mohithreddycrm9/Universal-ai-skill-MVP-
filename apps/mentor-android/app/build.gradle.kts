@@ -13,19 +13,36 @@ android {
         applicationId = "com.skillmcp.mentor"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("MENTOR_RELEASE_KEYSTORE")
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("MENTOR_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("MENTOR_KEY_ALIAS")
+                keyPassword = System.getenv("MENTOR_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            }
         }
     }
 
@@ -36,7 +53,10 @@ android {
 
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     packaging {
         resources {

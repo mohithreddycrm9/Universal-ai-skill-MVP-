@@ -310,7 +310,7 @@ class MultiLlmClient(
         http.newCall(builder.build()).execute().use { response ->
             val text = response.body?.string() ?: ""
             if (!response.isSuccessful) {
-                error("${profile.kind.label} HTTP ${response.code}: ${text.take(600)}")
+                error("${profile.kind.label} HTTP ${response.code}")
             }
             return text
         }

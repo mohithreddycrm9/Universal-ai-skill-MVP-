@@ -41,6 +41,10 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +57,8 @@ import com.skillmcp.mentor.llm.ModelPreset
 import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.ui.components.PromptLibrarySheet
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -82,6 +88,18 @@ fun ChatScreen(vm: MentorViewModel) {
     var renameDraft by remember { mutableStateOf("") }
     val filteredChats =
         state.conversations.filter { it.name.contains(drawerQuery, ignoreCase = true) }
+    val context = LocalContext.current
+    val micPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) vm.toggleListen()
+        }
+    val onMic: () -> Unit = {
+        when {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED -> vm.toggleListen()
+            else -> micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     val extraItems =
         (if (state.isSending && state.streamPreview.isNotBlank()) 1 else if (state.isSending) 1 else 0)
@@ -355,7 +373,7 @@ fun ChatScreen(vm: MentorViewModel) {
                     draft = state.draft,
                     onDraftChange = vm::onDraftChange,
                     onSend = vm::sendMessage,
-                    onMic = vm::toggleListen,
+                    onMic = onMic,
                     isSending = state.isSending,
                     isListening = state.isListening,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),

@@ -31,6 +31,7 @@ import com.skillmcp.mentor.mentor.AgentEventHint
 import com.skillmcp.mentor.mentor.BuildSuggestion
 import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.mentor.UiMessage
+import com.skillmcp.mentor.util.UserFacingErrors
 import com.skillmcp.mentor.voice.ElevenLabsVoiceClient
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -316,7 +317,6 @@ class MentorViewModel(
         }
         viewModelScope.launch {
             container.launchIntentHolder.actions.collect { action ->
-                if (action == null) return@collect
                 when (action) {
                     is LaunchAction.UseCase -> {
                         val useCase = UseCaseCatalog.featured.find { it.id == action.id }
@@ -329,7 +329,6 @@ class MentorViewModel(
                     is LaunchAction.OpenTab -> openTabInner.tryEmit(action.route)
                     is LaunchAction.Draft -> openChatWithSuggestion(action.text)
                 }
-                container.launchIntentHolder.consume()
             }
         }
         viewModelScope.launch {
@@ -409,7 +408,8 @@ class MentorViewModel(
                 val reply = result.getOrNull() ?: return@launch
                 if (prefs.current().speakResponses) speak(reply)
             } else {
-                status.value = result.exceptionOrNull()?.message ?: "Send failed"
+                status.value =
+                    result.exceptionOrNull()?.let(UserFacingErrors::message) ?: "Send failed"
             }
         }
     }

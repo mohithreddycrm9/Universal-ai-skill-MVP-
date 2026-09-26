@@ -1,0 +1,31 @@
+name: Mentor Android CI
+
+on:
+  push:
+    paths:
+      - "apps/mentor-android/**"
+      - ".github/workflows/mentor-android.yml"
+  pull_request:
+    paths:
+      - "apps/mentor-android/**"
+      - ".github/workflows/mentor-android.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mentor-android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+      - name: Lint
+        run: ./gradlew :app:lintDebug --no-daemon
+      - name: Assemble release
+        run: ./gradlew :app:assembleRelease --no-daemon

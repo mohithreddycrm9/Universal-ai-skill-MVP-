@@ -86,6 +86,16 @@ In the app: **Settings → WebSocket sync URL** → `ws://YOUR_LAN_IP:8787/sync`
 
 Payloads are **encrypted on device** before they hit the relay.
 
+## Production / Play Store
+
+- **Version** `1.0.0` (see `app/build.gradle.kts`)
+- **Release signing** — set env vars `MENTOR_RELEASE_KEYSTORE`, `MENTOR_KEYSTORE_PASSWORD`, `MENTOR_KEY_ALIAS`, `MENTOR_KEY_PASSWORD` before `assembleRelease`
+- **CI** — GitHub Actions workflow `mentor-android.yml` runs unit tests, lint, and release assemble
+- **Privacy** — in-app policy under Settings; bundled at `app/src/main/assets/legal/privacy_policy.html`
+- **Secrets** — LLM keys, ElevenLabs, and backup tokens in EncryptedSharedPreferences; backup disabled by default
+- **Network** — HTTPS by default; cleartext allowed for `localhost` / emulator Ollama; debug builds allow LAN HTTP for local testing
+- **Ollama on LAN (release)** — use HTTPS reverse proxy or a debug build for `http://192.168.x.x`
+
 ## Requirements
 
 - LLM API key(s) for your chosen provider(s)

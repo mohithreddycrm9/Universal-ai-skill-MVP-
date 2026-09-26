@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.skillmcp.mentor.MentorApplication
+import java.io.IOException
 
 class BackupWorker(
     appContext: Context,
@@ -11,9 +12,19 @@ class BackupWorker(
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         val container = (applicationContext as MentorApplication).container
+        val prefs = container.userPreferences.current()
+        if (prefs.backupUploadUrl.isBlank()) {
+            return Result.success()
+        }
         return container.backupRepository.uploadIfConfigured().fold(
             onSuccess = { Result.success() },
-            onFailure = { Result.retry() },
+            onFailure = { err ->
+                if (err is IOException) {
+                    Result.retry()
+                } else {
+                    Result.failure()
+                }
+            },
         )
     }
 

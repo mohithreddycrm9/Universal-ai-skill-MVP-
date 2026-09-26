@@ -38,7 +38,24 @@ class LlmSecureStore(context: Context) {
         prefs.edit().remove(keyFor(profileId)).remove(linkedKeyFor(profileId)).apply()
     }
 
+    fun getAppSecret(secretId: String): String = prefs.getString(appSecretKey(secretId), "") ?: ""
+
+    fun setAppSecret(secretId: String, value: String) {
+        if (value.isBlank()) {
+            prefs.edit().remove(appSecretKey(secretId)).apply()
+        } else {
+            prefs.edit().putString(appSecretKey(secretId), value).apply()
+        }
+    }
+
+    companion object {
+        const val SECRET_ELEVEN_LABS = "eleven_labs_api_key"
+        const val SECRET_BACKUP_TOKEN = "backup_bearer_token"
+    }
+
     private fun keyFor(profileId: String): String = "profile_key_$profileId"
 
     private fun linkedKeyFor(profileId: String): String = "profile_linked_$profileId"
+
+    private fun appSecretKey(secretId: String): String = "app_secret_$secretId"
 }

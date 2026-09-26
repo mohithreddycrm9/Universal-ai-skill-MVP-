@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Universal AI</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; padding: 16px; color: #1a1a1a; }
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p><strong>Last updated:</strong> September 2026</p>
+  <p>Universal AI is a bring-your-own-key assistant. You control which model providers you connect and which API keys you store.</p>
+  <h2>Data we store on your device</h2>
+  <ul>
+    <li>Chat history, skills, and usage statistics in a local database.</li>
+    <li>API keys and tokens in Android encrypted storage (EncryptedSharedPreferences).</li>
+    <li>App preferences (theme, budgets, reminders) in DataStore.</li>
+  </ul>
+  <h2>Data sent to third parties</h2>
+  <p>When you send a message, the app contacts the LLM provider you selected (OpenAI, Anthropic, Google, Hugging Face, Ollama, or your custom endpoint) using credentials you supplied. We do not operate a central chat server.</p>
+  <p>Optional features (encrypted backup upload, WebSocket sync, ElevenLabs voice, Hugging Face Hub search) only run when you configure URLs or keys.</p>
+  <h2>Permissions</h2>
+  <ul>
+    <li><strong>Internet</strong> — model APIs and optional sync/backup.</li>
+    <li><strong>Microphone</strong> — voice input when you tap the mic button.</li>
+    <li><strong>Notifications</strong> — optional daily brief reminder.</li>
+    <li><strong>Biometric</strong> — optional app unlock.</li>
+  </ul>
+  <h2>Your choices</h2>
+  <p>You can disconnect providers, clear credentials, disable backup/sync, and uninstall the app to remove on-device data. Backup is off by default.</p>
+  <h2>Contact</h2>
+  <p>For privacy questions, contact the developer listed on the app store listing.</p>
+</body>
+</html>

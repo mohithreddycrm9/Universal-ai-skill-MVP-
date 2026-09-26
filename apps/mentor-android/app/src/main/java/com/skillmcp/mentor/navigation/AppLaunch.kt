@@ -6,4 +6,6 @@ object AppLaunch {
     const val EXTRA_USE_CASE_ID = "use_case_id"
     const val EXTRA_TAB_ROUTE = "tab_route"
     const val EXTRA_DRAFT = "draft"
+    /** Set on intents created by this app (widget, shortcuts, notifications). */
+    const val EXTRA_INTERNAL = "internal_launch"
 }

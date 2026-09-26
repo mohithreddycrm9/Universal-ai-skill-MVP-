@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -22,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -30,6 +34,7 @@ import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.AppBackground
+import com.skillmcp.mentor.ui.components.LegalDocumentSheet
 import com.skillmcp.mentor.ui.components.TabSuggestions
 import com.skillmcp.mentor.ui.theme.ThemeMode
 
@@ -43,6 +48,14 @@ fun SettingsScreen(vm: MentorViewModel) {
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) vm.setDailyBriefReminder(true)
         }
+    var showPrivacy by remember { mutableStateOf(false) }
+    if (showPrivacy) {
+        LegalDocumentSheet(
+            title = "Privacy policy",
+            assetPath = "legal/privacy_policy.html",
+            onDismiss = { showPrivacy = false },
+        )
+    }
     val onDailyBriefToggle: (Boolean) -> Unit = { enabled ->
         if (!enabled) {
             vm.setDailyBriefReminder(false)
@@ -93,6 +106,14 @@ fun SettingsScreen(vm: MentorViewModel) {
             )
             Text(
                 "Add the home screen widget: long-press launcher → Widgets → Universal AI quick actions.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(onClick = { showPrivacy = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("Privacy policy")
+            }
+            Text(
+                "API keys and backup tokens are stored in encrypted storage on this device.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
