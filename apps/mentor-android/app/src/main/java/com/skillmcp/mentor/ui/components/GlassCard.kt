@@ -20,8 +20,12 @@ fun GlassCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.78f),
+        border =
+            BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            ),
         tonalElevation = 0.dp,
         shadowElevation = 2.dp,
     ) {

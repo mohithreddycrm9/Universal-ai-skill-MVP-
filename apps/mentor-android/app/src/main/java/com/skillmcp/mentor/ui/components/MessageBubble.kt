@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import com.skillmcp.mentor.ui.theme.AppColors
 import com.skillmcp.mentor.ui.theme.BubbleShapeAssistant
 import com.skillmcp.mentor.ui.theme.BubbleShapeUser
 
@@ -28,15 +27,20 @@ fun MessageBubble(
     modifier: Modifier = Modifier,
 ) {
     val clipboard = LocalClipboardManager.current
+    val scheme = MaterialTheme.colorScheme
     val dark = isSystemInDarkTheme()
     val bubbleColor =
         when {
-            isUser && dark -> AppColors.UserBubbleDark
-            isUser -> AppColors.UserBubbleLight
-            dark -> AppColors.AssistantBubbleDark
-            else -> AppColors.AssistantBubbleLight
+            isUser -> scheme.primary
+            dark -> scheme.surfaceContainerHighest
+            else -> scheme.primaryContainer.copy(alpha = 0.55f)
         }
-    val textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface
+    val textColor =
+        when {
+            isUser -> scheme.onPrimary
+            dark -> scheme.onSurface
+            else -> scheme.onPrimaryContainer
+        }
     val shape = if (isUser) BubbleShapeUser else BubbleShapeAssistant
     Box(
         modifier = modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
@@ -49,8 +53,17 @@ fun MessageBubble(
                     .combinedClickable(onClick = {}, onLongClick = { clipboard.setText(AnnotatedString(content)) }),
             shape = shape,
             color = bubbleColor,
-            shadowElevation = if (isUser) 4.dp else 1.dp,
+            shadowElevation = if (isUser) 6.dp else 2.dp,
             tonalElevation = 0.dp,
+            border =
+                if (!isUser) {
+                    androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        scheme.outlineVariant.copy(alpha = 0.5f),
+                    )
+                } else {
+                    null
+                },
         ) {
             Text(
                 text = content,

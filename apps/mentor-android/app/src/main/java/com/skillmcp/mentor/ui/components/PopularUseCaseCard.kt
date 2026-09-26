@@ -3,6 +3,7 @@ package com.skillmcp.mentor.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -18,12 +19,21 @@ fun PopularUseCaseCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedCard(onClick = onClick, modifier = modifier.width(260.dp)) {
+    val scheme = MaterialTheme.colorScheme
+    OutlinedCard(
+        onClick = onClick,
+        modifier = modifier.width(260.dp),
+        colors =
+            CardDefaults.outlinedCardColors(
+                containerColor = scheme.primaryContainer.copy(alpha = 0.4f),
+            ),
+    ) {
         Column(Modifier.padding(14.dp)) {
             Text(
                 useCase.category.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = scheme.tertiary,
+                fontWeight = FontWeight.SemiBold,
             )
             Text(useCase.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(

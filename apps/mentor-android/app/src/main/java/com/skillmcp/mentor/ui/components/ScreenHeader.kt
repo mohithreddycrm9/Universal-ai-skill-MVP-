@@ -16,12 +16,13 @@ fun ScreenHeader(
     subtitle: String? = null,
     modifier: Modifier = Modifier,
 ) {
+    val scheme = MaterialTheme.colorScheme
     Column(modifier.fillMaxWidth().padding(bottom = 8.dp)) {
         Text(
             title,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = scheme.primary,
         )
         subtitle?.let {
             Text(
