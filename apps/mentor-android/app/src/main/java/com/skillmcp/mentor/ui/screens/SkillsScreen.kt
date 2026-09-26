@@ -40,6 +40,9 @@ import com.skillmcp.mentor.ui.components.ScreenHeader
 fun SkillsScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
     var sourceUrl by remember { mutableStateOf("") }
+    var mcpName by remember { mutableStateOf("My MCP") }
+    var mcpUrl by remember { mutableStateOf("https://") }
+    var mcpToken by remember { mutableStateOf("") }
 
     AppBackground {
         LazyColumn(
@@ -48,12 +51,108 @@ fun SkillsScreen(vm: MentorViewModel) {
         ) {
             item {
                 ScreenHeader(
-                    title = "Skills",
-                    subtitle = "Extend your assistant with curated packs. Toggle skills per conversation in Chat.",
+                    title = "Extensions",
+                    subtitle = "Skill packs, on-device plugins, and remote MCP tool servers.",
+                )
+            }
+
+            item {
+                Text("On-device plugins", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Enable plugins, then use slash commands in chat (e.g. /calc, /time).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            items(state.builtinPlugins, key = { it.id }) { plugin ->
+                val enabled = plugin.id in state.prefs.enabledPluginIds
+                GlassCard {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(plugin.title, fontWeight = FontWeight.SemiBold)
+                            Text(plugin.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                plugin.commands.joinToString(" · "),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                        Switch(checked = enabled, onCheckedChange = { vm.setPluginEnabled(plugin.id, it) })
+                    }
+                }
+            }
+
+            item {
+                Text("MCP servers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Connect HTTP MCP endpoints (JSON-RPC). List tools in context; run with `/mcp ServerName tool_name {}`.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             item {
-                Text("Featured catalog", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                GlassCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(mcpName, { mcpName = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                        OutlinedTextField(
+                            mcpUrl,
+                            { mcpUrl = it },
+                            label = { Text("Endpoint URL") },
+                            placeholder = { Text("https://your-mcp-gateway/…") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                        OutlinedTextField(mcpToken, { mcpToken = it }, label = { Text("Bearer token (optional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                        Button(
+                            onClick = {
+                                vm.addMcpServer(mcpName, mcpUrl, mcpToken)
+                                mcpToken = ""
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Add MCP server")
+                        }
+                    }
+                }
+            }
+            items(state.mcpServers, key = { it.id }) { server ->
+                GlassCard {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(server.name, fontWeight = FontWeight.SemiBold)
+                            Text(server.endpointUrl, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = server.enabled, onCheckedChange = { vm.setMcpServerEnabled(server.id, it) })
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { vm.testMcpServer(server.id) }, modifier = Modifier.weight(1f)) {
+                            Text("Test")
+                        }
+                        IconButton(onClick = { vm.deleteMcpServer(server.id) }) {
+                            Icon(Icons.Outlined.DeleteOutline, contentDescription = "Remove MCP server")
+                        }
+                    }
+                }
+            }
+
+            item {
+                Text("Built-in skill packs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Offline install — no download required.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            items(state.bundledSkillPacks, key = { it.assetPath }) { pack ->
+                GlassCard {
+                    Text(pack.title, fontWeight = FontWeight.SemiBold)
+                    Text(pack.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(pack.category, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    OutlinedButton(onClick = { vm.installBundledSkill(pack) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        Text("Install")
+                    }
+                }
+            }
+
+            item {
+                Text("Remote catalog", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
             items(state.catalogSkills, key = { it.id }) { entry ->
                 GlassCard {
@@ -103,12 +202,12 @@ fun SkillsScreen(vm: MentorViewModel) {
                 }
             }
             item {
-                Text("Installed", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Installed skills", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
             if (state.skills.isEmpty()) {
                 item {
                     GlassCard {
-                        Text("No skills installed yet. Pick one from the catalog above.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("No skills installed yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -119,7 +218,7 @@ fun SkillsScreen(vm: MentorViewModel) {
                         Column(Modifier.weight(1f)) {
                             Text(skill.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(
-                                "${skill.owner} · ${skill.repo}",
+                                if (skill.owner == "bundled") "Built-in pack" else "${skill.owner} · ${skill.repo}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

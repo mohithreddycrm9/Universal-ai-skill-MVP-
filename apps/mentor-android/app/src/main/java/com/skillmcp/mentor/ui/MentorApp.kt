@@ -36,7 +36,7 @@ enum class MentorTab(val route: String, val label: String) {
     Chat("chat", "Chat"),
     Models("models", "Models"),
     Usage("usage", "Usage"),
-    Skills("skills", "Skills"),
+    Skills("skills", "Extensions"),
     Settings("settings", "Settings"),
 }
 

@@ -12,6 +12,10 @@ import com.skillmcp.mentor.llm.LlmProfileRepository
 import com.skillmcp.mentor.llm.LlmStreaming
 import com.skillmcp.mentor.llm.MultiLlmClient
 import com.skillmcp.mentor.policy.SpendGuard
+import com.skillmcp.mentor.extensions.ExtensionOrchestrator
+import com.skillmcp.mentor.mcp.McpRepository
+import com.skillmcp.mentor.skills.BundledSkillInstaller
+import com.skillmcp.mentor.skills.BundledSkillPack
 import com.skillmcp.mentor.skills.GitHubSkillImporter
 import com.skillmcp.mentor.data.db.ConversationSkillEntity
 import com.skillmcp.mentor.data.db.SavedPromptEntity
@@ -44,6 +48,9 @@ class MentorRepository(
     private val llmProfileRepository: LlmProfileRepository,
     private val userPreferences: UserPreferences,
     private val skillImporter: GitHubSkillImporter,
+    private val bundledSkillInstaller: BundledSkillInstaller,
+    private val extensionOrchestrator: ExtensionOrchestrator,
+    private val mcpRepository: McpRepository,
     private val syncCoordinator: SyncCoordinator,
 ) {
     val defaultProjectId = "default"
@@ -52,6 +59,14 @@ class MentorRepository(
         llmProfileRepository.ensureDefaults()
         ensureDefaultProject()
         seedDefaultPromptsIfEmpty()
+        seedDefaultPluginsIfEmpty()
+    }
+
+    private suspend fun seedDefaultPluginsIfEmpty() {
+        if (userPreferences.current().enabledPluginIds.isNotEmpty()) return
+        userPreferences.update {
+            it.copy(enabledPluginIds = setOf("calc", "time", "uuid", "wordcount"))
+        }
     }
 
     private suspend fun seedDefaultPromptsIfEmpty() {
@@ -195,6 +210,12 @@ class MentorRepository(
             )
 
             val skillContext = buildSkillContext(projectId)
+            val extraContext =
+                extensionOrchestrator.augmentExtraContext(
+                    userMessage = text,
+                    skillContext = skillContext,
+                    enabledPluginIds = prefs.enabledPluginIds,
+                )
 
             val history = historyList.filter { it.role == "user" || it.role == "assistant" }
             val result =
@@ -203,7 +224,7 @@ class MentorRepository(
                     systemPrompt = prefs.assistantSystemPrompt,
                     history = history,
                     userMessage = text,
-                    extraContext = skillContext,
+                    extraContext = extraContext,
                     onChunk = onStreamUpdate,
                     temperature = prefs.modelPreset.temperature,
                 )
@@ -251,6 +272,26 @@ class MentorRepository(
             success = false,
             errorMessage = err.message,
         )
+    }
+
+    fun observeMcpServers() = mcpRepository.observeServers()
+
+    suspend fun addMcpServer(name: String, endpointUrl: String, token: String) =
+        mcpRepository.upsertServer(name, endpointUrl, token)
+
+    suspend fun setMcpServerEnabled(id: String, enabled: Boolean) = mcpRepository.setServerEnabled(id, enabled)
+
+    suspend fun deleteMcpServer(id: String) = mcpRepository.deleteServer(id)
+
+    suspend fun testMcpServer(id: String) = mcpRepository.testServer(id)
+
+    suspend fun installBundledSkill(pack: BundledSkillPack): SkillEntity {
+        val entity = bundledSkillInstaller.toEntity(pack)
+        dao.upsertSkill(entity)
+        val convo = userPreferences.current().activeConversationId.ifBlank { defaultProjectId }
+        dao.upsertConversationSkill(ConversationSkillEntity(convo, entity.id, enabled = true))
+        syncCoordinator.publishStateSnapshot()
+        return entity
     }
 
     suspend fun importSkill(repoUrl: String): Result<SkillEntity> =

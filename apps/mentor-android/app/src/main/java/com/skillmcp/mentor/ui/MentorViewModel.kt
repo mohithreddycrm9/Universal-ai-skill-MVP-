@@ -12,6 +12,10 @@ import com.skillmcp.mentor.llm.HuggingFaceDefaults
 import com.skillmcp.mentor.llm.HuggingFaceHubApi
 import com.skillmcp.mentor.llm.HuggingFaceModelSummary
 import com.skillmcp.mentor.llm.ModelPreset
+import com.skillmcp.mentor.mcp.McpServer
+import com.skillmcp.mentor.plugins.BuiltinPlugins
+import com.skillmcp.mentor.skills.BundledSkillPack
+import com.skillmcp.mentor.skills.BundledSkills
 import com.skillmcp.mentor.skills.SkillCatalog
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
@@ -63,6 +67,9 @@ data class MentorUiState(
     val savedPrompts: List<SavedPromptEntity> = emptyList(),
     val skillToggles: Map<String, Boolean> = emptyMap(),
     val catalogSkills: List<com.skillmcp.mentor.skills.CatalogSkill> = SkillCatalog.featured,
+    val bundledSkillPacks: List<BundledSkillPack> = BundledSkills.packs,
+    val builtinPlugins: List<com.skillmcp.mentor.plugins.BuiltinPlugin> = BuiltinPlugins.all,
+    val mcpServers: List<McpServer> = emptyList(),
 )
 
 class MentorViewModel(
@@ -153,18 +160,29 @@ class MentorViewModel(
 
     private val metaSlice =
         combine(
-            repository.observeSkills(),
-            repository.observeLlmProfiles(),
-            activeProfileFlow,
-            usageSlice,
-            prefs.prefsFlow,
-        ) { skills, profiles, activeProfile, usage, mentorPrefs ->
-            MetaSlice(skills, profiles, activeProfile, usage, mentorPrefs)
+            combine(
+                repository.observeSkills(),
+                repository.observeLlmProfiles(),
+                repository.observeMcpServers(),
+            ) { skills, profiles, mcpServers -> Triple(skills, profiles, mcpServers) },
+            combine(activeProfileFlow, usageSlice, prefs.prefsFlow) { activeProfile, usage, mentorPrefs ->
+                Triple(activeProfile, usage, mentorPrefs)
+            },
+        ) { a, b ->
+            MetaSlice(
+                skills = a.first,
+                llmProfiles = a.second,
+                mcpServers = a.third,
+                activeLlmProfile = b.first,
+                usage = b.second,
+                prefs = b.third,
+            )
         }
 
     private data class MetaSlice(
         val skills: List<SkillEntity>,
         val llmProfiles: List<LlmProfile>,
+        val mcpServers: List<McpServer>,
         val activeLlmProfile: LlmProfile?,
         val usage: UsageSlice,
         val prefs: MentorPrefs,
@@ -179,6 +197,7 @@ class MentorViewModel(
                 suggestions = chat.suggestions,
                 skills = meta.skills,
                 llmProfiles = meta.llmProfiles,
+                mcpServers = meta.mcpServers,
                 activeLlmProfile = meta.activeLlmProfile,
                 usageTotals = meta.usage.totals,
                 usageByModel = meta.usage.byModel,
@@ -198,6 +217,7 @@ class MentorViewModel(
         val suggestions: List<BuildSuggestion>,
         val skills: List<SkillEntity>,
         val llmProfiles: List<LlmProfile>,
+        val mcpServers: List<McpServer>,
         val activeLlmProfile: LlmProfile?,
         val usageTotals: UsageTotals,
         val usageByModel: List<UsageByModelRow>,
@@ -235,6 +255,7 @@ class MentorViewModel(
                 conversations = core.conversations,
                 activeConversationId = core.activeConversationId,
                 llmProfiles = core.llmProfiles,
+                mcpServers = core.mcpServers,
                 activeLlmProfile = core.activeLlmProfile,
                 usageTotals = core.usageTotals,
                 usageByModel = core.usageByModel,
@@ -462,6 +483,48 @@ class MentorViewModel(
     }
 
     fun installCatalogSkill(url: String) = importSkill(url)
+
+    fun installBundledSkill(pack: BundledSkillPack) {
+        viewModelScope.launch {
+            val entity = repository.installBundledSkill(pack)
+            status.value = "Installed ${entity.title}"
+        }
+    }
+
+    fun setPluginEnabled(pluginId: String, enabled: Boolean) {
+        viewModelScope.launch {
+            prefs.update { p ->
+                val next =
+                    if (enabled) p.enabledPluginIds + pluginId else p.enabledPluginIds - pluginId
+                p.copy(enabledPluginIds = next)
+            }
+        }
+    }
+
+    fun addMcpServer(name: String, endpointUrl: String, token: String) {
+        viewModelScope.launch {
+            repository.addMcpServer(name, endpointUrl, token)
+            status.value = "MCP server added"
+        }
+    }
+
+    fun setMcpServerEnabled(id: String, enabled: Boolean) {
+        viewModelScope.launch { repository.setMcpServerEnabled(id, enabled) }
+    }
+
+    fun deleteMcpServer(id: String) {
+        viewModelScope.launch { repository.deleteMcpServer(id) }
+    }
+
+    fun testMcpServer(id: String) {
+        viewModelScope.launch {
+            status.value = "Testing MCP…"
+            repository.testMcpServer(id).fold(
+                onSuccess = { status.value = it },
+                onFailure = { status.value = it.message ?: "MCP test failed" },
+            )
+        }
+    }
 
     fun renameConversation(id: String, name: String) {
         viewModelScope.launch { repository.renameConversation(id, name) }

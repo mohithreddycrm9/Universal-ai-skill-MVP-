@@ -18,8 +18,17 @@ Open in Android Studio and run on API 26+.
 | **Chat** | Aurora UI, Fast/Balanced/Deep presets, prompt library, share-to-compose, streaming, drawer (search, pin, rename) |
 | **Models** | OpenAI-compatible, **Hugging Face Hub** (search + run via Inference Providers), Anthropic, Google AI, Ollama, custom |
 | **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
-| **Skills** | Featured catalog + custom URLs; per-conversation skill toggles |
+| **Extensions** | Built-in skill packs, remote catalog, **plugins** (`/calc`, `/time`, …), **MCP** HTTP servers |
 | **Settings** | Spend limits (daily/weekly USD), theme, voice, system prompt, sync & backup |
+
+### Extensions (skills, plugins, MCP)
+
+- **Built-in skill packs** — study coach, email, travel, code review, etc. (offline install)
+- **Remote catalog** — install instruction packs from public repositories
+- **Plugins** — enable in Extensions, then use in chat: `/calc`, `/time`, `/units`, `/uuid`, `/words`, `/fetch` (HTTPS only)
+- **MCP** — add an HTTP JSON-RPC endpoint and token; the app lists tools in context. Run: `/mcp YourServerName tool_name {"arg":"value"}`
+
+Popular MCP gateways and hosted servers are documented on the [Model Context Protocol](https://modelcontextprotocol.io) site; point the endpoint URL at your provider’s HTTP bridge.
 
 ### Hugging Face models
 
