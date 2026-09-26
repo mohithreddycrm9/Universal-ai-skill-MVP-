@@ -1,5 +1,6 @@
 package com.skillmcp.mentor
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        handleShareIntent(intent)
         val container = (application as MentorApplication).container
         setContent {
             val prefs by container.userPreferences.prefsFlow.collectAsState(
@@ -28,6 +30,19 @@ class MainActivity : ComponentActivity() {
             ) {
                 MentorApp(container = container)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleShareIntent(intent)
+    }
+
+    private fun handleShareIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_SEND) return
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT)?.trim()
+        if (!text.isNullOrEmpty()) {
+            (application as MentorApplication).container.shareTextHolder.push(text)
         }
     }
 }

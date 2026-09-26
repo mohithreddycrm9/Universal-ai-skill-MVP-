@@ -15,11 +15,19 @@ Open in Android Studio and run on API 26+.
 
 | Tab | What it does |
 | --- | --- |
-| **Chat** | Aurora UI, starter prompts, streaming tokens, conversation drawer |
+| **Chat** | Aurora UI, Fast/Balanced/Deep presets, prompt library, share-to-compose, streaming, drawer (search, pin, rename) |
 | **Models** | OpenAI-compatible, Anthropic, Google Generative API, Ollama + custom providers; test connection |
 | **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
-| **Skills** | Install skill packs from official repository URLs |
-| **Settings** | Theme, voice, system prompt, sync & backup |
+| **Skills** | Featured catalog + custom URLs; per-conversation skill toggles |
+| **Settings** | Spend limits (daily/weekly USD), theme, voice, system prompt, sync & backup |
+
+### Share from other apps
+
+Use **Share** on text in any app and pick **Universal AI**. The text lands in the composer so you can add context and send.
+
+### Spend guardrails
+
+In **Settings → Spend limits**, set daily or weekly USD caps (0 = off). Sends are blocked when estimated usage from the Usage tab exceeds your budget.
 
 ## Sync relay (phone ↔ desktop)
 

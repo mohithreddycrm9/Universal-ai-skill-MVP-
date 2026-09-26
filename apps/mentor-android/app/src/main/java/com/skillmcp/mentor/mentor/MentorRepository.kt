@@ -11,7 +11,10 @@ import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProfileRepository
 import com.skillmcp.mentor.llm.LlmStreaming
 import com.skillmcp.mentor.llm.MultiLlmClient
+import com.skillmcp.mentor.policy.SpendGuard
 import com.skillmcp.mentor.skills.GitHubSkillImporter
+import com.skillmcp.mentor.data.db.ConversationSkillEntity
+import com.skillmcp.mentor.data.db.SavedPromptEntity
 import com.skillmcp.mentor.sync.SyncCoordinator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +34,7 @@ data class UiConversation(
     val id: String,
     val name: String,
     val updatedAt: Long,
+    val pinned: Boolean = false,
 )
 
 class MentorRepository(
@@ -47,6 +51,23 @@ class MentorRepository(
     suspend fun bootstrap() {
         llmProfileRepository.ensureDefaults()
         ensureDefaultProject()
+        seedDefaultPromptsIfEmpty()
+    }
+
+    private suspend fun seedDefaultPromptsIfEmpty() {
+        val existing = dao.observeSavedPrompts().first()
+        if (existing.isNotEmpty()) return
+        val defaults =
+            listOf(
+                "Explain this like I'm new to the topic, with a simple example." to "Explain simply",
+                "Create a step-by-step plan I can follow today." to "Action plan",
+                "Review my message for clarity, tone, and grammar. Suggest improvements." to "Writing coach",
+            )
+        defaults.forEach { (body, title) ->
+            dao.upsertSavedPrompt(
+                SavedPromptEntity(UUID.randomUUID().toString(), title, body, System.currentTimeMillis()),
+            )
+        }
     }
 
     suspend fun ensureDefaultProject() {
@@ -67,8 +88,12 @@ class MentorRepository(
 
     fun observeConversations(): Flow<List<UiConversation>> =
         dao.observeProjects().map { list ->
-            list.map { UiConversation(it.id, it.name, it.updatedAt) }
+            list
+                .sortedWith(compareByDescending<ProjectEntity> { it.pinned }.thenByDescending { it.updatedAt })
+                .map { UiConversation(it.id, it.name, it.updatedAt, it.pinned) }
         }
+
+    fun observeSavedPrompts() = dao.observeSavedPrompts()
 
     fun observeMessages(): Flow<List<UiMessage>> =
         observeActiveConversationId().flatMapLatest { id ->
@@ -107,6 +132,17 @@ class MentorRepository(
         return id
     }
 
+    suspend fun renameConversation(id: String, name: String) {
+        val project = dao.allProjects().find { it.id == id } ?: return
+        dao.upsertProject(project.copy(name = name.trim().ifBlank { project.name }, updatedAt = System.currentTimeMillis()))
+        syncCoordinator.publishStateSnapshot()
+    }
+
+    suspend fun setConversationPinned(id: String, pinned: Boolean) {
+        val project = dao.allProjects().find { it.id == id } ?: return
+        dao.upsertProject(project.copy(pinned = pinned, updatedAt = System.currentTimeMillis()))
+    }
+
     suspend fun deleteConversation(id: String) {
         if (id == defaultProjectId) return
         dao.deleteProject(id)
@@ -138,6 +174,11 @@ class MentorRepository(
         withContext(Dispatchers.IO) {
             bootstrap()
             val prefs = userPreferences.current()
+            val spend =
+                SpendGuard.check(dao, prefs.dailyBudgetUsd, prefs.weeklyBudgetUsd)
+            if (!spend.allowed) {
+                return@withContext Result.failure(IllegalStateException(spend.message))
+            }
             val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }
             val profile = llmProfileRepository.activeProfile()
             val historyList =
@@ -153,11 +194,7 @@ class MentorRepository(
                 ),
             )
 
-            val skills = dao.allSkills()
-            val skillContext =
-                skills.joinToString("\n\n") { skill ->
-                    "### ${skill.owner}/${skill.repo} @ ${skill.ref}\n${skill.markdown.take(4000)}"
-                }
+            val skillContext = buildSkillContext(projectId)
 
             val history = historyList.filter { it.role == "user" || it.role == "assistant" }
             val result =
@@ -168,6 +205,7 @@ class MentorRepository(
                     userMessage = text,
                     extraContext = skillContext,
                     onChunk = onStreamUpdate,
+                    temperature = prefs.modelPreset.temperature,
                 )
 
             result.onSuccess { chat ->
@@ -200,6 +238,7 @@ class MentorRepository(
                 name = project?.name ?: "Chat",
                 goal = prefs.focusTopic,
                 updatedAt = System.currentTimeMillis(),
+                pinned = project?.pinned ?: false,
             ),
         )
         syncCoordinator.publishStateSnapshot()
@@ -228,10 +267,45 @@ class MentorRepository(
                         addedAt = System.currentTimeMillis(),
                     )
                 dao.upsertSkill(entity)
+                val convo = userPreferences.current().activeConversationId.ifBlank { defaultProjectId }
+                dao.upsertConversationSkill(ConversationSkillEntity(convo, entity.id, enabled = true))
                 syncCoordinator.publishStateSnapshot()
                 entity
             }
         }
+
+    suspend fun setSkillEnabledForConversation(conversationId: String, skillId: String, enabled: Boolean) {
+        dao.upsertConversationSkill(ConversationSkillEntity(conversationId, skillId, enabled))
+    }
+
+    suspend fun isSkillEnabled(conversationId: String, skillId: String): Boolean {
+        val row = dao.conversationSkills(conversationId).find { it.skillId == skillId }
+        return row?.enabled ?: true
+    }
+
+    private suspend fun buildSkillContext(conversationId: String): String {
+        val overrides = dao.conversationSkills(conversationId).associate { it.skillId to it.enabled }
+        return dao.allSkills()
+            .filter { overrides[it.id] != false }
+            .joinToString("\n\n") { skill ->
+                "### ${skill.title}\n${skill.markdown.take(4000)}"
+            }
+    }
+
+    suspend fun savePrompt(title: String, body: String) {
+        dao.upsertSavedPrompt(
+            SavedPromptEntity(
+                id = UUID.randomUUID().toString(),
+                title = title.trim().ifBlank { "Prompt" },
+                body = body.trim(),
+                createdAt = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    suspend fun deletePrompt(id: String) {
+        dao.deleteSavedPrompt(id)
+    }
 
     suspend fun removeSkill(id: String) {
         dao.deleteSkill(id)

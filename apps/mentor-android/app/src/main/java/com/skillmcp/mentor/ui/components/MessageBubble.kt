@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,17 +13,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.ui.theme.AppColors
 import com.skillmcp.mentor.ui.theme.BubbleShapeAssistant
 import com.skillmcp.mentor.ui.theme.BubbleShapeUser
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageBubble(
     content: String,
     isUser: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val clipboard = LocalClipboardManager.current
     val dark = isSystemInDarkTheme()
     val bubbleColor =
         when {
@@ -37,7 +43,10 @@ fun MessageBubble(
         contentAlignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth(0.9f),
+            modifier =
+                Modifier
+                    .fillMaxWidth(0.9f)
+                    .combinedClickable(onClick = {}, onLongClick = { clipboard.setText(AnnotatedString(content)) }),
             shape = shape,
             color = bubbleColor,
             shadowElevation = if (isUser) 4.dp else 1.dp,

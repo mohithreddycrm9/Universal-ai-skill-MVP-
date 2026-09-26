@@ -6,7 +6,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.data.MentorPrefs
+import com.skillmcp.mentor.data.db.SavedPromptEntity
 import com.skillmcp.mentor.data.db.SkillEntity
+import com.skillmcp.mentor.llm.ModelPreset
+import com.skillmcp.mentor.skills.SkillCatalog
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
 import com.skillmcp.mentor.llm.UsageByDayRow
@@ -54,6 +57,9 @@ data class MentorUiState(
     val activeStep: String = "",
     val lastCommand: String = "",
     val streamPreview: String = "",
+    val savedPrompts: List<SavedPromptEntity> = emptyList(),
+    val skillToggles: Map<String, Boolean> = emptyMap(),
+    val catalogSkills: List<com.skillmcp.mentor.skills.CatalogSkill> = SkillCatalog.featured,
 )
 
 class MentorViewModel(
@@ -72,6 +78,7 @@ class MentorViewModel(
     val lastCommand = MutableStateFlow("")
     val usageWindow = MutableStateFlow(UsageWindow.WEEK)
     val streamPreview = MutableStateFlow("")
+    val skillToggles = MutableStateFlow<Map<String, Boolean>>(emptyMap())
 
     private val sinceMs =
         usageWindow.map { window ->
@@ -161,7 +168,7 @@ class MentorViewModel(
     )
 
     private val coreData =
-        combine(chatSlice, metaSlice, streamPreview) { chat, meta, preview ->
+        combine(chatSlice, metaSlice, repository.observeSavedPrompts(), streamPreview, skillToggles) { chat, meta, prompts, preview, toggles ->
             CoreSlice(
                 messages = chat.messages,
                 conversations = chat.conversations,
@@ -176,6 +183,8 @@ class MentorViewModel(
                 usageWindow = meta.usage.window,
                 prefs = meta.prefs,
                 streamPreview = preview,
+                savedPrompts = prompts,
+                skillToggles = toggles,
             )
         }
 
@@ -193,6 +202,8 @@ class MentorViewModel(
         val usageWindow: UsageWindow,
         val prefs: MentorPrefs,
         val streamPreview: String,
+        val savedPrompts: List<SavedPromptEntity>,
+        val skillToggles: Map<String, Boolean>,
     )
 
     private val interactionState =
@@ -234,6 +245,8 @@ class MentorViewModel(
                 activeStep = interaction.activeStep,
                 lastCommand = interaction.lastCommand,
                 streamPreview = core.streamPreview,
+                savedPrompts = core.savedPrompts,
+                skillToggles = core.skillToggles,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
@@ -241,6 +254,25 @@ class MentorViewModel(
         viewModelScope.launch {
             repository.bootstrap()
             repository.startSyncIfConfigured()
+        }
+        viewModelScope.launch {
+            combine(repository.observeActiveConversationId(), repository.observeSkills()) { convoId, skills ->
+                convoId to skills
+            }.collect { (convoId, skills) ->
+                skillToggles.value =
+                    skills.associate { skill ->
+                        skill.id to repository.isSkillEnabled(convoId, skill.id)
+                    }
+            }
+        }
+        viewModelScope.launch {
+            container.shareTextHolder.pending.collect { text ->
+                if (!text.isNullOrBlank()) {
+                    draft.value = text
+                    container.shareTextHolder.consume()
+                    status.value = "Shared text ready to send"
+                }
+            }
         }
     }
 
@@ -385,6 +417,36 @@ class MentorViewModel(
 
     fun updateFocusTopic(topic: String) {
         viewModelScope.launch { repository.updateFocusTopic(topic) }
+    }
+
+    fun setModelPreset(preset: ModelPreset) {
+        viewModelScope.launch { prefs.update { it.copy(modelPreset = preset) } }
+    }
+
+    fun setSkillEnabled(skillId: String, enabled: Boolean) {
+        viewModelScope.launch {
+            val convo = prefs.current().activeConversationId.ifBlank { "default" }
+            repository.setSkillEnabledForConversation(convo, skillId, enabled)
+            skillToggles.value = skillToggles.value + (skillId to enabled)
+        }
+    }
+
+    fun installCatalogSkill(url: String) = importSkill(url)
+
+    fun renameConversation(id: String, name: String) {
+        viewModelScope.launch { repository.renameConversation(id, name) }
+    }
+
+    fun pinConversation(id: String, pinned: Boolean) {
+        viewModelScope.launch { repository.setConversationPinned(id, pinned) }
+    }
+
+    fun savePrompt(title: String, body: String) {
+        viewModelScope.launch { repository.savePrompt(title, body) }
+    }
+
+    fun deletePrompt(id: String) {
+        viewModelScope.launch { repository.deletePrompt(id) }
     }
 
     class Factory(

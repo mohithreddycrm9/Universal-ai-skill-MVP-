@@ -27,6 +27,7 @@ class LlmStreaming(
         userMessage: String,
         extraContext: String = "",
         onChunk: (String) -> Unit,
+        temperature: Double = 0.7,
     ): Result<LlmChatResult> =
         runCatching {
             val started = System.currentTimeMillis()
@@ -41,7 +42,7 @@ class LlmStreaming(
             when (profile.kind) {
                 LlmProviderKind.OPENAI_COMPAT,
                 LlmProviderKind.OLLAMA,
-                -> streamOpenAiCompat(profile, system, history, userMessage, onChunk)
+                -> streamOpenAiCompat(profile, system, history, userMessage, onChunk, temperature)
                 else -> {
                     val client = MultiLlmClient(http)
                     val result =
@@ -58,6 +59,7 @@ class LlmStreaming(
         history: List<ChatMessageDto>,
         userMessage: String,
         onChunk: (String) -> Unit,
+        temperature: Double,
     ): LlmChatResult {
         val base = profile.baseUrl.trimEnd('/') + "/"
         val url =
@@ -77,7 +79,7 @@ class LlmStreaming(
                 .put("model", profile.model)
                 .put("messages", messages)
                 .put("stream", true)
-                .put("temperature", 0.7)
+                .put("temperature", temperature)
                 .toString()
         val builder =
             Request.Builder()

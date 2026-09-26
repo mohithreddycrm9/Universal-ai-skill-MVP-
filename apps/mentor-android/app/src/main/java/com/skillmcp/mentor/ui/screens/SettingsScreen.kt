@@ -43,6 +43,37 @@ fun SettingsScreen(vm: MentorViewModel) {
                 subtitle = "Personalize your assistant, voice, and sync.",
             )
 
+            Text("Response style", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            com.skillmcp.mentor.llm.ModelPreset.entries.forEach { preset ->
+                Button(
+                    onClick = { vm.setModelPreset(preset) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = state.prefs.modelPreset != preset,
+                ) {
+                    Text("${preset.label} — ${preset.hint}")
+                }
+            }
+
+            Text("Spend limits (USD)", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = if (state.prefs.dailyBudgetUsd > 0) state.prefs.dailyBudgetUsd.toString() else "",
+                onValueChange = { v ->
+                    vm.updatePrefs { p -> p.copy(dailyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
+                },
+                label = { Text("Daily budget (0 = off)") },
+                singleLine = true,
+            )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = if (state.prefs.weeklyBudgetUsd > 0) state.prefs.weeklyBudgetUsd.toString() else "",
+                onValueChange = { v ->
+                    vm.updatePrefs { p -> p.copy(weeklyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
+                },
+                label = { Text("Weekly budget (0 = off)") },
+                singleLine = true,
+            )
+
             Text("Assistant", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
