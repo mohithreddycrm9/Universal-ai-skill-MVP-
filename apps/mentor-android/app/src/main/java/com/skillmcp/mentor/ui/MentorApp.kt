@@ -2,8 +2,10 @@ package com.skillmcp.mentor.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -21,13 +23,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.ui.screens.ChatScreen
+import com.skillmcp.mentor.ui.screens.ModelsScreen
 import com.skillmcp.mentor.ui.screens.SettingsScreen
 import com.skillmcp.mentor.ui.screens.SkillsScreen
+import com.skillmcp.mentor.ui.screens.UsageScreen
 
-enum class MentorTab(val route: String) {
-    Chat("chat"),
-    Skills("skills"),
-    Settings("settings"),
+enum class MentorTab(val route: String, val label: String) {
+    Chat("chat", "Chat"),
+    Models("models", "Models"),
+    Usage("usage", "Usage"),
+    Skills("skills", "Skills"),
+    Settings("settings", "Settings"),
 }
 
 @Composable
@@ -54,14 +60,16 @@ fun MentorApp(container: AppContainer) {
                         icon = {
                             Icon(
                                 when (tab) {
-                                    MentorTab.Chat -> Icons.Default.Chat
+                                    MentorTab.Chat -> Icons.AutoMirrored.Filled.Chat
+                                    MentorTab.Models -> Icons.Default.Hub
+                                    MentorTab.Usage -> Icons.Default.BarChart
                                     MentorTab.Skills -> Icons.Default.Extension
                                     MentorTab.Settings -> Icons.Default.Settings
                                 },
-                                contentDescription = tab.name,
+                                contentDescription = tab.label,
                             )
                         },
-                        label = { Text(tab.name) },
+                        label = { Text(tab.label) },
                     )
                 }
             }
@@ -73,6 +81,8 @@ fun MentorApp(container: AppContainer) {
             modifier = Modifier.padding(padding),
         ) {
             composable(MentorTab.Chat.route) { ChatScreen(vm) }
+            composable(MentorTab.Models.route) { ModelsScreen(vm) }
+            composable(MentorTab.Usage.route) { UsageScreen(vm) }
             composable(MentorTab.Skills.route) { SkillsScreen(vm) }
             composable(MentorTab.Settings.route) { SettingsScreen(vm) }
         }

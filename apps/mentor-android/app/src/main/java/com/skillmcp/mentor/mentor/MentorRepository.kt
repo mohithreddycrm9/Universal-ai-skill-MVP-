@@ -6,12 +6,16 @@ import com.skillmcp.mentor.data.db.ChatMessageEntity
 import com.skillmcp.mentor.data.db.MentorDao
 import com.skillmcp.mentor.data.db.ProjectEntity
 import com.skillmcp.mentor.data.db.SkillEntity
+import com.skillmcp.mentor.llm.LlmChatResult
+import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProfileRepository
+import com.skillmcp.mentor.llm.LlmStreaming
 import com.skillmcp.mentor.llm.MultiLlmClient
 import com.skillmcp.mentor.skills.GitHubSkillImporter
 import com.skillmcp.mentor.sync.SyncCoordinator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -23,11 +27,17 @@ data class UiMessage(
     val content: String,
 )
 
+data class UiConversation(
+    val id: String,
+    val name: String,
+    val updatedAt: Long,
+)
+
 class MentorRepository(
     private val dao: MentorDao,
     private val multiLlmClient: MultiLlmClient,
+    private val llmStreaming: LlmStreaming,
     private val llmProfileRepository: LlmProfileRepository,
-    private val buildSuggestionEngine: BuildSuggestionEngine,
     private val userPreferences: UserPreferences,
     private val skillImporter: GitHubSkillImporter,
     private val syncCoordinator: SyncCoordinator,
@@ -40,22 +50,29 @@ class MentorRepository(
     }
 
     suspend fun ensureDefaultProject() {
-        val existing = dao.allProjects().any { it.id == defaultProjectId }
-        if (!existing) {
+        if (dao.allProjects().none { it.id == defaultProjectId }) {
             dao.upsertProject(
                 ProjectEntity(
                     id = defaultProjectId,
-                    name = "Conversations",
-                    goal = userPreferences.current().focusTopic,
+                    name = "General",
+                    goal = "",
                     updatedAt = System.currentTimeMillis(),
                 ),
             )
         }
     }
 
-    fun observeMessages(projectId: String = defaultProjectId): Flow<List<UiMessage>> =
-        dao.observeMessages(projectId).map { list ->
-            list.map { UiMessage(it.id, it.role, it.content) }
+    fun observeActiveConversationId(): Flow<String> =
+        userPreferences.prefsFlow.map { it.activeConversationId.ifBlank { defaultProjectId } }
+
+    fun observeConversations(): Flow<List<UiConversation>> =
+        dao.observeProjects().map { list ->
+            list.map { UiConversation(it.id, it.name, it.updatedAt) }
+        }
+
+    fun observeMessages(): Flow<List<UiMessage>> =
+        observeActiveConversationId().flatMapLatest { id ->
+            dao.observeMessages(id).map { list -> list.map { UiMessage(it.id, it.role, it.content) } }
         }
 
     fun observeSkills() = dao.observeSkills()
@@ -68,9 +85,40 @@ class MentorRepository(
 
     fun observeUsageByDay(sinceMs: Long) = llmProfileRepository.observeUsageByDay(sinceMs)
 
-    fun observeBuildEvents(projectId: String = defaultProjectId) = dao.observeBuildEvents(projectId)
+    fun observeBuildEvents(): Flow<List<BuildEventEntity>> =
+        observeActiveConversationId().flatMapLatest { dao.observeBuildEvents(it) }
 
-    suspend fun recordBuildEvent(kind: String, summary: String? = null, projectId: String = defaultProjectId) {
+    suspend fun selectConversation(id: String) {
+        userPreferences.update { it.copy(activeConversationId = id) }
+    }
+
+    suspend fun createConversation(name: String): String {
+        val id = UUID.randomUUID().toString()
+        dao.upsertProject(
+            ProjectEntity(
+                id = id,
+                name = name.ifBlank { "New chat" },
+                goal = "",
+                updatedAt = System.currentTimeMillis(),
+            ),
+        )
+        userPreferences.update { it.copy(activeConversationId = id) }
+        syncCoordinator.publishStateSnapshot()
+        return id
+    }
+
+    suspend fun deleteConversation(id: String) {
+        if (id == defaultProjectId) return
+        dao.deleteProject(id)
+        val active = userPreferences.current().activeConversationId
+        if (active == id) {
+            userPreferences.update { it.copy(activeConversationId = defaultProjectId) }
+        }
+        syncCoordinator.publishStateSnapshot()
+    }
+
+    suspend fun recordBuildEvent(kind: String, summary: String? = null) {
+        val projectId = userPreferences.current().activeConversationId.ifBlank { defaultProjectId }
         dao.insertBuildEvent(
             BuildEventEntity(
                 id = UUID.randomUUID().toString(),
@@ -85,19 +133,24 @@ class MentorRepository(
 
     suspend fun sendUserMessage(
         text: String,
-        projectId: String = defaultProjectId,
-        onAssistantDelta: (String) -> Unit = {},
+        onStreamUpdate: (String) -> Unit = {},
     ): Result<String> =
         withContext(Dispatchers.IO) {
             bootstrap()
             val prefs = userPreferences.current()
+            val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }
             val profile = llmProfileRepository.activeProfile()
             val historyList =
                 dao.observeMessages(projectId).first().map { ChatMessageDto(it.role, it.content) }
 
-            val userId = UUID.randomUUID().toString()
             dao.insertMessage(
-                ChatMessageEntity(userId, projectId, "user", text, System.currentTimeMillis()),
+                ChatMessageEntity(
+                    UUID.randomUUID().toString(),
+                    projectId,
+                    "user",
+                    text,
+                    System.currentTimeMillis(),
+                ),
             )
 
             val skills = dao.allSkills()
@@ -106,18 +159,18 @@ class MentorRepository(
                     "### ${skill.owner}/${skill.repo} @ ${skill.ref}\n${skill.markdown.take(4000)}"
                 }
 
+            val history = historyList.filter { it.role == "user" || it.role == "assistant" }
             val result =
-                multiLlmClient.chat(
+                llmStreaming.streamChat(
                     profile = profile,
                     systemPrompt = prefs.assistantSystemPrompt,
-                    history = historyList.filter { it.role == "user" || it.role == "assistant" },
+                    history = history,
                     userMessage = text,
                     extraContext = skillContext,
+                    onChunk = onStreamUpdate,
                 )
 
             result.onSuccess { chat ->
-                onAssistantDelta(chat.content)
-                llmProfileRepository.recordUsage(profile, chat, success = true)
                 dao.insertMessage(
                     ChatMessageEntity(
                         UUID.randomUUID().toString(),
@@ -127,26 +180,39 @@ class MentorRepository(
                         System.currentTimeMillis(),
                     ),
                 )
-                dao.upsertProject(
-                    ProjectEntity(
-                        id = projectId,
-                        name = "Conversations",
-                        goal = prefs.focusTopic,
-                        updatedAt = System.currentTimeMillis(),
-                    ),
-                )
-                syncCoordinator.publishStateSnapshot()
+                onSuccessChat(projectId, profile, chat, prefs)
             }
-            result.onFailure { err ->
-                llmProfileRepository.recordUsage(
-                    profile,
-                    com.skillmcp.mentor.llm.LlmChatResult("", null, profile.model, 0),
-                    success = false,
-                    errorMessage = err.message,
-                )
-            }
+            result.onFailure { err -> onFailureChat(profile, err) }
             result.map { it.content }
         }
+
+    private suspend fun onSuccessChat(
+        projectId: String,
+        profile: LlmProfile,
+        chat: LlmChatResult,
+        prefs: com.skillmcp.mentor.data.MentorPrefs,
+    ) {
+        llmProfileRepository.recordUsage(profile, chat, success = true)
+        val project = dao.allProjects().find { it.id == projectId }
+        dao.upsertProject(
+            ProjectEntity(
+                id = projectId,
+                name = project?.name ?: "Chat",
+                goal = prefs.focusTopic,
+                updatedAt = System.currentTimeMillis(),
+            ),
+        )
+        syncCoordinator.publishStateSnapshot()
+    }
+
+    private suspend fun onFailureChat(profile: LlmProfile, err: Throwable) {
+        llmProfileRepository.recordUsage(
+            profile,
+            LlmChatResult("", null, profile.model, 0),
+            success = false,
+            errorMessage = err.message,
+        )
+    }
 
     suspend fun importSkill(repoUrl: String): Result<SkillEntity> =
         withContext(Dispatchers.IO) {
@@ -174,23 +240,18 @@ class MentorRepository(
 
     suspend fun updateFocusTopic(topic: String) {
         userPreferences.update { it.copy(focusTopic = topic) }
-        dao.upsertProject(
-            ProjectEntity(
-                id = defaultProjectId,
-                name = "Conversations",
-                goal = topic,
-                updatedAt = System.currentTimeMillis(),
-            ),
-        )
         syncCoordinator.publishStateSnapshot()
     }
 
     suspend fun setActiveLlmProfile(id: String) = llmProfileRepository.setActiveProfile(id)
 
-    suspend fun saveLlmProfile(profile: com.skillmcp.mentor.llm.LlmProfile) =
-        llmProfileRepository.upsertProfile(profile)
+    suspend fun saveLlmProfile(profile: LlmProfile) = llmProfileRepository.upsertProfile(profile)
 
     suspend fun deleteLlmProfile(id: String) = llmProfileRepository.deleteProfile(id)
+
+    suspend fun testLlmProfile(profile: LlmProfile) = llmProfileRepository.testProfile(profile)
+
+    suspend fun activeLlmProfile() = llmProfileRepository.activeProfile()
 
     fun startSyncIfConfigured() {
         syncCoordinator.startFromPrefs()

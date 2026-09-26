@@ -84,6 +84,16 @@ class LlmProfileRepository(
         }
     }
 
+    suspend fun testProfile(profile: LlmProfile): Result<String> {
+        val client = MultiLlmClient()
+        return client.chat(
+            profile = profile,
+            systemPrompt = "You are a connection test.",
+            history = emptyList(),
+            userMessage = "Reply with exactly: OK",
+        ).map { it.content.take(80) }
+    }
+
     suspend fun activeProfile(): LlmProfile {
         val id = userPreferences.current().activeLlmProfileId.ifBlank { "openai" }
         val entity = dao.getLlmProfile(id) ?: dao.allLlmProfiles().firstOrNull()

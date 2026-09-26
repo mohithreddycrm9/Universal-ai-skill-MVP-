@@ -7,22 +7,45 @@ import androidx.lifecycle.viewModelScope
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.data.MentorPrefs
 import com.skillmcp.mentor.data.db.SkillEntity
+import com.skillmcp.mentor.llm.LlmProfile
+import com.skillmcp.mentor.llm.LlmProviderKind
+import com.skillmcp.mentor.llm.UsageByDayRow
+import com.skillmcp.mentor.llm.UsageByModelRow
+import com.skillmcp.mentor.llm.UsageTotals
 import com.skillmcp.mentor.mentor.AgentEventHint
 import com.skillmcp.mentor.mentor.BuildSuggestion
+import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.mentor.UiMessage
 import com.skillmcp.mentor.voice.ElevenLabsVoiceClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+
+enum class UsageWindow(val days: Int, val label: String) {
+    TODAY(1, "Today"),
+    WEEK(7, "7 days"),
+    MONTH(30, "30 days"),
+}
 
 data class MentorUiState(
     val messages: List<UiMessage> = emptyList(),
     val suggestions: List<BuildSuggestion> = emptyList(),
     val skills: List<SkillEntity> = emptyList(),
+    val conversations: List<UiConversation> = emptyList(),
+    val activeConversationId: String = "default",
+    val llmProfiles: List<LlmProfile> = emptyList(),
+    val activeLlmProfile: LlmProfile? = null,
+    val usageTotals: UsageTotals = UsageTotals(0, 0, 0, 0.0),
+    val usageByModel: List<UsageByModelRow> = emptyList(),
+    val usageByDay: List<UsageByDayRow> = emptyList(),
+    val usageWindow: UsageWindow = UsageWindow.WEEK,
     val prefs: MentorPrefs = MentorPrefs(),
     val draft: String = "",
     val isSending: Boolean = false,
@@ -30,6 +53,7 @@ data class MentorUiState(
     val status: String? = null,
     val activeStep: String = "",
     val lastCommand: String = "",
+    val streamPreview: String = "",
 )
 
 class MentorViewModel(
@@ -46,13 +70,37 @@ class MentorViewModel(
     val status = MutableStateFlow<String?>(null)
     val activeStep = MutableStateFlow("")
     val lastCommand = MutableStateFlow("")
+    val usageWindow = MutableStateFlow(UsageWindow.WEEK)
+    val streamPreview = MutableStateFlow("")
+
+    private val sinceMs =
+        usageWindow.map { window ->
+            System.currentTimeMillis() - TimeUnit.DAYS.toMillis(window.days.toLong())
+        }
+
+    private val usageTotalsFlow =
+        sinceMs.flatMapLatest { repository.observeUsageTotals(it) }
+
+    private val usageByModelFlow =
+        sinceMs.flatMapLatest { repository.observeUsageByModel(it) }
+
+    private val usageByDayFlow =
+        sinceMs.flatMapLatest { repository.observeUsageByDay(it) }
+
+    private val activeProfileFlow =
+        combine(
+            repository.observeLlmProfiles(),
+            prefs.prefsFlow.map { it.activeLlmProfileId },
+        ) { profiles, id ->
+            profiles.find { it.id == id } ?: profiles.firstOrNull()
+        }
 
     private val suggestionsFlow =
         combine(
             repository.observeBuildEvents(),
             activeStep,
             lastCommand,
-            prefs.prefsFlow.map { it.buildGoal },
+            prefs.prefsFlow.map { it.focusTopic },
         ) { events, step, cmd, goal ->
             container.buildSuggestionEngine.compute(
                 com.skillmcp.mentor.mentor.BuildSuggestionsInput(
@@ -64,36 +112,95 @@ class MentorViewModel(
             )
         }
 
-    private val coreData =
+    private val chatSlice =
         combine(
             repository.observeMessages(),
+            repository.observeConversations(),
+            repository.observeActiveConversationId(),
             suggestionsFlow,
+        ) { messages, conversations, activeId, suggestions ->
+            ChatSlice(messages, conversations, activeId, suggestions)
+        }
+
+    private data class ChatSlice(
+        val messages: List<UiMessage>,
+        val conversations: List<UiConversation>,
+        val activeConversationId: String,
+        val suggestions: List<BuildSuggestion>,
+    )
+
+    private val usageSlice =
+        combine(usageTotalsFlow, usageByModelFlow, usageByDayFlow, usageWindow) { totals, byModel, byDay, window ->
+            UsageSlice(totals, byModel, byDay, window)
+        }
+
+    private data class UsageSlice(
+        val totals: UsageTotals,
+        val byModel: List<UsageByModelRow>,
+        val byDay: List<UsageByDayRow>,
+        val window: UsageWindow,
+    )
+
+    private val metaSlice =
+        combine(
             repository.observeSkills(),
+            repository.observeLlmProfiles(),
+            activeProfileFlow,
+            usageSlice,
             prefs.prefsFlow,
-        ) { messages, suggestions, skills, mentorPrefs ->
-            CoreSlice(messages, suggestions, skills, mentorPrefs)
+        ) { skills, profiles, activeProfile, usage, mentorPrefs ->
+            MetaSlice(skills, profiles, activeProfile, usage, mentorPrefs)
+        }
+
+    private data class MetaSlice(
+        val skills: List<SkillEntity>,
+        val llmProfiles: List<LlmProfile>,
+        val activeLlmProfile: LlmProfile?,
+        val usage: UsageSlice,
+        val prefs: MentorPrefs,
+    )
+
+    private val coreData =
+        combine(chatSlice, metaSlice, streamPreview) { chat, meta, preview ->
+            CoreSlice(
+                messages = chat.messages,
+                conversations = chat.conversations,
+                activeConversationId = chat.activeConversationId,
+                suggestions = chat.suggestions,
+                skills = meta.skills,
+                llmProfiles = meta.llmProfiles,
+                activeLlmProfile = meta.activeLlmProfile,
+                usageTotals = meta.usage.totals,
+                usageByModel = meta.usage.byModel,
+                usageByDay = meta.usage.byDay,
+                usageWindow = meta.usage.window,
+                prefs = meta.prefs,
+                streamPreview = preview,
+            )
         }
 
     private data class CoreSlice(
         val messages: List<UiMessage>,
+        val conversations: List<UiConversation>,
+        val activeConversationId: String,
         val suggestions: List<BuildSuggestion>,
         val skills: List<SkillEntity>,
+        val llmProfiles: List<LlmProfile>,
+        val activeLlmProfile: LlmProfile?,
+        val usageTotals: UsageTotals,
+        val usageByModel: List<UsageByModelRow>,
+        val usageByDay: List<UsageByDayRow>,
+        val usageWindow: UsageWindow,
         val prefs: MentorPrefs,
+        val streamPreview: String,
     )
 
     private val interactionState =
         combine(
-            combine(draft, isSending, isListening) { d, sending, listening -> Triple(d, sending, listening) },
+            combine(draft, isSending, isListening) { d, s, l -> Triple(d, s, l) },
             combine(status, activeStep, lastCommand) { st, step, cmd -> Triple(st, step, cmd) },
-        ) { first, second ->
-            InteractionSlice(
-                draft = first.first,
-                isSending = first.second,
-                isListening = first.third,
-                status = second.first,
-                activeStep = second.second,
-                lastCommand = second.third,
-            )
+        ) { a, b ->
+            InteractionSlice(a.first, a.second, a.third, b.first, b.second, b.third)
         }
 
     private data class InteractionSlice(
@@ -111,6 +218,14 @@ class MentorViewModel(
                 messages = core.messages,
                 suggestions = core.suggestions,
                 skills = core.skills,
+                conversations = core.conversations,
+                activeConversationId = core.activeConversationId,
+                llmProfiles = core.llmProfiles,
+                activeLlmProfile = core.activeLlmProfile,
+                usageTotals = core.usageTotals,
+                usageByModel = core.usageByModel,
+                usageByDay = core.usageByDay,
+                usageWindow = core.usageWindow,
                 prefs = core.prefs,
                 draft = interaction.draft,
                 isSending = interaction.isSending,
@@ -118,12 +233,13 @@ class MentorViewModel(
                 status = interaction.status,
                 activeStep = interaction.activeStep,
                 lastCommand = interaction.lastCommand,
+                streamPreview = core.streamPreview,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
     init {
         viewModelScope.launch {
-            repository.ensureDefaultProject()
+            repository.bootstrap()
             repository.startSyncIfConfigured()
         }
     }
@@ -132,23 +248,12 @@ class MentorViewModel(
         draft.value = value
     }
 
-    fun onActiveStepChange(value: String) {
-        activeStep.value = value
-    }
-
-    fun onLastCommandChange(value: String) {
-        lastCommand.value = value
-    }
-
     fun applySuggestion(prompt: String) {
         draft.value = prompt
     }
 
-    fun recordTestFailed() {
-        viewModelScope.launch {
-            repository.recordBuildEvent("test_failed", "Unit tests failed on device")
-            status.value = "Logged test_failed — new chips generated"
-        }
+    fun setUsageWindow(window: UsageWindow) {
+        usageWindow.value = window
     }
 
     fun sendMessage() {
@@ -157,14 +262,15 @@ class MentorViewModel(
         viewModelScope.launch {
             isSending.value = true
             status.value = null
-            val result = repository.sendUserMessage(text)
+            streamPreview.value = ""
+            val result =
+                repository.sendUserMessage(text) { partial -> streamPreview.value = partial }
+            streamPreview.value = ""
             isSending.value = false
             if (result.isSuccess) {
                 draft.value = ""
                 val reply = result.getOrNull() ?: return@launch
-                if (prefs.current().speakResponses) {
-                    speak(reply)
-                }
+                if (prefs.current().speakResponses) speak(reply)
             } else {
                 status.value = result.exceptionOrNull()?.message ?: "Send failed"
             }
@@ -176,10 +282,9 @@ class MentorViewModel(
         viewModelScope.launch {
             isListening.value = true
             val locale = prefs.current().voiceLocaleTag
-            val heard = voice.listenOnce(locale)
-            isListening.value = false
-            heard.onSuccess { draft.value = it }
-            heard.onFailure { status.value = it.message }
+            voice.listenOnce(locale).also { isListening.value = false }
+                .onSuccess { draft.value = it }
+                .onFailure { status.value = it.message }
         }
     }
 
@@ -188,11 +293,7 @@ class MentorViewModel(
             val p = prefs.current()
             val eleven =
                 if (p.elevenLabsApiKey.isNotBlank() && p.elevenLabsVoiceId.isNotBlank()) {
-                    ElevenLabsVoiceClient(
-                        apiKey = p.elevenLabsApiKey,
-                        voiceId = p.elevenLabsVoiceId,
-                        cacheDir = appContext.cacheDir,
-                    )
+                    ElevenLabsVoiceClient(p.elevenLabsApiKey, p.elevenLabsVoiceId, appContext.cacheDir)
                 } else {
                     null
                 }
@@ -200,15 +301,65 @@ class MentorViewModel(
         }
     }
 
+    fun newConversation() {
+        viewModelScope.launch {
+            repository.createConversation("Chat ${System.currentTimeMillis() % 1000}")
+        }
+    }
+
+    fun selectConversation(id: String) {
+        viewModelScope.launch { repository.selectConversation(id) }
+    }
+
+    fun deleteConversation(id: String) {
+        viewModelScope.launch { repository.deleteConversation(id) }
+    }
+
+    fun selectLlmProfile(id: String) {
+        viewModelScope.launch { repository.setActiveLlmProfile(id) }
+    }
+
+    fun saveLlmProfile(profile: LlmProfile) {
+        viewModelScope.launch {
+            repository.saveLlmProfile(profile)
+            status.value = "Saved ${profile.name}"
+        }
+    }
+
+    fun addCustomLlmProfile(name: String, kind: LlmProviderKind, baseUrl: String, model: String, apiKey: String) {
+        val id = "custom-${UUID.randomUUID()}"
+        saveLlmProfile(
+            LlmProfile(
+                id = id,
+                name = name,
+                kind = kind,
+                baseUrl = baseUrl,
+                model = model,
+                apiKey = apiKey,
+            ),
+        )
+        viewModelScope.launch { repository.setActiveLlmProfile(id) }
+    }
+
+    fun testLlmProfile(profile: LlmProfile) {
+        viewModelScope.launch {
+            status.value = "Testing ${profile.name}…"
+            val result = repository.testLlmProfile(profile)
+            status.value = result.fold(onSuccess = { "Connected: $it" }, onFailure = { it.message ?: "Failed" })
+        }
+    }
+
+    fun deleteLlmProfile(id: String) {
+        viewModelScope.launch { repository.deleteLlmProfile(id) }
+    }
+
     fun importSkill(url: String) {
         viewModelScope.launch {
             status.value = "Importing skill…"
-            val result = repository.importSkill(url)
-            status.value =
-                result.fold(
-                    onSuccess = { "Imported ${it.title}" },
-                    onFailure = { it.message ?: "Import failed" },
-                )
+            repository.importSkill(url).fold(
+                onSuccess = { status.value = "Imported ${it.title}" },
+                onFailure = { status.value = it.message ?: "Import failed" },
+            )
         }
     }
 
@@ -225,16 +376,16 @@ class MentorViewModel(
 
     fun runBackupNow() {
         viewModelScope.launch {
-            val result = container.backupRepository.uploadIfConfigured()
-            status.value = result.getOrElse { it.message ?: "Backup failed" }
+            container.backupRepository.uploadIfConfigured().fold(
+                onSuccess = { status.value = it },
+                onFailure = { status.value = it.message ?: "Backup failed" },
+            )
         }
     }
 
     fun updateFocusTopic(topic: String) {
         viewModelScope.launch { repository.updateFocusTopic(topic) }
     }
-
-    fun updateBuildGoal(goal: String) = updateFocusTopic(goal)
 
     class Factory(
         private val container: AppContainer,

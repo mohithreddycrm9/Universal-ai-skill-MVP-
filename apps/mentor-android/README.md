@@ -1,46 +1,45 @@
-# Code Mentor (Android)
+# Universal AI (Android)
 
-Personal coding mentor for mobile: OpenAI-compatible LLM chat, Cursor-style **build suggestion chips**, live speech (STT/TTS), optional **ElevenLabs** cloned voice, **GitHub SKILL.md** imports, encrypted **daily cloud backup**, and **WebSocket** real-time sync.
+Personal AI for **any topic** — connect **any LLM** you choose, with premium chat UI, streaming replies, usage dashboard, multi-chat threads, voice, GitHub skills, encrypted backup, and real-time sync.
 
-## Requirements
+## Run the app
 
-- Android Studio Ladybug+ (or CLI: JDK 17, Android SDK 35)
-- An LLM API key (OpenAI, OpenRouter, or local LM Studio with a compatible base URL)
+```bash
+cd apps/mentor-android
+./gradlew :app:assembleDebug
+```
 
-## Run
-
-1. Open `apps/mentor-android` in Android Studio.
-2. Sync Gradle, then **Run** on a device or emulator (API 26+).
-3. In **Settings**, set LLM base URL, model, and API key.
-4. Optional: set build goal, WebSocket sync URL, and backup PUT URL.
+Open in Android Studio and run on API 26+.
 
 ## Features
 
-| Area | Behavior |
+| Tab | What it does |
 | --- | --- |
-| Mentor chat | OpenAI-compatible `chat/completions` with system prompt + imported skills |
-| Build chips | Heuristics aligned with Universal Skills MCP `get_build_suggestions` signals |
-| Voice | Android STT + multilingual TTS; ElevenLabs for cloned voice when configured |
-| Skills | Paste a public `github.com/owner/repo` URL; app fetches `SKILL.md` |
-| Backup | AES-GCM encrypted snapshot uploaded daily (WorkManager) + manual trigger |
-| Sync | Encrypted snapshots pushed over user-provided WebSocket relay |
-| Theme | System/light/dark, accent hue, font scale |
+| **Chat** | Aurora UI, starter prompts, streaming tokens, conversation drawer |
+| **Models** | OpenAI-compatible, Anthropic, Google Generative API, Ollama + custom providers; test connection |
+| **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
+| **Skills** | Import public GitHub `SKILL.md` repos into context |
+| **Settings** | Theme, voice, system prompt, sync & backup |
 
-## Sync & backup endpoints
+## Sync relay (phone ↔ desktop)
 
-The app does not ship a hosted backend. Point **backup** to your object store or API (HTTP `PUT` of ciphertext). Point **sync** to a small relay you control (desktop bridge or cloud worker) that fans out encrypted envelopes to other devices.
+```bash
+cd apps/sync-relay
+npm install
+npm start
+```
+
+In the app: **Settings → WebSocket sync URL** → `ws://YOUR_LAN_IP:8787/sync`
+
+Payloads are **encrypted on device** before they hit the relay.
+
+## Requirements
+
+- LLM API key(s) for your chosen provider(s)
+- Optional: ElevenLabs for cloned voice, backup PUT endpoint
 
 ## Tests
 
 ```bash
-cd apps/mentor-android
-./gradlew test
+./gradlew :app:testDebugUnitTest
 ```
-
-## Build APK
-
-```bash
-./gradlew :app:assembleDebug
-```
-
-Output: `app/build/outputs/apk/debug/app-debug.apk`
