@@ -10,6 +10,8 @@ sealed class LaunchAction {
     data class Draft(val text: String) : LaunchAction()
 
     data class OpenTab(val route: String) : LaunchAction()
+
+    data object VoiceChat : LaunchAction()
 }
 
 class LaunchIntentHolder {

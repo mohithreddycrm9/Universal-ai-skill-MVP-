@@ -145,11 +145,22 @@ fun connectInfoFor(kind: LlmProviderKind): LlmProviderConnectInfo =
                 signInDestinations = emptyList(),
                 requiresApiKey = false,
             )
+        LlmProviderKind.ON_DEVICE ->
+            LlmProviderConnectInfo(
+                kind = kind,
+                headline = "On-device AI",
+                apiKeyHint = "No API key. Uses Gemini Nano when available; otherwise a lightweight on-device assistant.",
+                apiKeyPlaceholder = "",
+                signInMethods = emptyList(),
+                signInDestinations = emptyList(),
+                requiresApiKey = false,
+            )
     }
 
 fun LlmProfile.isConfigured(): Boolean =
     when (kind) {
         LlmProviderKind.OLLAMA -> baseUrl.isNotBlank() && model.isNotBlank()
+        LlmProviderKind.ON_DEVICE -> true
         else -> apiKey.isNotBlank()
     }
 
@@ -171,5 +182,6 @@ fun LlmProfile.connectionLabel(): String =
         !isConfigured() -> "Setup required"
         linkedAccount.isNotBlank() -> "Signed in · ${linkedAccount.take(32)}"
         kind == LlmProviderKind.OLLAMA -> "Local · ready"
+        kind == LlmProviderKind.ON_DEVICE -> "On-device · ready"
         else -> "API key saved"
     }

@@ -62,6 +62,8 @@ fun SettingsScreen(vm: MentorViewModel) {
     var showTerms by remember { mutableStateOf(false) }
     var showLicenses by remember { mutableStateOf(false) }
     var confirmErase by remember { mutableStateOf(false) }
+    var backupPassphrase by remember { mutableStateOf("") }
+    val backupPrompt by vm.backupPassphrasePrompt.collectAsState()
     if (showPrivacy) {
         LegalDocumentSheet(
             title = "Privacy policy",
@@ -81,6 +83,38 @@ fun SettingsScreen(vm: MentorViewModel) {
             title = "Open source licenses",
             assetPath = "legal/open_source_licenses.html",
             onDismiss = { showLicenses = false },
+        )
+    }
+    if (backupPrompt) {
+        AlertDialog(
+            onDismissRequest = vm::dismissBackupPassphrase,
+            title = { Text("Backup passphrase") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Optional but recommended: encrypt this backup with a passphrase only you know.")
+                    OutlinedTextField(
+                        value = backupPassphrase,
+                        onValueChange = { backupPassphrase = it },
+                        label = { Text("Passphrase") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val phrase = backupPassphrase.toCharArray()
+                        backupPassphrase = ""
+                        vm.runBackupNow(if (phrase.isNotEmpty()) phrase else null)
+                    },
+                ) {
+                    Text("Upload")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = vm::dismissBackupPassphrase) { Text("Cancel") }
+            },
         )
     }
     if (confirmErase) {
@@ -278,6 +312,35 @@ fun SettingsScreen(vm: MentorViewModel) {
                 )
             }
 
+            Text("Language", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            listOf("system" to "System", "en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்").forEach { (tag, label) ->
+                val selected = prefs.appLanguageTag == tag
+                if (selected) {
+                    Button(onClick = { }, modifier = Modifier.fillMaxWidth()) {
+                        Text("✓ $label")
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = {
+                            vm.updatePrefs { p ->
+                                val voice =
+                                    when (tag) {
+                                        "hi" -> "hi-IN"
+                                        "te" -> "te-IN"
+                                        "ta" -> "ta-IN"
+                                        "en" -> "en-US"
+                                        else -> p.voiceLocaleTag
+                                    }
+                                p.copy(appLanguageTag = tag, voiceLocaleTag = voice)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(label)
+                    }
+                }
+            }
+
             Text("Response style", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             com.skillmcp.mentor.llm.ModelPreset.entries.forEach { preset ->
                 val selected = state.prefs.modelPreset == preset
@@ -393,7 +456,17 @@ fun SettingsScreen(vm: MentorViewModel) {
                 onValueChange = { vm.updatePrefs { p -> p.copy(backupBearerToken = it) } },
                 label = { Text("Backup bearer token") },
             )
-            Button(onClick = vm::runBackupNow, modifier = Modifier.fillMaxWidth()) {
+            RowSwitch(
+                label = "Include API keys in encrypted backup",
+                checked = prefs.backupIncludeApiKeys,
+                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(backupIncludeApiKeys = on) } },
+            )
+            Text(
+                "Keys are encrypted with your passphrase or device key — never sent in plain text.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(onClick = vm::promptBackupPassphrase, modifier = Modifier.fillMaxWidth()) {
                 Text("Run backup now")
             }
         }

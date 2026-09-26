@@ -1,5 +1,6 @@
 package com.skillmcp.mentor
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -14,8 +15,17 @@ import com.skillmcp.mentor.data.resolvedDarkTheme
 import com.skillmcp.mentor.navigation.AppLaunch
 import com.skillmcp.mentor.ui.MentorApp
 import com.skillmcp.mentor.ui.theme.CodeMentorTheme
+import com.skillmcp.mentor.util.LocaleHelper
 
 class MainActivity : FragmentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        val tag =
+            runCatching {
+                (newBase.applicationContext as MentorApplication).container.userPreferences.current().appLanguageTag
+            }.getOrElse { "system" }
+        super.attachBaseContext(LocaleHelper.wrap(newBase, tag))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -61,6 +71,9 @@ class MainActivity : FragmentActivity() {
                 if (!isTrustedInternalIntent(intent)) return
                 val tab = intent.getStringExtra(AppLaunch.EXTRA_TAB_ROUTE) ?: "chat"
                 container.launchIntentHolder.push(LaunchAction.OpenTab(tab))
+                if (intent.getBooleanExtra(AppLaunch.EXTRA_VOICE_ON_OPEN, false)) {
+                    container.launchIntentHolder.push(LaunchAction.VoiceChat)
+                }
             }
             Intent.ACTION_VIEW -> {
                 val uri: Uri? = intent.data

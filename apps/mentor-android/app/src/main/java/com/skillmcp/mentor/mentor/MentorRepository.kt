@@ -43,6 +43,7 @@ data class UiConversation(
     val name: String,
     val updatedAt: Long,
     val pinned: Boolean = false,
+    val folderTag: String = "",
 )
 
 class MentorRepository(
@@ -117,7 +118,7 @@ class MentorRepository(
         dao.observeProjects().map { list ->
             list
                 .sortedWith(compareByDescending<ProjectEntity> { it.pinned }.thenByDescending { it.updatedAt })
-                .map { UiConversation(it.id, it.name, it.updatedAt, it.pinned) }
+                .map { UiConversation(it.id, it.name, it.updatedAt, it.pinned, it.folderTag) }
         }
 
     fun observeSavedPrompts() = dao.observeSavedPrompts()
@@ -185,6 +186,23 @@ class MentorRepository(
     suspend fun setConversationPinned(id: String, pinned: Boolean) {
         val project = dao.allProjects().find { it.id == id } ?: return
         dao.upsertProject(project.copy(pinned = pinned, updatedAt = System.currentTimeMillis()))
+    }
+
+    suspend fun setConversationFolderTag(id: String, tag: String) {
+        val project = dao.allProjects().find { it.id == id } ?: return
+        dao.upsertProject(
+            project.copy(folderTag = tag.trim(), updatedAt = System.currentTimeMillis()),
+        )
+        syncCoordinator.publishStateSnapshot()
+    }
+
+    suspend fun searchConversations(query: String): List<UiConversation> {
+        if (query.isBlank()) {
+            return dao.allProjects().map { UiConversation(it.id, it.name, it.updatedAt, it.pinned, it.folderTag) }
+        }
+        return dao.searchProjects(query.trim()).map {
+            UiConversation(it.id, it.name, it.updatedAt, it.pinned, it.folderTag)
+        }
     }
 
     suspend fun deleteConversation(id: String) {
@@ -289,6 +307,7 @@ class MentorRepository(
                 goal = prefs.focusTopic,
                 updatedAt = System.currentTimeMillis(),
                 pinned = project?.pinned ?: false,
+                folderTag = project?.folderTag ?: "",
             ),
         )
         syncCoordinator.publishStateSnapshot()

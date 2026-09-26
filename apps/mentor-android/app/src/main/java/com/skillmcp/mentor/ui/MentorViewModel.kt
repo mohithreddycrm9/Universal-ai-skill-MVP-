@@ -41,7 +41,12 @@ import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.mentor.UiMessage
 import com.skillmcp.mentor.util.UserFacingError
 import com.skillmcp.mentor.util.UserFacingErrors
+import com.skillmcp.mentor.llm.TokenCostEstimator
+import com.skillmcp.mentor.util.AttachmentTextExtractor
 import com.skillmcp.mentor.voice.ElevenLabsVoiceClient
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -124,6 +129,9 @@ class MentorViewModel(
     val pendingShareConsent = MutableStateFlow<SharePayload?>(null)
     val pendingSkillInstall = MutableStateFlow<SkillInstallRequest?>(null)
     val lastExportMarkdown = MutableStateFlow<String?>(null)
+    val pendingAttachment = MutableStateFlow<Uri?>(null)
+    val backupPassphrasePrompt = MutableStateFlow(false)
+    val drawerSearchResults = MutableStateFlow<List<UiConversation>?>(null)
 
     private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val openChatRequests: SharedFlow<Unit> = openChatRequestsInner.asSharedFlow()
@@ -427,6 +435,10 @@ class MentorViewModel(
                     }
                     is LaunchAction.OpenTab -> openTabInner.tryEmit(action.route)
                     is LaunchAction.Draft -> openChatWithSuggestion(action.text)
+                    LaunchAction.VoiceChat -> {
+                        openChatRequestsInner.tryEmit(Unit)
+                        startHandsFreeTurn(autoSend = false)
+                    }
                 }
             }
         }
@@ -585,6 +597,81 @@ class MentorViewModel(
         usageWindow.value = window
     }
 
+    fun estimatedSendCostUsd(): Double {
+        val profile = uiState.value.activeLlmProfile ?: return 0.0
+        val historyChars = uiState.value.messages.sumOf { it.content.length }
+        return TokenCostEstimator.estimateUsd(
+            profile,
+            draft.value,
+            uiState.value.prefs.modelPreset,
+            historyChars,
+        )
+    }
+
+    fun attachFromUri(uri: Uri, mimeType: String?) {
+        viewModelScope.launch {
+            pendingAttachment.value = uri
+            val desc = AttachmentTextExtractor.describeForModel(appContext, uri, mimeType)
+            draft.value =
+                buildString {
+                    append(draft.value.trim())
+                    if (isNotEmpty()) append("\n\n")
+                    append(desc)
+                }
+            status.value = "Attachment added to message"
+        }
+    }
+
+    fun clearAttachment() {
+        pendingAttachment.value = null
+    }
+
+    fun searchChats(query: String) {
+        viewModelScope.launch {
+            drawerSearchResults.value =
+                if (query.isBlank()) null else repository.searchConversations(query)
+        }
+    }
+
+    fun setConversationTag(id: String, tag: String) {
+        viewModelScope.launch { repository.setConversationFolderTag(id, tag) }
+    }
+
+    fun shareActiveChatMarkdown() {
+        viewModelScope.launch {
+            val id = uiState.value.activeConversationId
+            val md = container.chatExporter.exportConversationMarkdown(id)
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, "Chat export")
+                    putExtra(Intent.EXTRA_TEXT, md)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            appContext.startActivity(Intent.createChooser(intent, "Share chat").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }
+
+    fun shareActiveChatPdf() {
+        viewModelScope.launch {
+            val id = uiState.value.activeConversationId
+            val file = container.chatPdfExporter.exportConversationPdf(id)
+            val uri =
+                FileProvider.getUriForFile(
+                    appContext,
+                    "${appContext.packageName}.fileprovider",
+                    file,
+                )
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            appContext.startActivity(Intent.createChooser(intent, "Share PDF").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }
+
     fun sendMessage() {
         val text = draft.value.trim()
         if (text.isEmpty() || isSending.value) return
@@ -593,6 +680,7 @@ class MentorViewModel(
             status.value = null
             statusDetails.value = null
             streamPreview.value = ""
+            pendingAttachment.value = null
             val result =
                 repository.sendUserMessage(text) { partial -> streamPreview.value = partial }
             streamPreview.value = ""
@@ -843,9 +931,18 @@ class MentorViewModel(
         }
     }
 
-    fun runBackupNow() {
+    fun promptBackupPassphrase() {
+        backupPassphrasePrompt.value = true
+    }
+
+    fun dismissBackupPassphrase() {
+        backupPassphrasePrompt.value = false
+    }
+
+    fun runBackupNow(passphrase: CharArray? = null) {
         viewModelScope.launch {
-            container.backupRepository.uploadIfConfigured().fold(
+            backupPassphrasePrompt.value = false
+            container.backupRepository.uploadIfConfigured(passphrase).fold(
                 onSuccess = { status.value = it },
                 onFailure = { status.value = it.message ?: "Backup failed" },
             )

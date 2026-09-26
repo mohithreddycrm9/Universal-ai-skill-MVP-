@@ -18,6 +18,7 @@ class QuickActionsWidget : AppWidgetProvider() {
             views.setOnClickPendingIntent(R.id.widget_btn_brief, pendingUseCase(context, "daily-brief"))
             views.setOnClickPendingIntent(R.id.widget_btn_meal, pendingUseCase(context, "meal-grocery"))
             views.setOnClickPendingIntent(R.id.widget_btn_chat, pendingTab(context, "chat"))
+            views.setOnClickPendingIntent(R.id.widget_btn_ask, pendingAsk(context))
             appWidgetManager.updateAppWidget(id, views)
         }
     }
@@ -33,6 +34,22 @@ class QuickActionsWidget : AppWidgetProvider() {
         return PendingIntent.getActivity(
             context,
             useCaseId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    private fun pendingAsk(context: Context): PendingIntent {
+        val intent =
+            Intent(context, MainActivity::class.java).apply {
+                action = AppLaunch.ACTION_OPEN_TAB
+                putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
+                putExtra(AppLaunch.EXTRA_DRAFT, "")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        return PendingIntent.getActivity(
+            context,
+            "ask".hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

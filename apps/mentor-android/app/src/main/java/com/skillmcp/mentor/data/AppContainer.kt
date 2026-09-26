@@ -19,6 +19,7 @@ import com.skillmcp.mentor.skills.BundledSkillInstaller
 import com.skillmcp.mentor.skills.GitHubSkillImporter
 import com.skillmcp.mentor.sync.SyncCoordinator
 import com.skillmcp.mentor.analytics.UsageAnalytics
+import com.skillmcp.mentor.brief.MorningBriefCollector
 import com.skillmcp.mentor.voice.VoiceMentor
 
 class AppContainer(context: Context) {
@@ -70,7 +71,11 @@ class AppContainer(context: Context) {
             dao = database.mentorDao(),
             encryptor = encryptor,
             userPreferences = userPreferences,
+            secureStore = llmSecureStore,
         )
+
+    val morningBriefCollector = MorningBriefCollector(appContext)
+    val chatPdfExporter = ChatPdfExporter(appContext, database.mentorDao())
 
     val localDataWiper =
         LocalDataWiper(

@@ -31,6 +31,7 @@ import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.StatCard
 import com.skillmcp.mentor.ui.components.TabSuggestions
+import com.skillmcp.mentor.ui.components.UsageSpendBarChart
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,6 +125,11 @@ fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
             }
             item {
                 Text("Daily", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+            }
+            if (state.usageByDay.isNotEmpty()) {
+                item {
+                    UsageSpendBarChart(days = state.usageByDay)
+                }
             }
             item {
                 Text("Spend limits (USD)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

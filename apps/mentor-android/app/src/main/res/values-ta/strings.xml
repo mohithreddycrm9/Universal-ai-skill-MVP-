@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">யுனிவர்சல் AI</string>
+    <string name="nav_chat">அரட்டை</string>
+    <string name="nav_discover">கண்டறி</string>
+    <string name="nav_settings">அமைப்புகள்</string>
+    <string name="widget_ask_anything">எதையும் கேளுங்கள்…</string>
+    <string name="tile_voice_chat">குரல் அரட்டை</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">यूनिवर्सल AI</string>
+    <string name="nav_chat">चैट</string>
+    <string name="nav_discover">खोजें</string>
+    <string name="nav_settings">सेटिंग्स</string>
+    <string name="widget_title">यूनिवर्सल AI शॉर्टकट</string>
+    <string name="widget_subtitle">होम स्क्रीन से त्वरित कार्य</string>
+    <string name="widget_morning_brief">ब्रीफ</string>
+    <string name="widget_meal_plan">भोजन</string>
+    <string name="widget_open_chat">चैट</string>
+    <string name="widget_ask_anything">कुछ भी पूछें…</string>
+    <string name="tile_voice_chat">वॉइस चैट</string>
+    <string name="support_email_label">सहायता: mohithreddycrm9@gmail.com</string>
+</resources>

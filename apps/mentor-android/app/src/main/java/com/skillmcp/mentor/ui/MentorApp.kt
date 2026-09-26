@@ -25,7 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.skillmcp.mentor.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -57,6 +59,15 @@ fun MentorTab.barParentRoute(): String =
     when (this) {
         MentorTab.Models, MentorTab.Usage, MentorTab.Skills -> MentorTab.Discover.route
         else -> route
+    }
+
+@Composable
+fun MentorTab.localizedLabel(): String =
+    when (this) {
+        MentorTab.Chat -> stringResource(R.string.nav_chat)
+        MentorTab.Discover -> stringResource(R.string.nav_discover)
+        MentorTab.Settings -> stringResource(R.string.nav_settings)
+        else -> label
     }
 
 @Composable
@@ -155,8 +166,8 @@ fun MentorApp(container: AppContainer) {
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(tabIcon(tab), contentDescription = tab.label) },
-                            label = { Text(tab.label) },
+                            icon = { Icon(tabIcon(tab), contentDescription = tab.localizedLabel()) },
+                            label = { Text(tab.localizedLabel()) },
                             colors =
                                 NavigationBarItemDefaults.colors(
                                     selectedIconColor = MaterialTheme.colorScheme.primary,

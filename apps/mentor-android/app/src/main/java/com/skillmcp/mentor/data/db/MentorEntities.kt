@@ -31,6 +31,7 @@ data class ProjectEntity(
     val goal: String,
     val updatedAt: Long,
     val pinned: Boolean = false,
+    val folderTag: String = "",
 )
 
 @Entity(
@@ -127,6 +128,18 @@ data class BuildEventEntity(
 interface MentorDao {
     @Query("SELECT * FROM projects ORDER BY updatedAt DESC")
     fun observeProjects(): Flow<List<ProjectEntity>>
+
+    @Query(
+        """
+        SELECT DISTINCT p.* FROM projects p
+        LEFT JOIN chat_messages m ON m.projectId = p.id
+        WHERE p.name LIKE '%' || :query || '%'
+           OR p.folderTag LIKE '%' || :query || '%'
+           OR m.content LIKE '%' || :query || '%'
+        ORDER BY p.updatedAt DESC
+        """,
+    )
+    suspend fun searchProjects(query: String): List<ProjectEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertProject(project: ProjectEntity)
@@ -296,7 +309,7 @@ interface MentorDao {
         ConversationSkillEntity::class,
         SavedPromptEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class MentorDatabase : RoomDatabase() {

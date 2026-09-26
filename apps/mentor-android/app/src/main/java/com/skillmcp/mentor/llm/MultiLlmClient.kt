@@ -39,6 +39,8 @@ class MultiLlmClient(
                     LlmProviderKind.ANTHROPIC -> anthropic(profile, system, history, userMessage)
                     LlmProviderKind.GEMINI -> googleGenerative(profile, system, history, userMessage)
                     LlmProviderKind.OLLAMA -> ollama(profile, system, history, userMessage)
+                    LlmProviderKind.ON_DEVICE ->
+                        OnDeviceLlmClient().chat(system, history, userMessage)
                 }
             result.copy(latencyMs = System.currentTimeMillis() - started)
         }

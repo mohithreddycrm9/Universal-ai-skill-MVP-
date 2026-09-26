@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.backup
 
+import com.skillmcp.mentor.data.LlmSecureStore
 import com.skillmcp.mentor.data.UserPreferences
 import com.skillmcp.mentor.data.db.MentorDao
 import com.squareup.moshi.Moshi
@@ -15,6 +16,7 @@ class BackupRepository(
     private val dao: MentorDao,
     private val encryptor: PayloadEncryptor,
     private val userPreferences: UserPreferences,
+    private val secureStore: LlmSecureStore,
     private val http: OkHttpClient =
         OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -24,26 +26,44 @@ class BackupRepository(
     private val moshi = Moshi.Builder().build()
     private val adapter = moshi.adapter(BackupSnapshot::class.java)
 
-    suspend fun exportEncryptedPayload(): String =
+    suspend fun exportEncryptedPayload(
+        passphrase: CharArray? = null,
+        includeApiKeys: Boolean = false,
+    ): String =
         withContext(Dispatchers.IO) {
+            val prefs = userPreferences.current()
+            val keys =
+                if (includeApiKeys || prefs.backupIncludeApiKeys) {
+                    dao.allLlmProfiles().associate { row ->
+                        row.id to secureStore.getKey(row.id)
+                    }.filterValues { it.isNotBlank() }
+                } else {
+                    emptyMap()
+                }
             val snapshot =
                 BackupSnapshot(
                     exportedAt = System.currentTimeMillis(),
                     projects = dao.allProjects(),
                     messages = dao.allMessages(),
                     skills = dao.allSkills(),
+                    apiKeys = keys,
                 )
-            encryptor.encrypt(adapter.toJson(snapshot))
+            val json = adapter.toJson(snapshot)
+            if (passphrase != null && passphrase.isNotEmpty()) {
+                PassphraseEncryptor.encrypt(json, passphrase)
+            } else {
+                encryptor.encrypt(json)
+            }
         }
 
-    suspend fun uploadIfConfigured(): Result<String> =
+    suspend fun uploadIfConfigured(passphrase: CharArray? = null): Result<String> =
         withContext(Dispatchers.IO) {
             val prefs = userPreferences.current()
             val url = prefs.backupUploadUrl.trim()
             if (url.isEmpty()) {
                 return@withContext Result.failure(IllegalStateException("Backup URL not configured"))
             }
-            val body = exportEncryptedPayload()
+            val body = exportEncryptedPayload(passphrase, prefs.backupIncludeApiKeys)
             val requestBuilder =
                 Request.Builder()
                     .url(url)

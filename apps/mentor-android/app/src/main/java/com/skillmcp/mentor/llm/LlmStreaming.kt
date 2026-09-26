@@ -40,6 +40,11 @@ class LlmStreaming(
                     }
                 }
             when (profile.kind) {
+                LlmProviderKind.ON_DEVICE -> {
+                    val result = OnDeviceLlmClient().chat(system, history, userMessage)
+                    onChunk(result.content)
+                    result
+                }
                 LlmProviderKind.HUGGING_FACE ->
                     streamHuggingFace(profile, system, history, userMessage, onChunk, temperature)
                 LlmProviderKind.OPENAI_COMPAT,

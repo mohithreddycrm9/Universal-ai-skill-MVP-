@@ -7,9 +7,10 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class BackupSnapshot(
-    val version: Int = 1,
+    val version: Int = 2,
     val exportedAt: Long,
     val projects: List<ProjectEntity>,
     val messages: List<ChatMessageEntity>,
     val skills: List<SkillEntity>,
+    val apiKeys: Map<String, String> = emptyMap(),
 )

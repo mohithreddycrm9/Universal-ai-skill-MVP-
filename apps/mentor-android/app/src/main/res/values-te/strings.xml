@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">యూనివర్సల్ AI</string>
+    <string name="nav_chat">చాట్</string>
+    <string name="nav_discover">కనుగొనండి</string>
+    <string name="nav_settings">సెట్టింగ్‌లు</string>
+    <string name="widget_ask_anything">ఏదైనా అడగండి…</string>
+    <string name="tile_voice_chat">వాయిస్ చాట్</string>
+</resources>

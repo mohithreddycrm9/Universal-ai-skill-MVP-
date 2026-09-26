@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
@@ -89,9 +90,21 @@ fun ChatScreen(vm: MentorViewModel) {
     var drawerQuery by remember { mutableStateOf("") }
     var renameTarget by remember { mutableStateOf<UiConversation?>(null) }
     var renameDraft by remember { mutableStateOf("") }
-    val filteredChats =
-        state.conversations.filter { it.name.contains(drawerQuery, ignoreCase = true) }
+    var tagTarget by remember { mutableStateOf<UiConversation?>(null) }
+    var tagDraft by remember { mutableStateOf("") }
     val context = LocalContext.current
+    val searchResults by vm.drawerSearchResults.collectAsState()
+    LaunchedEffect(drawerQuery) { vm.searchChats(drawerQuery) }
+    val filteredChats =
+        searchResults
+            ?: state.conversations.filter { it.name.contains(drawerQuery, ignoreCase = true) }
+    val attachLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                val mime = context.contentResolver.getType(uri)
+                vm.attachFromUri(uri, mime)
+            }
+        }
     val micPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) vm.toggleListen()
@@ -186,6 +199,12 @@ fun ChatScreen(vm: MentorViewModel) {
                         },
                         onTogglePin = { vm.pinConversation(chat.id, !chat.pinned) },
                         onDelete = { vm.deleteConversation(chat.id) },
+                        onSetTag = {
+                            tagTarget = chat
+                            tagDraft = chat.folderTag
+                        },
+                        onShareMarkdown = vm::shareActiveChatMarkdown,
+                        onSharePdf = vm::shareActiveChatPdf,
                     )
                 }
                 NavigationDrawerItem(
@@ -203,6 +222,34 @@ fun ChatScreen(vm: MentorViewModel) {
         },
     ) {
         AppBackground {
+            tagTarget?.let { chat ->
+                AlertDialog(
+                    onDismissRequest = { tagTarget = null },
+                    title = { Text("Folder / tag") },
+                    text = {
+                        OutlinedTextField(
+                            value = tagDraft,
+                            onValueChange = { tagDraft = it },
+                            label = { Text("Tag (e.g. Work, Travel)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                vm.setConversationTag(chat.id, tagDraft)
+                                tagTarget = null
+                            },
+                        ) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(onClick = { tagTarget = null }) { Text("Cancel") }
+                    },
+                )
+            }
             renameTarget?.let { chat ->
                 AlertDialog(
                     onDismissRequest = { renameTarget = null },
@@ -264,6 +311,12 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     },
                     actions = {
+                        IconButton(
+                            onClick = { attachLauncher.launch(arrayOf("image/*", "application/pdf", "text/*")) },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(Icons.Default.AttachFile, contentDescription = "Attach file")
+                        }
                         IconButton(
                             onClick = { showPrompts = true },
                             modifier = Modifier.size(48.dp),
@@ -354,6 +407,17 @@ fun ChatScreen(vm: MentorViewModel) {
                             selected = state.prefs.modelPreset == preset,
                             onClick = { vm.setModelPreset(preset) },
                             label = { Text(preset.label) },
+                        )
+                    }
+                }
+                if (state.prefs.modelPreset == ModelPreset.DEEP && state.draft.isNotBlank()) {
+                    val est = vm.estimatedSendCostUsd()
+                    if (est > 0) {
+                        Text(
+                            "Estimated cost for this message: $${"%.4f".format(est)} (approx.)",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -500,6 +564,9 @@ private fun ConversationDrawerRow(
     onRename: () -> Unit,
     onTogglePin: () -> Unit,
     onDelete: () -> Unit,
+    onSetTag: () -> Unit,
+    onShareMarkdown: () -> Unit,
+    onSharePdf: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(
@@ -516,7 +583,16 @@ private fun ConversationDrawerRow(
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
-                    Text(chat.name, maxLines = 1)
+                    Column {
+                        Text(chat.name, maxLines = 1)
+                        if (chat.folderTag.isNotBlank()) {
+                            Text(
+                                chat.folderTag,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             },
             selected = selected,
@@ -533,6 +609,27 @@ private fun ConversationDrawerRow(
                 onClick = {
                     menuOpen = false
                     onRename()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Folder / tag") },
+                onClick = {
+                    menuOpen = false
+                    onSetTag()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Share as Markdown") },
+                onClick = {
+                    menuOpen = false
+                    onShareMarkdown()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Share as PDF") },
+                onClick = {
+                    menuOpen = false
+                    onSharePdf()
                 },
             )
             DropdownMenuItem(

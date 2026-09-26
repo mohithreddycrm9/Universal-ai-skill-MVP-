@@ -30,6 +30,8 @@ data class MentorPrefs(
     val llmApiKey: String = "",
     val assistantSystemPrompt: String = DEFAULT_ASSISTANT_PROMPT,
     val voiceLocaleTag: String = Locale.getDefault().toLanguageTag(),
+    /** BCP-47 tag or `system` for device default. */
+    val appLanguageTag: String = "system",
     val speakResponses: Boolean = true,
     val elevenLabsApiKey: String = "",
     val elevenLabsVoiceId: String = "",
@@ -91,6 +93,7 @@ class UserPreferences(
                         ?: prefs[KEY_MENTOR_PROMPT]
                         ?: MentorPrefs.DEFAULT_ASSISTANT_PROMPT,
                 voiceLocaleTag = prefs[KEY_VOICE_LOCALE] ?: Locale.getDefault().toLanguageTag(),
+                appLanguageTag = prefs[KEY_APP_LANGUAGE] ?: "system",
                 speakResponses = prefs[KEY_SPEAK] ?: true,
                 elevenLabsApiKey = secureStore.getAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS),
                 elevenLabsVoiceId = prefs[KEY_ELEVEN_VOICE] ?: "",
@@ -137,6 +140,7 @@ class UserPreferences(
             prefs[KEY_ACTIVE_LLM] = next.activeLlmProfileId
             prefs[KEY_ASSISTANT_PROMPT] = next.assistantSystemPrompt
             prefs[KEY_VOICE_LOCALE] = next.voiceLocaleTag
+            prefs[KEY_APP_LANGUAGE] = next.appLanguageTag
             prefs[KEY_SPEAK] = next.speakResponses
             prefs.remove(KEY_ELEVEN_KEY)
             prefs[KEY_ELEVEN_VOICE] = next.elevenLabsVoiceId
@@ -195,6 +199,7 @@ class UserPreferences(
         val KEY_MENTOR_PROMPT = stringPreferencesKey("mentor_prompt")
         val KEY_FOCUS_TOPIC = stringPreferencesKey("focus_topic")
         val KEY_VOICE_LOCALE = stringPreferencesKey("voice_locale")
+        val KEY_APP_LANGUAGE = stringPreferencesKey("app_language")
         val KEY_SPEAK = booleanPreferencesKey("speak")
         val KEY_ELEVEN_KEY = stringPreferencesKey("eleven_key")
         val KEY_ELEVEN_VOICE = stringPreferencesKey("eleven_voice")

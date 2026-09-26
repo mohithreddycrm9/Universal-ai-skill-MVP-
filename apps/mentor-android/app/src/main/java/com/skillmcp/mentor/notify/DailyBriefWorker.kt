@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -24,41 +23,45 @@ class DailyBriefWorker(
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         ensureChannel(applicationContext)
-        val prefs = (applicationContext as MentorApplication).container.userPreferences.current()
-        val includes =
-            buildList {
-                if (prefs.morningBriefTasks) add("tasks")
-                if (prefs.morningBriefCalendar) add("calendar")
-                if (prefs.morningBriefWeather) add("weather")
-                if (prefs.morningBriefNews) add("news")
-            }
-        val subtitle =
-            if (includes.isEmpty()) {
-                "Tap to configure your brief in Settings"
-            } else {
-                "Includes: ${includes.joinToString(", ")}"
-            }
-        val intent =
+        val container = (applicationContext as MentorApplication).container
+        val prefs = container.userPreferences.current()
+        val brief = container.morningBriefCollector.collect(prefs)
+        val body = brief.lines.joinToString("\n")
+        val openBriefIntent =
             Intent(applicationContext, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_USE_CASE
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, "daily-brief")
-                putExtra(AppLaunch.EXTRA_INTERNAL, true)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-        val pending =
+        val continueIntent =
+            Intent(applicationContext, MainActivity::class.java).apply {
+                action = AppLaunch.ACTION_OPEN_TAB
+                putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
+                putExtra(AppLaunch.EXTRA_DRAFT, brief.chatPrompt)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        val openPending =
             PendingIntent.getActivity(
                 applicationContext,
                 1001,
-                intent,
+                openBriefIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        val continuePending =
+            PendingIntent.getActivity(
+                applicationContext,
+                1002,
+                continueIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         val notification =
             NotificationCompat.Builder(applicationContext, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Morning brief")
-                .setContentText(subtitle)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(subtitle))
-                .setContentIntent(pending)
+                .setContentText(body.lines().firstOrNull() ?: "Your brief is ready")
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setContentIntent(openPending)
+                .addAction(0, "Continue in chat", continuePending)
                 .setAutoCancel(true)
                 .build()
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
