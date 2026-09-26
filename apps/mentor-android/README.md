@@ -1,6 +1,17 @@
 # Universal AI (Android)
 
-Personal AI for **any topic** — connect **any LLM** you choose, with premium chat UI, streaming replies, usage dashboard, multi-chat threads, voice, skills, encrypted backup, and real-time sync.
+Personal AI for **everyday routines** — connect **any LLM** you choose (OpenAI-compatible, Anthropic, Google AI, **Hugging Face Hub**, Ollama), with usage spend transparency, skill packs, and on-device plugins. Positioned for the use cases people actually adopt: **writing**, **study & work**, **meal and trip planning**, and **shopping research**—without locking you to one vendor.
+
+### Why people switch from a single chatbot app
+
+| Trend (2025–2026 consumer AI) | How Universal AI fits |
+| --- | --- |
+| Writing & rewording messages | Polish message, email, and translate starters + skills |
+| School & homework help | Study coach skill + tutor-style prompts |
+| Meal & grocery planning | Meal planner skill + workflow cards |
+| Compare before buying | Shopping research skill + shop compare prompts |
+| Multi-model & privacy | **Bring your own API keys**, HF Hub, local Ollama, usage dashboard |
+| Cost control | Spend limits + per-model usage breakdown |
 
 ## Run the app
 

@@ -11,50 +11,58 @@ enum class SuggestionScreen {
 object ScreenSuggestions {
     val models: List<QuickSuggestion> =
         listOf(
-            QuickSuggestion("Pick a model", "Help me choose an LLM for everyday chat vs coding vs long documents."),
+            QuickSuggestion("Pick a model", "Help me choose an LLM for writing vs coding vs long documents on mobile."),
             QuickSuggestion("HF search tips", "How do I pick a Hugging Face model id and what does :fastest mean?"),
-            QuickSuggestion("Compare providers", "Compare OpenAI-compatible APIs vs local Ollama for privacy and cost."),
+            QuickSuggestion("Compare providers", "Compare cloud APIs vs local Ollama for privacy, cost, and speed."),
+            QuickSuggestion("Cheaper stack", "Suggest a low-cost multi-model setup for a student."),
+            QuickSuggestion("Switch models", "When should I switch models mid-conversation in this app?"),
             QuickSuggestion("Test failed", "My model test connection failed—what should I check in order?"),
-            QuickSuggestion("Cheaper setup", "Suggest a low-cost model stack for a student budget."),
-            QuickSuggestion("Latency", "Which settings reduce latency on mobile networks?"),
-            QuickSuggestion("Multilingual", "Which provider setup works best for multilingual chat?"),
-            QuickSuggestion("Vision models", "Do any of my provider types support images and how do I configure them?"),
+            QuickSuggestion("Multilingual", "Best provider setup for multilingual chat?"),
+            QuickSuggestion("Latency", "Tips to reduce latency on mobile networks."),
+            QuickSuggestion("Reasoning vs fast", "When to use Fast vs Balanced vs Deep presets?"),
+            QuickSuggestion("On-device path", "How do I run models on my home Ollama server from this phone?"),
         )
 
     val usage: List<QuickSuggestion> =
         listOf(
-            QuickSuggestion("Explain my spend", "Explain my usage dashboard numbers and what drives estimated USD."),
-            QuickSuggestion("Cut costs", "Give me 5 practical ways to lower LLM spend without losing quality."),
-            QuickSuggestion("Budget guardrails", "How should I set daily and weekly spend limits in Settings?"),
-            QuickSuggestion("Model comparison", "Which model in my usage breakdown is most expensive per request?"),
-            QuickSuggestion("Token tips", "How can I write prompts that use fewer tokens?"),
-            QuickSuggestion("Weekly report", "Summarize what my usage pattern says about how I use the app."),
-            QuickSuggestion("Anomaly check", "Could anything in my usage indicate a misconfigured provider?"),
-            QuickSuggestion("Offline option", "When should I use local Ollama based on my usage trends?"),
+            QuickSuggestion("Explain spend", "Explain my usage dashboard and what drives estimated USD."),
+            QuickSuggestion("Cut costs", "5 ways to lower LLM spend without losing quality for everyday chat."),
+            QuickSuggestion("Budget caps", "How should I set daily and weekly spend limits?"),
+            QuickSuggestion("Heavy vs light", "What usage pattern looks like 'light' vs 'power' user?"),
+            QuickSuggestion("Token tips", "Write prompts that use fewer tokens."),
+            QuickSuggestion("Model cost", "Which model in my breakdown costs the most per request?"),
+            QuickSuggestion("Weekly report", "Summarize my usage pattern and one habit to improve."),
+            QuickSuggestion("Anomaly check", "Could my usage indicate a misconfigured provider?"),
+            QuickSuggestion("Student budget", "Recommend spend caps for homework-only use."),
+            QuickSuggestion("Local savings", "When does Ollama save money vs cloud?"),
         )
 
     val extensions: List<QuickSuggestion> =
         listOf(
-            QuickSuggestion("Which skill?", "Which built-in skill pack fits learning a new language?"),
-            QuickSuggestion("Install order", "What order should I install skill packs for productivity?"),
-            QuickSuggestion("Plugin ideas", "What are creative uses for /calc, /time, and /fetch plugins?"),
-            QuickSuggestion("Per-chat skills", "How do per-conversation skill toggles work?"),
-            QuickSuggestion("Study coach", "I installed Study coach—give me a sample first session."),
-            QuickSuggestion("Code reviewer", "I installed Code reviewer—what should I paste for a useful review?"),
-            QuickSuggestion("Custom skill URL", "What makes a good public skill repository URL to import?"),
-            QuickSuggestion("Combine skills", "Can I use multiple skill packs together? Best practices?"),
+            QuickSuggestion("Meal skill", "Install meal planner skill and run my first weekly plan."),
+            QuickSuggestion("Shop skill", "Use shopping research skill to compare two phones."),
+            QuickSuggestion("Study coach", "Sample first session with Study coach installed."),
+            QuickSuggestion("Plugin: /calc", "Show a real-world example using /calc in chat."),
+            QuickSuggestion("Plugin: /fetch", "When is /fetch appropriate for research?"),
+            QuickSuggestion("Which skill?", "Which built-in skill fits learning a new language?"),
+            QuickSuggestion("Combine skills", "Best practices using multiple skill packs together."),
+            QuickSuggestion("Custom skill", "What makes a good skill pack URL to import?"),
+            QuickSuggestion("Per-chat toggle", "How do per-conversation skill toggles work?"),
+            QuickSuggestion("Code review", "What to paste for a useful code review skill session?"),
         )
 
     val settings: List<QuickSuggestion> =
         listOf(
-            QuickSuggestion("System prompt", "Write a strong default system prompt for a friendly general assistant."),
-            QuickSuggestion("Focus topic", "How should I use the focus topic field effectively?"),
-            QuickSuggestion("Voice setup", "Walk me through voice input and spoken replies settings."),
-            QuickSuggestion("Theme & readability", "Recommend theme, accent, and font scale for long reading sessions."),
-            QuickSuggestion("Sync relay", "Explain WebSocket sync and how to connect phone to desktop safely."),
-            QuickSuggestion("Backup", "How does encrypted backup work and what should I put in the upload URL?"),
-            QuickSuggestion("Spend limits", "Recommend daily and weekly USD caps for light vs heavy use."),
-            QuickSuggestion("Privacy checklist", "Give me a privacy checklist for API keys on mobile."),
+            QuickSuggestion("System prompt", "Write a strong default system prompt for everyday assistant use."),
+            QuickSuggestion("Focus topic", "How should I use focus topic for a semester goal?"),
+            QuickSuggestion("Voice setup", "Walk me through voice input and spoken replies."),
+            QuickSuggestion("Privacy keys", "Checklist for storing API keys safely on Android."),
+            QuickSuggestion("Sync relay", "Explain WebSocket sync phone ↔ desktop safely."),
+            QuickSuggestion("Backup", "How encrypted backup works and what URL to use."),
+            QuickSuggestion("Spend limits", "Recommended USD caps for light daily chat."),
+            QuickSuggestion("Theme", "Best theme settings for reading long answers."),
+            QuickSuggestion("BYOK why", "Why bring-your-own-key matters vs single-vendor apps."),
+            QuickSuggestion("Share to app", "How Share into Universal AI works from other apps."),
         )
 
     fun forScreen(screen: SuggestionScreen): List<QuickSuggestion> =

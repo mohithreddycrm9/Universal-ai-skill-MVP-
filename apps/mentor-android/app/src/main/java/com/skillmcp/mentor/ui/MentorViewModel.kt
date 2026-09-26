@@ -15,6 +15,8 @@ import com.skillmcp.mentor.llm.ModelPreset
 import com.skillmcp.mentor.plugins.BuiltinPlugins
 import com.skillmcp.mentor.skills.BundledSkillPack
 import com.skillmcp.mentor.skills.BundledSkills
+import com.skillmcp.mentor.mentor.PopularUseCase
+import com.skillmcp.mentor.mentor.UseCaseCatalog
 import com.skillmcp.mentor.skills.SkillCatalog
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
@@ -71,6 +73,7 @@ data class MentorUiState(
     val catalogSkills: List<com.skillmcp.mentor.skills.CatalogSkill> = SkillCatalog.featured,
     val bundledSkillPacks: List<BundledSkillPack> = BundledSkills.packs,
     val builtinPlugins: List<com.skillmcp.mentor.plugins.BuiltinPlugin> = BuiltinPlugins.all,
+    val popularUseCases: List<PopularUseCase> = UseCaseCatalog.featured,
 )
 
 class MentorViewModel(
@@ -314,6 +317,18 @@ class MentorViewModel(
         draft.value = prompt
         status.value = null
         openChatRequestsInner.tryEmit(Unit)
+    }
+
+    fun startPopularUseCase(useCase: PopularUseCase) {
+        viewModelScope.launch {
+            useCase.bundledSkillAsset?.let { asset ->
+                val pack = BundledSkills.packs.find { it.assetPath == asset }
+                if (pack != null) {
+                    runCatching { repository.installBundledSkill(pack) }
+                }
+            }
+            openChatWithSuggestion(useCase.prompt)
+        }
     }
 
     fun setUsageWindow(window: UsageWindow) {

@@ -60,6 +60,18 @@ object BundledSkills {
                 "Data",
                 "Clean and normalize tabular data descriptions.",
             ),
+            BundledSkillPack(
+                "skills/meal-planner.md",
+                "Meal & grocery",
+                "Life",
+                "Weekly meals and a grouped shopping list.",
+            ),
+            BundledSkillPack(
+                "skills/shopping-research.md",
+                "Shopping research",
+                "Shop",
+                "Compare products before you buy.",
+            ),
         )
 }
 

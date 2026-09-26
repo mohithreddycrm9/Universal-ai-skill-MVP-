@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -60,6 +61,7 @@ import com.skillmcp.mentor.ui.components.MessageBubble
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.SuggestionChipRow
+import com.skillmcp.mentor.ui.components.PopularUseCaseCard
 import com.skillmcp.mentor.ui.components.TabSuggestions
 import kotlinx.coroutines.launch
 
@@ -235,11 +237,30 @@ fun ChatScreen(vm: MentorViewModel) {
                                 )
                                 Spacer(Modifier.height(10.dp))
                                 Text(
-                                    "Your assistant for learning, planning, creativity, and everyday questions.",
+                                    "Your keys, your models—writing, study, meals, shopping, and work help.",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
                                 )
+                                Spacer(Modifier.height(20.dp))
+                                Text(
+                                    "Popular right now",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    items(state.popularUseCases, key = { it.id }) { useCase ->
+                                        PopularUseCaseCard(
+                                            useCase = useCase,
+                                            onClick = { vm.startPopularUseCase(useCase) },
+                                        )
+                                    }
+                                }
                                 Spacer(Modifier.height(16.dp))
                                 TabSuggestions(
                                     title = "Try these",

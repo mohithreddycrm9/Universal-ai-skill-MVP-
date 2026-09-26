@@ -86,6 +86,10 @@ class MentorRepository(
                 "Summarize the key points from our conversation in 5 bullets." to "Summarize chat",
                 "Draft a professional email. Ask me for recipient, tone, and key points." to "Draft email",
                 "Build a 7-day study plan for a subject I name." to "Study plan",
+                "Plan meals for the week and give me a grouped grocery list." to "Meal plan",
+                "Help me compare products before I buy. Ask category and budget." to "Shop compare",
+                "Run a morning brief: my top 3 tasks for today." to "Morning brief",
+                "I'll paste a draft—rewrite it in casual and professional versions." to "Polish message",
             )
         defaults.forEach { (body, title) ->
             if (title in knownTitles) return@forEach

@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -37,6 +39,7 @@ import com.skillmcp.mentor.ui.components.GlassCard
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.ScreenHeader
+import com.skillmcp.mentor.ui.components.PopularUseCaseCard
 import com.skillmcp.mentor.ui.components.TabSuggestions
 
 @Composable
@@ -60,6 +63,21 @@ fun SkillsScreen(vm: MentorViewModel) {
                     suggestions = ScreenSuggestions.forScreen(SuggestionScreen.EXTENSIONS),
                     onSelect = vm::openChatWithSuggestion,
                 )
+            }
+            item {
+                Text("Trending workflows", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Tap to install a matching skill (when available) and open Chat.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(state.popularUseCases.take(10), key = { it.id }) { useCase ->
+                        PopularUseCaseCard(useCase = useCase, onClick = { vm.startPopularUseCase(useCase) })
+                    }
+                }
             }
 
             item {
