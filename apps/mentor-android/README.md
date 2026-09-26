@@ -38,12 +38,19 @@ Open in Android Studio and run on API 26+.
 - **Remote catalog** — install instruction packs from public repositories
 - **Plugins** — enable in Extensions, then use in chat: `/calc`, `/time`, `/units`, `/uuid`, `/words`, `/fetch` (HTTPS only)
 
+### Connecting an LLM
+
+1. Open **Models** (or tap **Connect** on the Chat banner).
+2. Tap **Connect account** on OpenAI, Google AI, Anthropic, Hugging Face, or Ollama.
+3. Choose **API key**, **Google**, **Email & password**, or **Mobile number** — browser opens the provider login when needed; paste your API key or token on return.
+4. Tap **Save & use this provider**, then chat.
+
+Optional: set `google_web_client_id` in `res/values/strings.xml` to enable on-device Google sign-in when connecting Google AI (OAuth web client ID).
+
 ### Hugging Face models
 
-1. Open **Models** → select **Hugging Face** (built-in) or add a new **Hugging Face** provider.
-2. Paste a [Hugging Face access token](https://huggingface.co/settings/tokens) with **Inference Providers** permission.
-3. Pick a **featured** model, search the Hub, or type any model id (e.g. `Qwen/Qwen2.5-7B-Instruct:fastest`).
-4. Tap **Test connection**, then chat.
+1. Connect **Hugging Face** with a [token](https://huggingface.co/settings/tokens) (**Inference Providers** permission).
+2. Pick a **featured** model, search the Hub, or type any model id (e.g. `Qwen/Qwen2.5-7B-Instruct:fastest`).
 
 The app uses the OpenAI-compatible router at `https://router.huggingface.co/v1/` with streaming. If a model is not on the router, it falls back to the classic serverless inference API when possible.
 
