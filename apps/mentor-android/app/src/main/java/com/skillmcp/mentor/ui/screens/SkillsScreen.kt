@@ -40,10 +40,6 @@ import com.skillmcp.mentor.ui.components.ScreenHeader
 fun SkillsScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
     var sourceUrl by remember { mutableStateOf("") }
-    var mcpName by remember { mutableStateOf("My MCP") }
-    var mcpUrl by remember { mutableStateOf("https://") }
-    var mcpToken by remember { mutableStateOf("") }
-
     AppBackground {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
@@ -52,7 +48,7 @@ fun SkillsScreen(vm: MentorViewModel) {
             item {
                 ScreenHeader(
                     title = "Extensions",
-                    subtitle = "Skill packs, on-device plugins, and remote MCP tool servers.",
+                    subtitle = "Skill packs and on-device plugins to extend your assistant.",
                 )
             }
 
@@ -79,59 +75,6 @@ fun SkillsScreen(vm: MentorViewModel) {
                             )
                         }
                         Switch(checked = enabled, onCheckedChange = { vm.setPluginEnabled(plugin.id, it) })
-                    }
-                }
-            }
-
-            item {
-                Text("MCP servers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Connect HTTP MCP endpoints (JSON-RPC). List tools in context; run with `/mcp ServerName tool_name {}`.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            item {
-                GlassCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(mcpName, { mcpName = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                        OutlinedTextField(
-                            mcpUrl,
-                            { mcpUrl = it },
-                            label = { Text("Endpoint URL") },
-                            placeholder = { Text("https://your-mcp-gateway/…") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                        )
-                        OutlinedTextField(mcpToken, { mcpToken = it }, label = { Text("Bearer token (optional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                        Button(
-                            onClick = {
-                                vm.addMcpServer(mcpName, mcpUrl, mcpToken)
-                                mcpToken = ""
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text("Add MCP server")
-                        }
-                    }
-                }
-            }
-            items(state.mcpServers, key = { it.id }) { server ->
-                GlassCard {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(server.name, fontWeight = FontWeight.SemiBold)
-                            Text(server.endpointUrl, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Switch(checked = server.enabled, onCheckedChange = { vm.setMcpServerEnabled(server.id, it) })
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { vm.testMcpServer(server.id) }, modifier = Modifier.weight(1f)) {
-                            Text("Test")
-                        }
-                        IconButton(onClick = { vm.deleteMcpServer(server.id) }) {
-                            Icon(Icons.Outlined.DeleteOutline, contentDescription = "Remove MCP server")
-                        }
                     }
                 }
             }

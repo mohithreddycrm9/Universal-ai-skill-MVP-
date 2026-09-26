@@ -1,11 +1,9 @@
 package com.skillmcp.mentor.extensions
 
-import com.skillmcp.mentor.mcp.McpRepository
 import com.skillmcp.mentor.plugins.PluginRunner
 
 class ExtensionOrchestrator(
     private val pluginRunner: PluginRunner,
-    private val mcpRepository: McpRepository,
 ) {
     suspend fun augmentExtraContext(
         userMessage: String,
@@ -20,8 +18,6 @@ class ExtensionOrchestrator(
         if (pluginHelp.isNotBlank() && !userMessage.trimStart().startsWith("/")) {
             parts += pluginHelp
         }
-        val mcpContext = mcpRepository.buildMcpContext(userMessage)
-        if (mcpContext.isNotBlank()) parts += mcpContext
         return parts.joinToString("\n\n")
     }
 }

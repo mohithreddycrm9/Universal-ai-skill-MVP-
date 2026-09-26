@@ -77,14 +77,6 @@ object SkillCatalog {
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "mcp-docs",
-                title = "MCP integration guide",
-                description = "Model Context Protocol patterns for tools and resources.",
-                category = "Agent tooling",
-                sourceUrl = "https://github.com/modelcontextprotocol/servers",
-                trustTier = "Curated",
-            ),
-            CatalogSkill(
                 id = "huggingface-skills",
                 title = "Hugging Face agents",
                 description = "ML workflows, datasets, and inference patterns.",

@@ -13,7 +13,6 @@ import com.skillmcp.mentor.llm.LlmStreaming
 import com.skillmcp.mentor.llm.MultiLlmClient
 import com.skillmcp.mentor.policy.SpendGuard
 import com.skillmcp.mentor.extensions.ExtensionOrchestrator
-import com.skillmcp.mentor.mcp.McpRepository
 import com.skillmcp.mentor.skills.BundledSkillInstaller
 import com.skillmcp.mentor.skills.BundledSkillPack
 import com.skillmcp.mentor.skills.GitHubSkillImporter
@@ -50,7 +49,6 @@ class MentorRepository(
     private val skillImporter: GitHubSkillImporter,
     private val bundledSkillInstaller: BundledSkillInstaller,
     private val extensionOrchestrator: ExtensionOrchestrator,
-    private val mcpRepository: McpRepository,
     private val syncCoordinator: SyncCoordinator,
 ) {
     val defaultProjectId = "default"
@@ -273,17 +271,6 @@ class MentorRepository(
             errorMessage = err.message,
         )
     }
-
-    fun observeMcpServers() = mcpRepository.observeServers()
-
-    suspend fun addMcpServer(name: String, endpointUrl: String, token: String) =
-        mcpRepository.upsertServer(name, endpointUrl, token)
-
-    suspend fun setMcpServerEnabled(id: String, enabled: Boolean) = mcpRepository.setServerEnabled(id, enabled)
-
-    suspend fun deleteMcpServer(id: String) = mcpRepository.deleteServer(id)
-
-    suspend fun testMcpServer(id: String) = mcpRepository.testServer(id)
 
     suspend fun installBundledSkill(pack: BundledSkillPack): SkillEntity {
         val entity = bundledSkillInstaller.toEntity(pack)
