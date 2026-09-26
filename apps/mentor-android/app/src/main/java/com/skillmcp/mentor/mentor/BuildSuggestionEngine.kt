@@ -23,23 +23,16 @@ data class BuildSuggestionsInput(
     val lastCommand: String? = null,
     val lastCommandExitCode: Int? = null,
     val recentEvents: List<AgentEventHint> = emptyList(),
-    val limit: Int = 6,
+    val messageCount: Int = 0,
+    val hasInstalledSkills: Boolean = false,
+    val enabledPluginIds: Set<String> = emptySet(),
+    val limit: Int = 10,
 )
 
 class BuildSuggestionEngine {
     fun compute(input: BuildSuggestionsInput): List<BuildSuggestion> {
         val events = input.recentEvents.takeLast(24)
         val goal = input.goal?.trim()?.take(200)
-        val hasSignals =
-            !goal.isNullOrEmpty() ||
-                !input.activeStep.isNullOrBlank() ||
-                events.isNotEmpty() ||
-                input.changedFiles.isNotEmpty() ||
-                !input.lastCommand.isNullOrBlank() ||
-                input.lastCommandExitCode != null
-
-        if (!hasSignals) return emptyList()
-
         val raw = mutableListOf<BuildSuggestion>()
 
         fun add(label: String, prompt: String, because: String, priority: Int) {
@@ -83,8 +76,8 @@ class BuildSuggestionEngine {
         }
         if (events.any { it.kind == "skill_gap" || it.kind == "acquire_job_failed" }) {
             add(
-                label = "Add a skill",
-                prompt = "Recommend a skill pack I should install for this goal and how to use it.",
+                label = "Add a skill pack",
+                prompt = "Recommend a skill pack from Extensions I should install for my goal and how to use it.",
                 because = "skill_gap",
                 priority = 75,
             )
@@ -102,13 +95,11 @@ class BuildSuggestionEngine {
                 because = "learn_topic",
                 priority = 68,
             )
-        }
-        if (events.isEmpty() && goal.isNullOrEmpty() && input.activeStep.isNullOrBlank()) {
             add(
-                label = "What can you do?",
-                prompt = "What kinds of tasks can you help me with? Give 5 examples across different topics.",
-                because = "onboarding",
-                priority = 60,
+                label = "Milestones",
+                prompt = "Break \"$goal\" into 3 milestones with success criteria for each.",
+                because = "goal_set",
+                priority = 67,
             )
         }
         if (input.changedFiles.isNotEmpty()) {
@@ -121,6 +112,49 @@ class BuildSuggestionEngine {
             )
         }
 
-        return raw.sortedByDescending { it.priority }.take(input.limit.coerceIn(1, 12))
+        if (input.messageCount == 0) {
+            ChatSuggestions.heroStarters.shuffled().take(6).forEach { quick ->
+                add(quick.label, quick.prompt, "hero", 62)
+            }
+            add(
+                label = "What can you do?",
+                prompt = "What kinds of tasks can you help me with? Give 8 examples across learning, work, and life.",
+                because = "onboarding",
+                priority = 60,
+            )
+        } else {
+            val baselineSlots = (input.limit - raw.size).coerceAtLeast(4)
+            raw += ChatSuggestions.baselineBuildSuggestions(baselineSlots)
+        }
+
+        if (input.hasInstalledSkills) {
+            add(
+                label = "Use my skills",
+                prompt = "Using my installed skill packs, how should I approach my current question?",
+                because = "skills_installed",
+                priority = 58,
+            )
+        }
+        if ("calc" in input.enabledPluginIds) {
+            add(
+                label = "Quick math",
+                prompt = "I might use /calc for arithmetic—help me set up the expression for a problem I describe.",
+                because = "plugin_calc",
+                priority = 40,
+            )
+        }
+        if ("fetch" in input.enabledPluginIds) {
+            add(
+                label = "Research a link",
+                prompt = "I can use /fetch on an HTTPS page—tell me what to look for once I share a URL.",
+                because = "plugin_fetch",
+                priority = 39,
+            )
+        }
+
+        return raw
+            .distinctBy { it.label.lowercase() }
+            .sortedByDescending { it.priority }
+            .take(input.limit.coerceIn(4, 14))
     }
 }

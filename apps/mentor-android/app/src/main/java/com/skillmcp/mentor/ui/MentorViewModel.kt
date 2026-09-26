@@ -112,17 +112,28 @@ class MentorViewModel(
 
     private val suggestionsFlow =
         combine(
-            repository.observeBuildEvents(),
-            activeStep,
-            lastCommand,
-            prefs.prefsFlow.map { it.focusTopic },
-        ) { events, step, cmd, goal ->
+            combine(
+                repository.observeBuildEvents(),
+                repository.observeMessages(),
+                repository.observeSkills(),
+            ) { events, messages, skills ->
+                Triple(events, messages.size, skills.isNotEmpty())
+            },
+            combine(activeStep, lastCommand, prefs.prefsFlow) { step, cmd, mentorPrefs ->
+                Triple(step, cmd, mentorPrefs)
+            },
+        ) { a, b ->
+            val (events, messageCount, hasSkills) = a
+            val (step, cmd, mentorPrefs) = b
             container.buildSuggestionEngine.compute(
                 com.skillmcp.mentor.mentor.BuildSuggestionsInput(
-                    goal = goal,
+                    goal = mentorPrefs.focusTopic,
                     activeStep = step,
                     lastCommand = cmd,
                     recentEvents = events.map { AgentEventHint(it.kind, it.summary) },
+                    messageCount = messageCount,
+                    hasInstalledSkills = hasSkills,
+                    enabledPluginIds = mentorPrefs.enabledPluginIds,
                 ),
             )
         }

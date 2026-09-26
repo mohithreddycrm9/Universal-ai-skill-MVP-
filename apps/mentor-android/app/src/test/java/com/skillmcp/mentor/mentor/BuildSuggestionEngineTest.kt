@@ -17,4 +17,17 @@ class BuildSuggestionEngineTest {
             )
         assertTrue(suggestions.any { it.because == "test_failed" })
     }
+
+    @Test
+    fun alwaysOffersSuggestionsOnEmptyChat() {
+        val suggestions = engine.compute(BuildSuggestionsInput(messageCount = 0))
+        assertTrue(suggestions.size >= 4)
+        assertTrue(suggestions.any { it.because == "hero" || it.because == "onboarding" })
+    }
+
+    @Test
+    fun offersFollowupsWhenChatHasMessages() {
+        val suggestions = engine.compute(BuildSuggestionsInput(messageCount = 3))
+        assertTrue(suggestions.any { it.because == "followup" || it.because == "learn" })
+    }
 }

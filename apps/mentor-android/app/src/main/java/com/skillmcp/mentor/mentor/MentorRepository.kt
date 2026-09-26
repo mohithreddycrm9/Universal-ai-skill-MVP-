@@ -75,6 +75,11 @@ class MentorRepository(
                 "Explain this like I'm new to the topic, with a simple example." to "Explain simply",
                 "Create a step-by-step plan I can follow today." to "Action plan",
                 "Review my message for clarity, tone, and grammar. Suggest improvements." to "Writing coach",
+                "What are the top 3 things I should focus on this week?" to "Weekly focus",
+                "Help me prepare talking points for a meeting tomorrow." to "Meeting prep",
+                "Turn my rough notes into a clear outline with headings." to "Outline notes",
+                "Suggest 5 interview questions for a role I describe." to "Interview prep",
+                "Give me a gentle habit I can start today and track for 7 days." to "Small habit",
             )
         defaults.forEach { (body, title) ->
             dao.upsertSavedPrompt(

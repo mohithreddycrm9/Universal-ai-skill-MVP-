@@ -1,6 +1,5 @@
 package com.skillmcp.mentor.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -58,16 +57,9 @@ import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.ComposerBar
 import com.skillmcp.mentor.ui.components.MessageBubble
+import com.skillmcp.mentor.mentor.ChatSuggestions
 import com.skillmcp.mentor.ui.components.SuggestionChipRow
 import kotlinx.coroutines.launch
-
-private val starters =
-    listOf(
-        "Help me plan my week",
-        "Explain a topic simply",
-        "Draft a professional email",
-        "Walk through a problem step by step",
-    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -246,9 +238,25 @@ fun ChatScreen(vm: MentorViewModel) {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
                                 )
-                                Spacer(Modifier.height(24.dp))
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    "Try these",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(8.dp))
                                 SuggestionChipRow(
-                                    labels = starters.map { prompt -> prompt to { vm.applySuggestion(prompt) } },
+                                    labels =
+                                        ChatSuggestions.heroStarters.take(8).map { quick ->
+                                            quick.label to { vm.applySuggestion(quick.prompt) }
+                                        },
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                SuggestionChipRow(
+                                    labels =
+                                        ChatSuggestions.heroStarters.drop(8).map { quick ->
+                                            quick.label to { vm.applySuggestion(quick.prompt) }
+                                        },
                                 )
                             }
                         }
@@ -274,11 +282,24 @@ fun ChatScreen(vm: MentorViewModel) {
                     }
                 }
 
-                AnimatedVisibility(visible = state.suggestions.isNotEmpty()) {
-                    SuggestionChipRow(
-                        labels = state.suggestions.map { it.label to { vm.applySuggestion(it.prompt) } },
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
+                if (state.messages.isNotEmpty() && state.suggestions.isNotEmpty()) {
+                    Column(Modifier.padding(horizontal = 16.dp)) {
+                        Text(
+                            "Suggestions",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        )
+                        SuggestionChipRow(
+                            labels = state.suggestions.take(7).map { it.label to { vm.applySuggestion(it.prompt) } },
+                        )
+                        if (state.suggestions.size > 7) {
+                            SuggestionChipRow(
+                                labels = state.suggestions.drop(7).map { it.label to { vm.applySuggestion(it.prompt) } },
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                    }
                 }
 
                 state.status?.let {
