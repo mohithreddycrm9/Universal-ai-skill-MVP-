@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">यूनिवर्सल AI</string>
+    <string name="widget_title">यूनिवर्सल AI — त्वरित कार्य</string>
+    <string name="widget_subtitle">होम स्क्रीन से तुरंत शुरू करें</string>
+    <string name="widget_morning_brief">ब्रीफ</string>
+    <string name="widget_meal_plan">भोजन</string>
+    <string name="widget_open_chat">चैट</string>
+</resources>

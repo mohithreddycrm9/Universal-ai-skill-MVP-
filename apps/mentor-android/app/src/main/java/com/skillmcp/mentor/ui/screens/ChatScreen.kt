@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -73,6 +74,7 @@ import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.SuggestionChipRow
 import com.skillmcp.mentor.ui.components.PopularUseCaseCard
 import com.skillmcp.mentor.ui.components.TabSuggestions
+import com.skillmcp.mentor.policy.SpendBlockReason
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,6 +108,29 @@ fun ChatScreen(vm: MentorViewModel) {
     LaunchedEffect(state.messages.size, extraItems, state.streamPreview) {
         val last = state.messages.size + extraItems - 1
         if (last >= 0) listState.animateScrollToItem(last)
+    }
+
+    state.pendingShare?.let { share ->
+        AlertDialog(
+            onDismissRequest = vm::declineSharedContent,
+            title = { Text("Send to your AI provider?") },
+            text = {
+                Text(
+                    "Shared content will be sent to ${state.activeLlmProfile?.name ?: "your connected model"} when you tap Send. " +
+                        "The provider may process URLs and text on their servers.",
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = vm::acceptSharedContent) {
+                    Text("Continue")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = vm::declineSharedContent) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 
     ModalNavigationDrawer(
@@ -209,13 +234,19 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawer.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Conversations")
+                        IconButton(
+                            onClick = { scope.launch { drawer.open() } },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Conversations menu")
                         }
                     },
                     actions = {
-                        IconButton(onClick = { showPrompts = true }) {
-                            Icon(Icons.Outlined.Lightbulb, contentDescription = "Prompt library")
+                        IconButton(
+                            onClick = { showPrompts = true },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(Icons.Outlined.Lightbulb, contentDescription = "Open prompt library")
                         }
                     },
                     colors =
@@ -227,7 +258,7 @@ fun ChatScreen(vm: MentorViewModel) {
                 state.activeLlmProfile?.takeIf { !it.isConfigured() }?.let { profile ->
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     ) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
@@ -236,7 +267,7 @@ fun ChatScreen(vm: MentorViewModel) {
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                "Sign in with Google, email, mobile, or paste an API key. Credentials stay encrypted on your phone.",
+                                "Get an API key in your browser (Google, email, or mobile) or paste a key. Credentials stay encrypted on this device.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -244,8 +275,49 @@ fun ChatScreen(vm: MentorViewModel) {
                                 Button(onClick = { vm.openConnectLlm(profile.id) }) {
                                     Text("Connect")
                                 }
-                                androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("models") }) {
+                                androidx.compose.material3.TextButton(
+                                    onClick = { vm.requestOpenTab("models") },
+                                ) {
                                     Text("All providers")
+                                }
+                            }
+                        }
+                    }
+                }
+                state.spendGuard.warningMessage?.let { warning ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    ) {
+                        Text(
+                            warning,
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                }
+                if (!state.spendGuard.allowed) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    ) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                state.spendGuard.message ?: "Estimated spend limit reached.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = vm::bumpSpendLimits) { Text("Raise limit") }
+                                if (state.spendGuard.blockReason == SpendBlockReason.DAILY) {
+                                    androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("settings") }) {
+                                        Text("Wait until tomorrow")
+                                    }
+                                } else {
+                                    androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("settings") }) {
+                                        Text("Adjust in Settings")
+                                    }
                                 }
                             }
                         }

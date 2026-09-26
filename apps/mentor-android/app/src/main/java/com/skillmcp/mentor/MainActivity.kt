@@ -89,7 +89,12 @@ class MainActivity : FragmentActivity() {
                 } else {
                     text
                 }
-            container.shareTextHolder.push(enriched)
+            container.shareTextHolder.push(
+                com.skillmcp.mentor.data.SharePayload(
+                    text = enriched,
+                    sendsToAiProvider = true,
+                ),
+            )
         }
     }
 

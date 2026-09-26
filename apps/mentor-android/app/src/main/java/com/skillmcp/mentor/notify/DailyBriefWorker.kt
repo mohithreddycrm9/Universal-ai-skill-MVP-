@@ -13,6 +13,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.skillmcp.mentor.MainActivity
+import com.skillmcp.mentor.MentorApplication
 import com.skillmcp.mentor.R
 import com.skillmcp.mentor.navigation.AppLaunch
 import java.util.concurrent.TimeUnit
@@ -23,6 +24,20 @@ class DailyBriefWorker(
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         ensureChannel(applicationContext)
+        val prefs = (applicationContext as MentorApplication).container.userPreferences.current()
+        val includes =
+            buildList {
+                if (prefs.morningBriefTasks) add("tasks")
+                if (prefs.morningBriefCalendar) add("calendar")
+                if (prefs.morningBriefWeather) add("weather")
+                if (prefs.morningBriefNews) add("news")
+            }
+        val subtitle =
+            if (includes.isEmpty()) {
+                "Tap to configure your brief in Settings"
+            } else {
+                "Includes: ${includes.joinToString(", ")}"
+            }
         val intent =
             Intent(applicationContext, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_USE_CASE
@@ -41,7 +56,8 @@ class DailyBriefWorker(
             NotificationCompat.Builder(applicationContext, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Morning brief")
-                .setContentText("Tap to plan your top 3 tasks for today")
+                .setContentText(subtitle)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(subtitle))
                 .setContentIntent(pending)
                 .setAutoCancel(true)
                 .build()

@@ -4,15 +4,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class ShareTextHolder {
-    private val _pending = MutableStateFlow<String?>(null)
-    val pending: StateFlow<String?> = _pending.asStateFlow()
+data class SharePayload(
+    val text: String,
+    /** True when content will be sent to the user's configured LLM provider. */
+    val sendsToAiProvider: Boolean,
+)
 
-    fun push(text: String) {
-        _pending.value = text.trim()
+class ShareTextHolder {
+    private val _pending = MutableStateFlow<SharePayload?>(null)
+    val pending: StateFlow<SharePayload?> = _pending.asStateFlow()
+
+    fun push(payload: SharePayload) {
+        _pending.value = payload.copy(text = payload.text.trim())
     }
 
-    fun consume(): String? {
+    fun consume(): SharePayload? {
         val value = _pending.value
         _pending.value = null
         return value

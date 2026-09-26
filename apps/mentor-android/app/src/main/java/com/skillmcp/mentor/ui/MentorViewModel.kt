@@ -20,6 +20,10 @@ import com.skillmcp.mentor.skills.BundledSkillPack
 import com.skillmcp.mentor.skills.BundledSkills
 import com.skillmcp.mentor.mentor.PopularUseCase
 import com.skillmcp.mentor.mentor.UseCaseCatalog
+import com.skillmcp.mentor.analytics.UsageAnalytics
+import com.skillmcp.mentor.data.SharePayload
+import com.skillmcp.mentor.policy.SpendCheck
+import com.skillmcp.mentor.skills.CatalogSkill
 import com.skillmcp.mentor.skills.SkillCatalog
 import com.skillmcp.mentor.llm.GoogleLlmSignIn
 import com.skillmcp.mentor.llm.LlmProfile
@@ -47,6 +51,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+
+data class SkillInstallRequest(
+    val title: String,
+    val sourceUrl: String,
+    val trustTier: String,
+    val needsNetwork: Boolean,
+)
 
 enum class UsageWindow(val days: Int, val label: String) {
     TODAY(1, "Today"),
@@ -76,10 +87,15 @@ data class MentorUiState(
     val streamPreview: String = "",
     val savedPrompts: List<SavedPromptEntity> = emptyList(),
     val skillToggles: Map<String, Boolean> = emptyMap(),
-    val catalogSkills: List<com.skillmcp.mentor.skills.CatalogSkill> = SkillCatalog.featured,
+    val catalogSkills: List<CatalogSkill> = emptyList(),
     val bundledSkillPacks: List<BundledSkillPack> = BundledSkills.packs,
     val builtinPlugins: List<com.skillmcp.mentor.plugins.BuiltinPlugin> = BuiltinPlugins.all,
     val popularUseCases: List<PopularUseCase> = UseCaseCatalog.featured,
+    val rankedUseCases: List<PopularUseCase> = UseCaseCatalog.featured,
+    val spendGuard: SpendCheck = SpendCheck(allowed = true),
+    val pendingShare: SharePayload? = null,
+    val pendingSkillInstall: SkillInstallRequest? = null,
+    val lastExportMarkdown: String? = null,
 )
 
 class MentorViewModel(
@@ -99,6 +115,9 @@ class MentorViewModel(
     val usageWindow = MutableStateFlow(UsageWindow.WEEK)
     val streamPreview = MutableStateFlow("")
     val skillToggles = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val pendingShareConsent = MutableStateFlow<SharePayload?>(null)
+    val pendingSkillInstall = MutableStateFlow<SkillInstallRequest?>(null)
+    val lastExportMarkdown = MutableStateFlow<String?>(null)
 
     private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val openChatRequests: SharedFlow<Unit> = openChatRequestsInner.asSharedFlow()
@@ -208,8 +227,23 @@ class MentorViewModel(
         val prefs: MentorPrefs,
     )
 
+    private val spendGuardFlow = repository.observeSpendGuard()
+
     private val coreData =
-        combine(chatSlice, metaSlice, repository.observeSavedPrompts(), streamPreview, skillToggles) { chat, meta, prompts, preview, toggles ->
+        combine(
+            combine(
+                chatSlice,
+                metaSlice,
+                repository.observeSavedPrompts(),
+                streamPreview,
+                skillToggles,
+            ) { chat, meta, prompts, preview, toggles ->
+                Quintuple(chat, meta, prompts, preview, toggles)
+            },
+            spendGuardFlow,
+        ) { q, spend ->
+            val chat = q.first
+            val meta = q.second
             CoreSlice(
                 messages = chat.messages,
                 conversations = chat.conversations,
@@ -223,11 +257,22 @@ class MentorViewModel(
                 usageByDay = meta.usage.byDay,
                 usageWindow = meta.usage.window,
                 prefs = meta.prefs,
-                streamPreview = preview,
-                savedPrompts = prompts,
-                skillToggles = toggles,
+                streamPreview = q.fourth,
+                savedPrompts = q.third,
+                skillToggles = q.fifth,
+                spendGuard = spend,
+                catalogSkills = SkillCatalog.featuredForUi(meta.skills),
+                rankedUseCases = rankUseCases(UseCaseCatalog.featured),
             )
         }
+
+    private data class Quintuple<A, B, C, D, E>(
+        val first: A,
+        val second: B,
+        val third: C,
+        val fourth: D,
+        val fifth: E,
+    )
 
     private data class CoreSlice(
         val messages: List<UiMessage>,
@@ -245,7 +290,17 @@ class MentorViewModel(
         val streamPreview: String,
         val savedPrompts: List<SavedPromptEntity>,
         val skillToggles: Map<String, Boolean>,
+        val spendGuard: SpendCheck,
+        val catalogSkills: List<CatalogSkill>,
+        val rankedUseCases: List<PopularUseCase>,
     )
+
+    private fun rankUseCases(cases: List<PopularUseCase>): List<PopularUseCase> {
+        val tops = container.usageAnalytics.topIds(UsageAnalytics.EVENT_USE_CASE)
+        if (tops.isEmpty()) return cases
+        val order = tops.mapIndexed { index, pair -> pair.first to index }.toMap()
+        return cases.sortedBy { order[it.id] ?: Int.MAX_VALUE }
+    }
 
     private val interactionState =
         combine(
@@ -265,7 +320,17 @@ class MentorViewModel(
     )
 
     val uiState: StateFlow<MentorUiState> =
-        combine(coreData, interactionState) { core, interaction ->
+        combine(
+            combine(coreData, interactionState) { core, interaction -> core to interaction },
+            combine(pendingShareConsent, pendingSkillInstall, lastExportMarkdown) { share, skillInstall, exportMd ->
+                Triple(share, skillInstall, exportMd)
+            },
+        ) { a, b ->
+            val core = a.first
+            val interaction = a.second
+            val share = b.first
+            val skillInstall = b.second
+            val exportMd = b.third
             MentorUiState(
                 messages = core.messages,
                 suggestions = core.suggestions,
@@ -288,6 +353,12 @@ class MentorViewModel(
                 streamPreview = core.streamPreview,
                 savedPrompts = core.savedPrompts,
                 skillToggles = core.skillToggles,
+                catalogSkills = core.catalogSkills,
+                rankedUseCases = core.rankedUseCases,
+                spendGuard = core.spendGuard,
+                pendingShare = share,
+                pendingSkillInstall = skillInstall,
+                lastExportMarkdown = exportMd,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
@@ -307,12 +378,15 @@ class MentorViewModel(
             }
         }
         viewModelScope.launch {
-            container.shareTextHolder.pending.collect { text ->
-                if (!text.isNullOrBlank()) {
-                    draft.value = text
+            container.shareTextHolder.pending.collect { payload ->
+                if (payload != null && payload.text.isNotBlank()) {
                     container.shareTextHolder.consume()
-                    status.value = "Shared text ready to send"
-                    openChatRequestsInner.tryEmit(Unit)
+                    if (payload.sendsToAiProvider) {
+                        pendingShareConsent.value = payload
+                    } else {
+                        draft.value = payload.text
+                        openChatRequestsInner.tryEmit(Unit)
+                    }
                 }
             }
         }
@@ -357,6 +431,54 @@ class MentorViewModel(
         viewModelScope.launch { prefs.update { it.copy(hasSeenWelcome = true) } }
     }
 
+    fun completeGuidedSetup() {
+        viewModelScope.launch {
+            prefs.update { it.copy(hasCompletedGuidedSetup = true, hasSeenWelcome = true) }
+        }
+    }
+
+    fun acceptSharedContent() {
+        val payload = pendingShareConsent.value ?: return
+        draft.value = payload.text
+        pendingShareConsent.value = null
+        status.value = null
+        openChatRequestsInner.tryEmit(Unit)
+    }
+
+    fun declineSharedContent() {
+        pendingShareConsent.value = null
+    }
+
+    fun bumpSpendLimits() {
+        viewModelScope.launch {
+            prefs.update { p ->
+                p.copy(
+                    dailyBudgetUsd = if (p.dailyBudgetUsd > 0) p.dailyBudgetUsd * 1.25 else 5.0,
+                    weeklyBudgetUsd = if (p.weeklyBudgetUsd > 0) p.weeklyBudgetUsd * 1.25 else 25.0,
+                )
+            }
+            status.value = "Spend limits raised by 25%"
+        }
+    }
+
+    fun exportChatsMarkdown() {
+        viewModelScope.launch {
+            val md = container.chatExporter.exportAllMarkdown()
+            lastExportMarkdown.value = md
+            status.value = "Chat export ready — copy from Settings"
+        }
+    }
+
+    fun clearExportMarkdown() {
+        lastExportMarkdown.value = null
+    }
+
+    fun setAnalyticsOptIn(enabled: Boolean) {
+        container.usageAnalytics.setOptIn(enabled)
+    }
+
+    fun analyticsOptIn(): Boolean = container.usageAnalytics.isOptIn()
+
     fun showWidgetHint() {
         markWelcomeSeen()
         status.value = "Add widget: long-press home screen → Widgets → Universal AI"
@@ -378,6 +500,7 @@ class MentorViewModel(
     }
 
     fun startPopularUseCase(useCase: PopularUseCase) {
+        container.usageAnalytics.record(UsageAnalytics.EVENT_USE_CASE, useCase.id)
         viewModelScope.launch {
             useCase.bundledSkillAsset?.let { asset ->
                 val pack = BundledSkills.packs.find { it.assetPath == asset }
@@ -408,6 +531,9 @@ class MentorViewModel(
                 draft.value = ""
                 val reply = result.getOrNull() ?: return@launch
                 if (prefs.current().speakResponses) speak(reply)
+                if (prefs.current().voiceHandsFree) {
+                    toggleListen()
+                }
             } else {
                 status.value =
                     result.exceptionOrNull()?.let(UserFacingErrors::message) ?: "Send failed"
@@ -561,14 +687,44 @@ class MentorViewModel(
         viewModelScope.launch { repository.deleteLlmProfile(id) }
     }
 
-    fun importSkill(url: String) {
+    fun requestInstallFromUrl(
+        url: String,
+        title: String,
+        trustTier: String = "Custom",
+        needsNetwork: Boolean = true,
+    ) {
+        val trimmed = url.trim()
+        if (trimmed.isBlank()) return
+        pendingSkillInstall.value =
+            SkillInstallRequest(
+                title = title,
+                sourceUrl = trimmed,
+                trustTier = trustTier,
+                needsNetwork = needsNetwork,
+            )
+    }
+
+    fun confirmSkillInstall() {
+        val req = pendingSkillInstall.value ?: return
+        pendingSkillInstall.value = null
         viewModelScope.launch {
             status.value = "Importing skill…"
-            repository.importSkill(url).fold(
-                onSuccess = { status.value = "Imported ${it.title}" },
+            repository.importSkill(req.sourceUrl).fold(
+                onSuccess = {
+                    container.usageAnalytics.record(UsageAnalytics.EVENT_SKILL, it.id)
+                    status.value = "Imported ${it.title}"
+                },
                 onFailure = { status.value = it.message ?: "Import failed" },
             )
         }
+    }
+
+    fun dismissSkillInstall() {
+        pendingSkillInstall.value = null
+    }
+
+    fun importSkill(url: String) {
+        requestInstallFromUrl(url, title = "Custom skill", trustTier = "Unverified", needsNetwork = true)
     }
 
     fun removeSkill(id: String) {
@@ -622,11 +778,19 @@ class MentorViewModel(
         }
     }
 
-    fun installCatalogSkill(url: String) = importSkill(url)
+    fun installCatalogSkill(entry: CatalogSkill) {
+        requestInstallFromUrl(
+            url = entry.sourceUrl,
+            title = entry.title,
+            trustTier = entry.trustTier,
+            needsNetwork = entry.needsNetwork,
+        )
+    }
 
     fun installBundledSkill(pack: BundledSkillPack) {
         viewModelScope.launch {
             val entity = repository.installBundledSkill(pack)
+            container.usageAnalytics.record(UsageAnalytics.EVENT_SKILL, entity.id)
             status.value = "Installed ${entity.title}"
         }
     }

@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,7 @@ fun SettingsScreen(vm: MentorViewModel) {
     val scroll = rememberScrollState()
     val context = LocalContext.current
     val appLockAuth = remember { appLockAuthenticators(context) }
+    var analyticsOptIn by remember { mutableStateOf(vm.analyticsOptIn()) }
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) vm.setDailyBriefReminder(true)
@@ -159,6 +161,66 @@ fun SettingsScreen(vm: MentorViewModel) {
                 checked = prefs.dailyBriefReminder,
                 onCheckedChange = onDailyBriefToggle,
             )
+            Text("Morning brief content", style = MaterialTheme.typography.titleSmall)
+            RowSwitch(
+                label = "Tasks & priorities",
+                checked = prefs.morningBriefTasks,
+                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefTasks = on) } },
+            )
+            RowSwitch(
+                label = "Calendar (when available)",
+                checked = prefs.morningBriefCalendar,
+                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefCalendar = on) } },
+            )
+            RowSwitch(
+                label = "Weather",
+                checked = prefs.morningBriefWeather,
+                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefWeather = on) } },
+            )
+            RowSwitch(
+                label = "News headlines",
+                checked = prefs.morningBriefNews,
+                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefNews = on) } },
+            )
+            RowSwitch(
+                label = "Help improve Discover (on-device only)",
+                checked = analyticsOptIn,
+                onCheckedChange = {
+                    analyticsOptIn = it
+                    vm.setAnalyticsOptIn(it)
+                },
+            )
+            RowSwitch(
+                label = "Hands-free voice (listen after each reply)",
+                checked = prefs.voiceHandsFree,
+                onCheckedChange = { vm.updatePrefs { p -> p.copy(voiceHandsFree = it) } },
+            )
+            OutlinedButton(onClick = vm::exportChatsMarkdown, modifier = Modifier.fillMaxWidth()) {
+                Text("Export chats as Markdown")
+            }
+            state.lastExportMarkdown?.let { md ->
+                SelectionContainer {
+                    OutlinedTextField(
+                        value = md.take(4000),
+                        onValueChange = {},
+                        readOnly = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Export preview (copy)") },
+                        minLines = 4,
+                    )
+                }
+                TextButton(onClick = vm::clearExportMarkdown) { Text("Clear export") }
+            }
+            Text("Advanced", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            OutlinedButton(onClick = { vm.requestOpenTab("models") }, modifier = Modifier.fillMaxWidth()) {
+                Text("Models & API keys")
+            }
+            OutlinedButton(onClick = { vm.requestOpenTab("skills") }, modifier = Modifier.fillMaxWidth()) {
+                Text("Add abilities & tools")
+            }
+            OutlinedButton(onClick = { vm.requestOpenTab("usage") }, modifier = Modifier.fillMaxWidth()) {
+                Text("Usage & spend limits")
+            }
             Text(
                 "Add the home screen widget: long-press launcher → Widgets → Universal AI quick actions.",
                 style = MaterialTheme.typography.bodySmall,
@@ -180,9 +242,15 @@ fun SettingsScreen(vm: MentorViewModel) {
                 Text("Erase all local data")
             }
             Text(
-                "API keys and backup tokens are stored in encrypted storage on this device.",
+                "API keys and backup tokens are stored in EncryptedSharedPreferences (Android Keystore). " +
+                    "They are not included in backup or sync unless you explicitly opt in below.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            RowSwitch(
+                label = "Include API keys in encrypted backup (not recommended)",
+                checked = prefs.backupIncludeApiKeys,
+                onCheckedChange = { vm.updatePrefs { p -> p.copy(backupIncludeApiKeys = it) } },
             )
 
             Text("About", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
@@ -205,6 +273,11 @@ fun SettingsScreen(vm: MentorViewModel) {
             }
 
             Text("Spend limits (USD)", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(
+                "Limits use estimated costs from Usage — not exact billing. You'll see an 80% warning before sends are blocked.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = if (state.prefs.dailyBudgetUsd > 0) state.prefs.dailyBudgetUsd.toString() else "",

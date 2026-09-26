@@ -22,4 +22,11 @@ class SpendGuardTest {
         val check = SpendGuard.checkSpend(1.0, 10.0, 0.0, 9.99)
         assertFalse(check.allowed)
     }
+
+    @Test
+    fun warnsAtEightyPercentDaily() {
+        val check = SpendGuard.checkSpend(4.0, 4.0, 5.0, 0.0)
+        assertTrue(check.allowed)
+        assertTrue(check.warningMessage?.contains("80") == true || check.warningMessage?.contains("4") == true)
+    }
 }

@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#1B1F3B</color>
+    <color name="ic_launcher_background">#FF1D4ED8</color>
+    <color name="widget_surface">#FFF5F5F5</color>
+    <color name="widget_outline">#FFE5E5E5</color>
+    <color name="widget_title_text">#FF171717</color>
+    <color name="widget_body_text">#FF525252</color>
+    <color name="widget_button_bg">#FFEAEAEA</color>
+    <color name="widget_button_primary_bg">#FF1D4ED8</color>
+    <color name="widget_button_text">#FF171717</color>
+    <color name="widget_button_primary_text">#FFFFFFFF</color>
 </resources>

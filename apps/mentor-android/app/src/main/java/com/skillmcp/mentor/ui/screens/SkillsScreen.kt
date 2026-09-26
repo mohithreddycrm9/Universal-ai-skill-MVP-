@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.items
+import com.skillmcp.mentor.skills.SkillCatalog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.DeleteOutline
@@ -48,6 +48,7 @@ import com.skillmcp.mentor.ui.components.TabSuggestions
 fun SkillsScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
     var sourceUrl by remember { mutableStateOf("") }
+    var confirmFetch by remember { mutableStateOf(false) }
     AppBackground {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
@@ -55,8 +56,8 @@ fun SkillsScreen(vm: MentorViewModel) {
         ) {
             item {
                 ScreenHeader(
-                    title = "Extensions",
-                    subtitle = "Instruction skill packs plus optional network tools. Calculator and date/time are built into chat.",
+                    title = "Add abilities",
+                    subtitle = "Teach the assistant new workflows. Calculator and date/time are always built into chat.",
                 )
             }
             item {
@@ -104,9 +105,9 @@ fun SkillsScreen(vm: MentorViewModel) {
                 }
             }
             item {
-                Text("Optional extensions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Network tools", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Enable when you need them (network access).",
+                    "Optional tools that can fetch HTTPS pages when you enable them.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -125,28 +126,47 @@ fun SkillsScreen(vm: MentorViewModel) {
                                 modifier = Modifier.padding(top = 4.dp),
                             )
                         }
-                        Switch(checked = enabled, onCheckedChange = { vm.setPluginEnabled(plugin.id, it) })
+                        Switch(
+                            checked = enabled,
+                            onCheckedChange = { on ->
+                                if (on && plugin.id == "fetch") {
+                                    confirmFetch = true
+                                } else {
+                                    vm.setPluginEnabled(plugin.id, on)
+                                }
+                            },
+                        )
                     }
                 }
             }
 
             item {
-                Text("Built-in skill packs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text("Offline install — no download required.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Offline abilities", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Shipped with the app — no download.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             items(state.bundledSkillPacks, key = { it.assetPath }) { pack ->
+                val installed = SkillCatalog.isBundledInstalled(pack, state.skills)
                 GlassCard {
                     Text(pack.title, fontWeight = FontWeight.SemiBold)
                     Text(pack.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(pack.category, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    OutlinedButton(onClick = { vm.installBundledSkill(pack) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                        Text("Install")
+                    if (installed) {
+                        Text("Installed", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    } else {
+                        OutlinedButton(onClick = { vm.installBundledSkill(pack) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                            Text("Install")
+                        }
                     }
                 }
             }
 
             item {
-                Text("Remote catalog", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Add from catalog", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Curated instruction packs from public repositories.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             items(state.catalogSkills, key = { it.id }) { entry ->
                 GlassCard {
@@ -158,18 +178,28 @@ fun SkillsScreen(vm: MentorViewModel) {
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 4.dp),
                     )
+                    Text(
+                        "Source: ${entry.sourceUrl}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     OutlinedButton(
-                        onClick = { vm.installCatalogSkill(entry.sourceUrl) },
+                        onClick = { vm.installCatalogSkill(entry) },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) {
-                        Text("Install")
+                        Text("Review & install")
                     }
                 }
             }
             item {
                 GlassCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Custom source", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("Install from link", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Paste a public skill repository URL.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         OutlinedTextField(
                             modifier = Modifier.fillMaxWidth(),
                             value = sourceUrl,
@@ -227,5 +257,29 @@ fun SkillsScreen(vm: MentorViewModel) {
                 }
             }
         }
+    }
+    if (confirmFetch) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmFetch = false },
+            title = { Text("Allow network access?") },
+            text = {
+                Text(
+                    "The /fetch tool can download HTTPS pages you request in chat. Only enable if you trust the sites you share.",
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        vm.setPluginEnabled("fetch", true)
+                        confirmFetch = false
+                    },
+                ) {
+                    Text("Enable")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { confirmFetch = false }) { Text("Cancel") }
+            },
+        )
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -56,6 +57,7 @@ fun ConnectLlmSheet(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val webClientId = remember { context.getString(R.string.google_web_client_id) }
+    val clipboard = LocalClipboardManager.current
 
     var method by remember(profile.id) {
         mutableStateOf(info.signInMethods.first())
@@ -117,6 +119,14 @@ fun ConnectLlmSheet(
                 LlmSignInMethod.API_KEY -> {
                     if (info.requiresApiKey) {
                         Text(info.apiKeyHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        OutlinedButton(
+                            onClick = {
+                                clipboard.getText()?.text?.trim()?.takeIf { it.isNotBlank() }?.let { apiKey = it }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Paste API key from clipboard")
+                        }
                         OutlinedTextField(
                             value = apiKey,
                             onValueChange = { apiKey = it },
@@ -149,7 +159,25 @@ fun ConnectLlmSheet(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = dest != null,
                     ) {
-                        Text("Open ${method.label} in browser")
+                        val label =
+                            when (method) {
+                                LlmSignInMethod.GOOGLE -> "Get a key from ${profile.name} with Google (opens browser)"
+                                LlmSignInMethod.EMAIL -> "Get a key from ${profile.name} with email (opens browser)"
+                                LlmSignInMethod.PHONE -> "Sign up with mobile on ${profile.name} (opens browser)"
+                                else -> "Open ${method.label} in browser"
+                            }
+                        Text(label)
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            clipboard.getText()?.text?.trim()?.takeIf { it.isNotBlank() }?.let {
+                                apiKey = it
+                                browserHint = "Pasted API key from clipboard."
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Paste API key from clipboard")
                     }
                     if (method == LlmSignInMethod.GOOGLE && webClientId.isNotBlank()) {
                         OutlinedButton(

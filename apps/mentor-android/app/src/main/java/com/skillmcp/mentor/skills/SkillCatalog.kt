@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.skills
 
+import com.skillmcp.mentor.data.db.SkillEntity
+
 data class CatalogSkill(
     val id: String,
     val title: String,
@@ -7,6 +9,7 @@ data class CatalogSkill(
     val category: String,
     val sourceUrl: String,
     val trustTier: String = "Curated",
+    val needsNetwork: Boolean = true,
 )
 
 object SkillCatalog {
@@ -69,14 +72,6 @@ object SkillCatalog {
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "markdown-outline",
-                title = "Markdown outliner",
-                description = "Structure long documents and outlines with consistent headings.",
-                category = "Writing",
-                sourceUrl = "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/tree/main/examples/skills/benign/markdown-outline",
-                trustTier = "Curated",
-            ),
-            CatalogSkill(
                 id = "huggingface-skills",
                 title = "Hugging Face agents",
                 description = "ML workflows, datasets, and inference patterns.",
@@ -85,4 +80,17 @@ object SkillCatalog {
                 trustTier = "Curated",
             ),
         )
+
+    /** Remote catalog minus packs already shipped offline or installed. */
+    fun featuredForUi(installed: List<SkillEntity>): List<CatalogSkill> {
+        val bundledTitles = BundledSkills.packs.map { it.title.lowercase() }.toSet()
+        val installedTitles = installed.map { it.title.lowercase() }.toSet()
+        return featured.filter { entry ->
+            val titleKey = entry.title.lowercase()
+            titleKey !in bundledTitles && titleKey !in installedTitles
+        }
+    }
+
+    fun isBundledInstalled(pack: BundledSkillPack, installed: List<SkillEntity>): Boolean =
+        installed.any { it.title.equals(pack.title, ignoreCase = true) }
 }

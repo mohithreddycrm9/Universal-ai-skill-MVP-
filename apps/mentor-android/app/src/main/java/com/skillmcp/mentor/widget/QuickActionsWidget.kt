@@ -14,6 +14,7 @@ class QuickActionsWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         appWidgetIds.forEach { id ->
             val views = RemoteViews(context.packageName, R.layout.widget_quick_actions)
+            views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_title))
             views.setOnClickPendingIntent(R.id.widget_btn_brief, pendingUseCase(context, "daily-brief"))
             views.setOnClickPendingIntent(R.id.widget_btn_meal, pendingUseCase(context, "meal-grocery"))
             views.setOnClickPendingIntent(R.id.widget_btn_chat, pendingTab(context, "chat"))

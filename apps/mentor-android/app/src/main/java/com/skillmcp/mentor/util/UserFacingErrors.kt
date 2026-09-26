@@ -1,6 +1,6 @@
 package com.skillmcp.mentor.util
 
-import java.io.IOException
+import com.skillmcp.mentor.policy.SpendLimitException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
@@ -14,8 +14,12 @@ object UserFacingErrors {
                 return "The request timed out. Try again or pick a smaller model."
             raw.contains("Backup URL not configured", ignoreCase = true) ->
                 return "Backup is not configured."
-            raw.contains("Spend limit", ignoreCase = true) || raw.contains("budget", ignoreCase = true) ->
-                return raw.take(200)
+            throwable is SpendLimitException ->
+                return throwable.check.message ?: "Estimated spend limit reached."
+            raw.contains("Spend limit", ignoreCase = true) ||
+                raw.contains("estimated spend", ignoreCase = true) ||
+                raw.contains("budget", ignoreCase = true) ->
+                return raw.take(280)
             raw.contains("API key", ignoreCase = true) || raw.contains("401", ignoreCase = true) ->
                 return "Authentication failed. Open Models and update your API key or sign-in."
             raw.contains("403", ignoreCase = true) ->

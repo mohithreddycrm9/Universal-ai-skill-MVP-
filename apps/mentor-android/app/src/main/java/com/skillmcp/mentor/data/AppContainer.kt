@@ -17,6 +17,7 @@ import com.skillmcp.mentor.plugins.PluginRunner
 import com.skillmcp.mentor.skills.BundledSkillInstaller
 import com.skillmcp.mentor.skills.GitHubSkillImporter
 import com.skillmcp.mentor.sync.SyncCoordinator
+import com.skillmcp.mentor.analytics.UsageAnalytics
 import com.skillmcp.mentor.voice.VoiceMentor
 
 class AppContainer(context: Context) {
@@ -76,4 +77,7 @@ class AppContainer(context: Context) {
             userPreferences = userPreferences,
             llmProfileRepository = llmProfileRepository,
         )
+
+    val chatExporter = ChatExporter(database.mentorDao())
+    val usageAnalytics = UsageAnalytics(appContext)
 }

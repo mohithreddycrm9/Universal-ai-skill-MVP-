@@ -7,6 +7,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -30,18 +31,21 @@ import androidx.navigation.compose.rememberNavController
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.security.BiometricGate
 import com.skillmcp.mentor.ui.components.ConnectLlmSheet
-import com.skillmcp.mentor.ui.components.WelcomeSheet
+import com.skillmcp.mentor.ui.components.GuidedSetupSheet
+import com.skillmcp.mentor.ui.components.SkillInstallDialog
 import com.skillmcp.mentor.ui.screens.ChatScreen
+import com.skillmcp.mentor.ui.screens.DiscoverScreen
 import com.skillmcp.mentor.ui.screens.ModelsScreen
 import com.skillmcp.mentor.ui.screens.SettingsScreen
 import com.skillmcp.mentor.ui.screens.SkillsScreen
 import com.skillmcp.mentor.ui.screens.UsageScreen
 
-enum class MentorTab(val route: String, val label: String) {
+enum class MentorTab(val route: String, val label: String, val showInBar: Boolean = true) {
     Chat("chat", "Chat"),
-    Models("models", "Models"),
-    Usage("usage", "Usage"),
-    Skills("skills", "Extensions"),
+    Discover("discover", "Discover"),
+    Models("models", "Models", showInBar = false),
+    Usage("usage", "Usage", showInBar = false),
+    Skills("skills", "Abilities", showInBar = false),
     Settings("settings", "Settings"),
 }
 
@@ -78,10 +82,20 @@ fun MentorApp(container: AppContainer) {
     }
 
     BiometricGate(enabled = state.prefs.requireBiometricUnlock) {
-        WelcomeSheet(
-            visible = !state.prefs.hasSeenWelcome,
-            onDismiss = vm::markWelcomeSeen,
-            onAddWidgetHint = vm::showWidgetHint,
+        GuidedSetupSheet(
+            visible = !state.prefs.hasCompletedGuidedSetup,
+            useCases = state.rankedUseCases,
+            onConnectOpenAi = { vm.openConnectLlm("openai") },
+            onSendTestMessage = {
+                vm.openChatWithSuggestion("Say hello in one sentence — this is my setup test.")
+            },
+            onPickUseCase = { vm.startPopularUseCase(it) },
+            onFinish = vm::completeGuidedSetup,
+        )
+        SkillInstallDialog(
+            request = state.pendingSkillInstall,
+            onConfirm = vm::confirmSkillInstall,
+            onDismiss = vm::dismissSkillInstall,
         )
         ConnectLlmSheet(
             profile = connectProfile,
@@ -95,7 +109,7 @@ fun MentorApp(container: AppContainer) {
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
                 ) {
-                    MentorTab.entries.forEach { tab ->
+                    MentorTab.entries.filter { it.showInBar }.forEach { tab ->
                         val selected = current == tab.route
                         NavigationBarItem(
                             selected = selected,
@@ -127,6 +141,7 @@ fun MentorApp(container: AppContainer) {
                 modifier = Modifier.padding(padding),
             ) {
                 composable(MentorTab.Chat.route) { ChatScreen(vm) }
+                composable(MentorTab.Discover.route) { DiscoverScreen(vm) }
                 composable(MentorTab.Models.route) { ModelsScreen(vm) }
                 composable(MentorTab.Usage.route) { UsageScreen(vm) }
                 composable(MentorTab.Skills.route) { SkillsScreen(vm) }
@@ -139,6 +154,7 @@ fun MentorApp(container: AppContainer) {
 private fun tabIcon(tab: MentorTab): ImageVector =
     when (tab) {
         MentorTab.Chat -> Icons.AutoMirrored.Filled.Chat
+        MentorTab.Discover -> Icons.Outlined.Explore
         MentorTab.Models -> Icons.Outlined.Hub
         MentorTab.Usage -> Icons.Outlined.BarChart
         MentorTab.Skills -> Icons.Outlined.AutoAwesome

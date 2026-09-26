@@ -26,11 +26,12 @@ Open in Android Studio and run on API 26+.
 
 | Tab | What it does |
 | --- | --- |
-| **Chat** | Aurora UI, Fast/Balanced/Deep presets, prompt library, share-to-compose, streaming, drawer (search, pin, rename) |
-| **Models** | Per-provider **Connect** flow: API key, **Google**, **email/password**, or **mobile** (browser sign-in) + paste key; Hugging Face Hub search; Ollama URL |
-| **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
-| **Extensions** | Built-in skill packs, remote catalog; **built-in tools** `/calc`, `/time`, `/units` (always on) |
-| **Settings** | Spend limits (daily/weekly USD), theme, voice, system prompt, sync & backup |
+| **Chat** | Fast/Balanced/Deep presets, prompt library, share-to-compose (with provider disclosure), streaming, drawer (search, pin, rename) |
+| **Discover** | Popular workflows, spend snapshot, links to models/abilities/usage |
+| **Models** _(Advanced)_ | Per-provider **Connect**: API key, **Google**, **email**, or **mobile** (browser) + paste key; Hugging Face Hub; Ollama |
+| **Usage** _(Advanced)_ | Requests, tokens, estimated USD (today / 7d / 30d), per-model breakdown |
+| **Abilities** _(Advanced)_ | Offline packs, curated catalog (install review), optional `/fetch` tool |
+| **Settings** | Guided setup, spend limits with 80% warnings, theme, voice (hands-free option), export chats, sync & backup |
 
 ### Extensions (skills & plugins)
 

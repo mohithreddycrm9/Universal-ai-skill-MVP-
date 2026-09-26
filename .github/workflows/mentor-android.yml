@@ -23,8 +23,12 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+      - name: Assemble debug
+        run: ./gradlew :app:assembleDebug --no-daemon
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --no-daemon
+      - name: Paparazzi verify
+        run: ./gradlew :app:verifyPaparazziDebug --no-daemon
       - name: Lint
         run: ./gradlew :app:lintDebug --no-daemon
       - name: Bundle release (AAB)

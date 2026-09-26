@@ -11,7 +11,12 @@ import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProfileRepository
 import com.skillmcp.mentor.llm.LlmStreaming
 import com.skillmcp.mentor.llm.MultiLlmClient
+import com.skillmcp.mentor.policy.SpendCheck
 import com.skillmcp.mentor.policy.SpendGuard
+import com.skillmcp.mentor.policy.SpendLimitException
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import java.util.concurrent.TimeUnit
 import com.skillmcp.mentor.extensions.ExtensionOrchestrator
 import com.skillmcp.mentor.skills.BundledSkillInstaller
 import com.skillmcp.mentor.skills.BundledSkillPack
@@ -131,6 +136,23 @@ class MentorRepository(
 
     fun observeUsageByDay(sinceMs: Long) = llmProfileRepository.observeUsageByDay(sinceMs)
 
+    fun observeSpendGuard(): Flow<SpendCheck> =
+        combine(
+            userPreferences.prefsFlow,
+            dao.observeUsageTotals(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)),
+        ) { prefs, _ -> prefs }
+            .flatMapLatest { prefs ->
+                flow {
+                    emit(
+                        SpendGuard.check(
+                            dao,
+                            prefs.dailyBudgetUsd,
+                            prefs.weeklyBudgetUsd,
+                        ),
+                    )
+                }
+            }
+
     fun observeBuildEvents(): Flow<List<BuildEventEntity>> =
         observeActiveConversationId().flatMapLatest { dao.observeBuildEvents(it) }
 
@@ -198,7 +220,7 @@ class MentorRepository(
             val spend =
                 SpendGuard.check(dao, prefs.dailyBudgetUsd, prefs.weeklyBudgetUsd)
             if (!spend.allowed) {
-                return@withContext Result.failure(IllegalStateException(spend.message))
+                return@withContext Result.failure(SpendLimitException(spend))
             }
             val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }
             val profile = llmProfileRepository.activeProfile()

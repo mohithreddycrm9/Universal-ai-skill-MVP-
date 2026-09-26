@@ -46,6 +46,13 @@ data class MentorPrefs(
     val hasSeenWelcome: Boolean = false,
     val requireBiometricUnlock: Boolean = false,
     val dailyBriefReminder: Boolean = false,
+    val hasCompletedGuidedSetup: Boolean = false,
+    val morningBriefCalendar: Boolean = true,
+    val morningBriefWeather: Boolean = true,
+    val morningBriefNews: Boolean = false,
+    val morningBriefTasks: Boolean = true,
+    val voiceHandsFree: Boolean = false,
+    val backupIncludeApiKeys: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_ASSISTANT_PROMPT =
@@ -104,6 +111,13 @@ class UserPreferences(
                 hasSeenWelcome = prefs[KEY_SEEN_WELCOME] ?: false,
                 requireBiometricUnlock = prefs[KEY_BIOMETRIC] ?: false,
                 dailyBriefReminder = prefs[KEY_DAILY_BRIEF] ?: false,
+                hasCompletedGuidedSetup = prefs[KEY_GUIDED_SETUP] ?: false,
+                morningBriefCalendar = prefs[KEY_BRIEF_CAL] ?: true,
+                morningBriefWeather = prefs[KEY_BRIEF_WEATHER] ?: true,
+                morningBriefNews = prefs[KEY_BRIEF_NEWS] ?: false,
+                morningBriefTasks = prefs[KEY_BRIEF_TASKS] ?: true,
+                voiceHandsFree = prefs[KEY_VOICE_HANDS_FREE] ?: false,
+                backupIncludeApiKeys = prefs[KEY_BACKUP_KEYS] ?: false,
             )
         }
 
@@ -144,6 +158,13 @@ class UserPreferences(
             prefs[KEY_SEEN_WELCOME] = next.hasSeenWelcome
             prefs[KEY_BIOMETRIC] = next.requireBiometricUnlock
             prefs[KEY_DAILY_BRIEF] = next.dailyBriefReminder
+            prefs[KEY_GUIDED_SETUP] = next.hasCompletedGuidedSetup
+            prefs[KEY_BRIEF_CAL] = next.morningBriefCalendar
+            prefs[KEY_BRIEF_WEATHER] = next.morningBriefWeather
+            prefs[KEY_BRIEF_NEWS] = next.morningBriefNews
+            prefs[KEY_BRIEF_TASKS] = next.morningBriefTasks
+            prefs[KEY_VOICE_HANDS_FREE] = next.voiceHandsFree
+            prefs[KEY_BACKUP_KEYS] = next.backupIncludeApiKeys
         }
     }
 
@@ -196,5 +217,12 @@ class UserPreferences(
         val KEY_SEEN_WELCOME = booleanPreferencesKey("seen_welcome")
         val KEY_BIOMETRIC = booleanPreferencesKey("require_biometric")
         val KEY_DAILY_BRIEF = booleanPreferencesKey("daily_brief_reminder")
+        val KEY_GUIDED_SETUP = booleanPreferencesKey("guided_setup_done")
+        val KEY_BRIEF_CAL = booleanPreferencesKey("brief_calendar")
+        val KEY_BRIEF_WEATHER = booleanPreferencesKey("brief_weather")
+        val KEY_BRIEF_NEWS = booleanPreferencesKey("brief_news")
+        val KEY_BRIEF_TASKS = booleanPreferencesKey("brief_tasks")
+        val KEY_VOICE_HANDS_FREE = booleanPreferencesKey("voice_hands_free")
+        val KEY_BACKUP_KEYS = booleanPreferencesKey("backup_include_api_keys")
     }
 }
