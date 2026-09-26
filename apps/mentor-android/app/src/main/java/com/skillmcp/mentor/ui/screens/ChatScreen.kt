@@ -57,7 +57,6 @@ import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.ComposerBar
 import com.skillmcp.mentor.ui.components.MessageBubble
-import com.skillmcp.mentor.mentor.ChatSuggestions
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.SuggestionChipRow
