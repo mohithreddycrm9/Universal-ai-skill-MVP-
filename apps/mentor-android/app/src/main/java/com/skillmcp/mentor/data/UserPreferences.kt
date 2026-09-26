@@ -22,7 +22,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 data class MentorPrefs(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val accentHue: Float = 265f,
+    val accentHue: Float = 220f,
     val fontScale: Float = 1f,
     val activeLlmProfileId: String = "openai",
     val llmBaseUrl: String = "https://api.openai.com/v1/",
@@ -77,7 +77,7 @@ class UserPreferences(
         context.dataStore.data.map { prefs ->
             MentorPrefs(
                 themeMode = ThemeMode.entries.find { it.name == prefs[KEY_THEME] } ?: ThemeMode.SYSTEM,
-                accentHue = prefs[KEY_ACCENT] ?: 265f,
+                accentHue = prefs[KEY_ACCENT] ?: 220f,
                 fontScale = prefs[KEY_FONT_SCALE] ?: 1f,
                 llmBaseUrl = prefs[KEY_LLM_BASE] ?: "https://api.openai.com/v1/",
                 llmModel = prefs[KEY_LLM_MODEL] ?: "gpt-4o-mini",

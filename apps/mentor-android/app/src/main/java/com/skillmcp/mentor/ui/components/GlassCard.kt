@@ -16,18 +16,14 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = MaterialTheme.shapes.large
+    val scheme = MaterialTheme.colorScheme
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.78f),
-        border =
-            BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            ),
+        shape = MaterialTheme.shapes.medium,
+        color = scheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, scheme.outlineVariant),
         tonalElevation = 0.dp,
-        shadowElevation = 2.dp,
+        shadowElevation = 0.dp,
     ) {
         Column(Modifier.padding(16.dp), content = content)
     }

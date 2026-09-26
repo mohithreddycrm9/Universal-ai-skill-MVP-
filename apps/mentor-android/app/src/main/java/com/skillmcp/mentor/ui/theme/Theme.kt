@@ -20,83 +20,85 @@ fun ThemeMode.resolvesDark(systemDark: Boolean): Boolean =
         ThemeMode.DARK -> true
     }
 
-fun accentFromHue(hue: Float): Color {
+/** Subtle accent shift for Settings — low chroma. */
+fun accentFromHue(hue: Float, dark: Boolean): Color {
     val h = hue.coerceIn(0f, 360f)
-    return Color.hsv(h, 0.58f, if (h in 45f..65f) 0.82f else 0.9f)
+    return if (dark) {
+        Color.hsv(h, 0.32f, 0.82f)
+    } else {
+        Color.hsv(h, 0.38f, 0.38f)
+    }
 }
-
-fun tertiaryFromHue(hue: Float): Color = Color.hsv((hue + 42f) % 360f, 0.52f, 0.88f)
-
-private fun primaryContainerFromHue(hue: Float, dark: Boolean): Color =
-    if (dark) {
-        Color.hsv(hue, 0.42f, 0.26f)
-    } else {
-        Color.hsv(hue, 0.28f, 0.97f)
-    }
-
-private fun onPrimaryContainerFromHue(hue: Float, dark: Boolean): Color =
-    if (dark) {
-        Color.hsv(hue, 0.35f, 0.92f)
-    } else {
-        Color.hsv(hue, 0.55f, 0.28f)
-    }
 
 private val LightScheme =
     lightColorScheme(
-        primary = AppColors.AuroraStart,
+        primary = Color(0xFF1D4ED8),
         onPrimary = Color.White,
-        primaryContainer = Color(0xFFEDE9FE),
-        onPrimaryContainer = Color(0xFF312E81),
-        secondary = AppColors.AuroraMid,
+        primaryContainer = Color(0xFFEFF6FF),
+        onPrimaryContainer = Color(0xFF1E3A8A),
+        secondary = Color(0xFF475569),
         onSecondary = Color.White,
-        secondaryContainer = Color(0xFFFCE7F3),
-        onSecondaryContainer = Color(0xFF701A75),
-        tertiary = AppColors.AuroraSky,
-        onTertiary = Color(0xFF0C4A6E),
-        tertiaryContainer = Color(0xFFE0F2FE),
-        onTertiaryContainer = Color(0xFF0C4A6E),
-        surface = Color(0xFFFBFAFF),
-        surfaceContainerHigh = Color(0xFFF4F2FA),
-        surfaceContainerHighest = Color(0xFFEBE8F4),
-        onSurface = Color(0xFF1C1917),
-        onSurfaceVariant = Color(0xFF57534E),
-        outline = Color(0xFFD6D3D1),
-        outlineVariant = Color(0xFFE7E5E4),
+        secondaryContainer = Color(0xFFF1F5F9),
+        onSecondaryContainer = Color(0xFF334155),
+        tertiary = Color(0xFF64748B),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFF8FAFC),
+        onTertiaryContainer = Color(0xFF334155),
+        background = Color(0xFFFAFAFA),
+        onBackground = Color(0xFF171717),
+        surface = Color(0xFFFAFAFA),
+        onSurface = Color(0xFF171717),
+        surfaceContainerLow = Color(0xFFF5F5F5),
+        surfaceContainer = Color(0xFFF0F0F0),
+        surfaceContainerHigh = Color(0xFFEAEAEA),
+        surfaceContainerHighest = Color(0xFFE5E5E5),
+        onSurfaceVariant = Color(0xFF525252),
+        outline = Color(0xFFD4D4D4),
+        outlineVariant = Color(0xFFE5E5E5),
+        error = Color(0xFFB91C1C),
+        errorContainer = Color(0xFFFEE2E2),
+        onErrorContainer = Color(0xFF7F1D1D),
     )
 
 private val DarkScheme =
     darkColorScheme(
-        primary = Color(0xFFA5B4FC),
-        onPrimary = Color(0xFF1E1B4B),
-        primaryContainer = Color(0xFF3730A3),
-        onPrimaryContainer = Color(0xFFE0E7FF),
-        secondary = Color(0xFFE879F9),
-        onSecondary = Color(0xFF4A044E),
-        secondaryContainer = Color(0xFF701A75),
-        onSecondaryContainer = Color(0xFFFDF4FF),
-        tertiary = Color(0xFF67E8F9),
-        onTertiary = Color(0xFF083344),
-        tertiaryContainer = Color(0xFF155E75),
-        onTertiaryContainer = Color(0xFFCFFAFE),
-        surface = Color(0xFF0F0D14),
-        surfaceContainerHigh = Color(0xFF1C1828),
-        surfaceContainerHighest = Color(0xFF28243A),
-        onSurface = Color(0xFFF5F5F4),
-        onSurfaceVariant = Color(0xFFA8A29E),
-        outline = Color(0xFF44403C),
-        outlineVariant = Color(0xFF292524),
+        primary = Color(0xFF93C5FD),
+        onPrimary = Color(0xFF0C1929),
+        primaryContainer = Color(0xFF1E3A5F),
+        onPrimaryContainer = Color(0xFFDBEAFE),
+        secondary = Color(0xFF94A3B8),
+        onSecondary = Color(0xFF0F172A),
+        secondaryContainer = Color(0xFF334155),
+        onSecondaryContainer = Color(0xFFE2E8F0),
+        tertiary = Color(0xFF94A3B8),
+        onTertiary = Color(0xFF0F172A),
+        tertiaryContainer = Color(0xFF1E293B),
+        onTertiaryContainer = Color(0xFFCBD5E1),
+        background = Color(0xFF121212),
+        onBackground = Color(0xFFFAFAFA),
+        surface = Color(0xFF121212),
+        onSurface = Color(0xFFFAFAFA),
+        surfaceContainerLow = Color(0xFF1A1A1A),
+        surfaceContainer = Color(0xFF1F1F1F),
+        surfaceContainerHigh = Color(0xFF262626),
+        surfaceContainerHighest = Color(0xFF2E2E2E),
+        onSurfaceVariant = Color(0xFFA3A3A3),
+        outline = Color(0xFF404040),
+        outlineVariant = Color(0xFF2E2E2E),
+        error = Color(0xFFF87171),
+        errorContainer = Color(0xFF450A0A),
+        onErrorContainer = Color(0xFFFECACA),
     )
 
 @Composable
 fun CodeMentorTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    accentHue: Float = 265f,
+    accentHue: Float = 220f,
     fontScale: Float = 1f,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val accent = accentFromHue(accentHue)
-    val tertiary = tertiaryFromHue(accentHue)
+    val accent = accentFromHue(accentHue, darkTheme)
     val context = LocalContext.current
     val base =
         when {
@@ -109,17 +111,7 @@ fun CodeMentorTheme(
     val colorScheme =
         base.copy(
             primary = accent,
-            onPrimary = if (darkTheme) Color(0xFF1A1625) else Color.White,
-            primaryContainer = primaryContainerFromHue(accentHue, darkTheme),
-            onPrimaryContainer = onPrimaryContainerFromHue(accentHue, darkTheme),
-            secondary = accent.copy(alpha = 0.88f),
-            tertiary = tertiary,
-            tertiaryContainer =
-                if (darkTheme) {
-                    Color.hsv((accentHue + 42f) % 360f, 0.38f, 0.22f)
-                } else {
-                    Color.hsv((accentHue + 42f) % 360f, 0.22f, 0.96f)
-                },
+            onPrimary = if (darkTheme) DarkScheme.onPrimary else Color.White,
         )
 
     val scaledTypography =

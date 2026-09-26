@@ -144,25 +144,13 @@ private fun ProviderCard(
             style = MaterialTheme.typography.bodySmall,
             color =
                 if (configured) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 } else {
                     MaterialTheme.colorScheme.error
                 },
             modifier = Modifier.padding(start = 48.dp, bottom = 8.dp),
         )
-        Button(
-            onClick = onConnect,
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor =
-                        if (configured) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                ),
-        ) {
+        OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) {
             Text(if (configured) "Update login or API key" else "Connect account")
         }
     }

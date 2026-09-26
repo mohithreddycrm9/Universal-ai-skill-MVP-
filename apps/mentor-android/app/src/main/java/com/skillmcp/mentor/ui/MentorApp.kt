@@ -92,8 +92,8 @@ fun MentorApp(container: AppContainer) {
             containerColor = MaterialTheme.colorScheme.surface,
             bottomBar = {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
-                    tonalElevation = 6.dp,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp,
                 ) {
                     MentorTab.entries.forEach { tab ->
                         val selected = current == tab.route
@@ -112,7 +112,7 @@ fun MentorApp(container: AppContainer) {
                                 NavigationBarItemDefaults.colors(
                                     selectedIconColor = MaterialTheme.colorScheme.primary,
                                     selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
+                                    indicatorColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                     unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                     unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 ),

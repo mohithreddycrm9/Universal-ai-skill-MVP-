@@ -227,7 +227,7 @@ fun ChatScreen(vm: MentorViewModel) {
                 state.activeLlmProfile?.takeIf { !it.isConfigured() }?.let { profile ->
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     ) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
@@ -279,22 +279,23 @@ fun ChatScreen(vm: MentorViewModel) {
                                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
                             ) {
                                 Text(
-                                    "What can I help with?",
-                                    style = MaterialTheme.typography.displaySmall,
-                                    fontWeight = FontWeight.Bold,
+                                    "New conversation",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.SemiBold,
                                     textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
-                                Spacer(Modifier.height(10.dp))
+                                Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Your keys, your models—writing, study, meals, shopping, and work help.",
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    "Ask a question or pick a starter below.",
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
                                 )
                                 Spacer(Modifier.height(20.dp))
                                 Text(
-                                    "Popular right now",
-                                    style = MaterialTheme.typography.titleSmall,
+                                    "Starters",
+                                    style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.fillMaxWidth(),
                                 )

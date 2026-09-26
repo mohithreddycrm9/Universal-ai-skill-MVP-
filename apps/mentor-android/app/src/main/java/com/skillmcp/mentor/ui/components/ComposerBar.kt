@@ -37,10 +37,10 @@ fun ComposerBar(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = ComposerShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-        shadowElevation = 12.dp,
-        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(6.dp),

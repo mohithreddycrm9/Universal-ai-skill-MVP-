@@ -6,13 +6,13 @@ import androidx.compose.ui.unit.dp
 
 val AppShapes =
     Shapes(
-        extraSmall = RoundedCornerShape(10.dp),
-        small = RoundedCornerShape(14.dp),
-        medium = RoundedCornerShape(18.dp),
-        large = RoundedCornerShape(24.dp),
-        extraLarge = RoundedCornerShape(32.dp),
+        extraSmall = RoundedCornerShape(4.dp),
+        small = RoundedCornerShape(8.dp),
+        medium = RoundedCornerShape(12.dp),
+        large = RoundedCornerShape(16.dp),
+        extraLarge = RoundedCornerShape(20.dp),
     )
 
-val BubbleShapeUser = RoundedCornerShape(22.dp, 22.dp, 6.dp, 22.dp)
-val BubbleShapeAssistant = RoundedCornerShape(22.dp, 22.dp, 22.dp, 6.dp)
-val ComposerShape = RoundedCornerShape(28.dp)
+val BubbleShapeUser = RoundedCornerShape(16.dp, 16.dp, 4.dp, 16.dp)
+val BubbleShapeAssistant = RoundedCornerShape(16.dp, 16.dp, 16.dp, 4.dp)
+val ComposerShape = RoundedCornerShape(12.dp)

@@ -158,7 +158,7 @@ fun SkillsScreen(vm: MentorViewModel) {
                             shape = MaterialTheme.shapes.medium,
                             colors =
                                 OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                    focusedBorderColor = MaterialTheme.colorScheme.outline,
                                 ),
                         )
                         Button(
