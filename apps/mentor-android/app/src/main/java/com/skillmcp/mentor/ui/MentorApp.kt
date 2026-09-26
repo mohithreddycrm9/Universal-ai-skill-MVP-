@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.security.BiometricGate
+import com.skillmcp.mentor.ui.components.ConnectLlmSheet
 import com.skillmcp.mentor.ui.components.WelcomeSheet
 import com.skillmcp.mentor.ui.screens.ChatScreen
 import com.skillmcp.mentor.ui.screens.ModelsScreen
@@ -52,6 +53,8 @@ fun MentorApp(container: AppContainer) {
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route ?: MentorTab.Chat.route
     val state by vm.uiState.collectAsState()
+    val connectProfileId by vm.connectLlmProfileId.collectAsState()
+    val connectProfile = state.llmProfiles.find { it.id == connectProfileId }
 
     LaunchedEffect(vm) {
         vm.openChatRequests.collect {
@@ -79,6 +82,11 @@ fun MentorApp(container: AppContainer) {
             visible = !state.prefs.hasSeenWelcome,
             onDismiss = vm::markWelcomeSeen,
             onAddWidgetHint = vm::showWidgetHint,
+        )
+        ConnectLlmSheet(
+            profile = connectProfile,
+            vm = vm,
+            onDismiss = vm::dismissConnectLlm,
         )
         Scaffold(
             containerColor = MaterialTheme.colorScheme.surface,

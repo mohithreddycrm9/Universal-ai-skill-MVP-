@@ -15,7 +15,14 @@ class LlmProfileRepository(
     private val userPreferences: UserPreferences,
 ) {
     fun observeProfiles(): Flow<List<LlmProfile>> =
-        dao.observeLlmProfiles().map { rows -> rows.map { it.toProfile(secureStore.getKey(it.id)) } }
+        dao.observeLlmProfiles().map { rows ->
+            rows.map {
+                it.toProfile(
+                    apiKey = secureStore.getKey(it.id),
+                    linkedAccount = secureStore.getLinkedAccount(it.id),
+                )
+            }
+        }
 
     suspend fun ensureDefaults() {
         if (dao.allLlmProfiles().isEmpty()) {
@@ -103,8 +110,13 @@ class LlmProfileRepository(
     suspend fun activeProfile(): LlmProfile {
         val id = userPreferences.current().activeLlmProfileId.ifBlank { "openai" }
         val entity = dao.getLlmProfile(id) ?: dao.allLlmProfiles().firstOrNull()
-        return entity?.toProfile(secureStore.getKey(entity.id))
-            ?: defaultLlmProfiles().first().copy(apiKey = secureStore.getKey("openai"))
+        return entity?.toProfile(
+            apiKey = secureStore.getKey(entity.id),
+            linkedAccount = secureStore.getLinkedAccount(entity.id),
+        ) ?: defaultLlmProfiles().first().copy(
+            apiKey = secureStore.getKey("openai"),
+            linkedAccount = secureStore.getLinkedAccount("openai"),
+        )
     }
 
     suspend fun setActiveProfile(id: String) {
@@ -114,11 +126,16 @@ class LlmProfileRepository(
     suspend fun upsertProfile(profile: LlmProfile) {
         dao.upsertLlmProfile(profile.toEntity())
         secureStore.setKey(profile.id, profile.apiKey)
+        secureStore.setLinkedAccount(profile.id, profile.linkedAccount)
+    }
+
+    suspend fun disconnectProfile(id: String) {
+        secureStore.clearProfile(id)
     }
 
     suspend fun deleteProfile(id: String) {
         dao.deleteLlmProfile(id)
-        secureStore.deleteKey(id)
+        secureStore.clearProfile(id)
         val active = userPreferences.current().activeLlmProfileId
         if (active == id) {
             userPreferences.update { it.copy(activeLlmProfileId = "openai") }
@@ -188,7 +205,7 @@ class LlmProfileRepository(
         }
 }
 
-private fun LlmProfileEntity.toProfile(apiKey: String): LlmProfile =
+private fun LlmProfileEntity.toProfile(apiKey: String, linkedAccount: String): LlmProfile =
     LlmProfile(
         id = id,
         name = name,
@@ -196,6 +213,7 @@ private fun LlmProfileEntity.toProfile(apiKey: String): LlmProfile =
         baseUrl = baseUrl,
         model = model,
         apiKey = apiKey,
+        linkedAccount = linkedAccount,
         inputCostPer1M = inputCostPer1M,
         outputCostPer1M = outputCostPer1M,
         isBuiltIn = isBuiltIn,

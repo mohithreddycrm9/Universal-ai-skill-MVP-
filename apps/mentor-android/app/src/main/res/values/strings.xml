@@ -15,4 +15,6 @@
     <string name="shortcut_meal_long">Weekly meals and grocery list</string>
     <string name="shortcut_chat">Open chat</string>
     <string name="shortcut_chat_long">Start a new conversation</string>
+    <!-- Optional: OAuth 2.0 Web client ID for on-device Google sign-in when connecting Google AI -->
+    <string name="google_web_client_id" translatable="false"></string>
 </resources>

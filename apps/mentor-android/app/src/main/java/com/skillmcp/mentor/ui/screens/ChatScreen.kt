@@ -23,6 +23,9 @@ import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -47,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.skillmcp.mentor.llm.ModelPreset
+import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.ui.components.PromptLibrarySheet
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -202,6 +206,33 @@ fun ChatScreen(vm: MentorViewModel) {
                             scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                         ),
                 )
+                state.activeLlmProfile?.takeIf { !it.isConfigured() }?.let { profile ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)),
+                    ) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                "Connect ${profile.name} to start chatting",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                "Sign in with Google, email, mobile, or paste an API key. Credentials stay encrypted on your phone.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { vm.openConnectLlm(profile.id) }) {
+                                    Text("Connect")
+                                }
+                                androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("models") }) {
+                                    Text("All providers")
+                                }
+                            }
+                        }
+                    }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

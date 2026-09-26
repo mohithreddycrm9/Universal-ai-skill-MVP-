@@ -365,6 +365,8 @@ class MentorRepository(
 
     suspend fun saveLlmProfile(profile: LlmProfile) = llmProfileRepository.upsertProfile(profile)
 
+    suspend fun disconnectLlmProfile(id: String) = llmProfileRepository.disconnectProfile(id)
+
     suspend fun deleteLlmProfile(id: String) = llmProfileRepository.deleteProfile(id)
 
     suspend fun testLlmProfile(profile: LlmProfile) = llmProfileRepository.testProfile(profile)

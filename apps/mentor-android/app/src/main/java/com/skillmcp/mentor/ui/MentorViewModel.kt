@@ -20,8 +20,10 @@ import com.skillmcp.mentor.skills.BundledSkills
 import com.skillmcp.mentor.mentor.PopularUseCase
 import com.skillmcp.mentor.mentor.UseCaseCatalog
 import com.skillmcp.mentor.skills.SkillCatalog
+import com.skillmcp.mentor.llm.GoogleLlmSignIn
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
+import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.llm.UsageByDayRow
 import com.skillmcp.mentor.llm.UsageByModelRow
 import com.skillmcp.mentor.llm.UsageTotals
@@ -101,6 +103,9 @@ class MentorViewModel(
 
     private val openTabInner = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val openTabRequests: SharedFlow<String> = openTabInner.asSharedFlow()
+
+    private val connectLlmProfileIdInner = MutableStateFlow<String?>(null)
+    val connectLlmProfileId: StateFlow<String?> = connectLlmProfileIdInner
 
     private val sinceMs =
         usageWindow.map { window ->
@@ -451,10 +456,53 @@ class MentorViewModel(
         viewModelScope.launch { repository.setActiveLlmProfile(id) }
     }
 
+    fun openConnectLlm(profileId: String) {
+        connectLlmProfileIdInner.value = profileId
+    }
+
+    fun dismissConnectLlm() {
+        connectLlmProfileIdInner.value = null
+    }
+
+    fun requestOpenTab(route: String) {
+        openTabInner.tryEmit(route)
+    }
+
     fun saveLlmProfile(profile: LlmProfile) {
         viewModelScope.launch {
             repository.saveLlmProfile(profile)
             status.value = "Saved ${profile.name}"
+        }
+    }
+
+    fun saveLlmConnection(profile: LlmProfile, activate: Boolean) {
+        viewModelScope.launch {
+            repository.saveLlmProfile(profile)
+            if (activate) repository.setActiveLlmProfile(profile.id)
+            status.value =
+                if (profile.isConfigured()) {
+                    "Connected to ${profile.name}"
+                } else {
+                    "Saved ${profile.name} — add credentials to chat"
+                }
+        }
+    }
+
+    fun disconnectLlmProfile(id: String) {
+        viewModelScope.launch {
+            repository.disconnectLlmProfile(id)
+            status.value = "Disconnected — add a new API key when ready"
+        }
+    }
+
+    fun signInWithGoogle(webClientId: String, onEmail: (String) -> Unit) {
+        viewModelScope.launch {
+            GoogleLlmSignIn.signIn(appContext, webClientId)
+                .onSuccess { email ->
+                    onEmail(email)
+                    status.value = "Signed in as $email"
+                }
+                .onFailure { status.value = it.message ?: "Google sign-in failed" }
         }
     }
 

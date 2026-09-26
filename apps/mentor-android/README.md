@@ -27,7 +27,7 @@ Open in Android Studio and run on API 26+.
 | Tab | What it does |
 | --- | --- |
 | **Chat** | Aurora UI, Fast/Balanced/Deep presets, prompt library, share-to-compose, streaming, drawer (search, pin, rename) |
-| **Models** | OpenAI-compatible, **Hugging Face Hub** (search + run via Inference Providers), Anthropic, Google AI, Ollama, custom |
+| **Models** | Per-provider **Connect** flow: API key, **Google**, **email/password**, or **mobile** (browser sign-in) + paste key; Hugging Face Hub search; Ollama URL |
 | **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
 | **Extensions** | Built-in skill packs, remote catalog, **plugins** (`/calc`, `/time`, …) |
 | **Settings** | Spend limits (daily/weekly USD), theme, voice, system prompt, sync & backup |

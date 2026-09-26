@@ -24,5 +24,21 @@ class LlmSecureStore(context: Context) {
         prefs.edit().remove(keyFor(profileId)).apply()
     }
 
+    fun getLinkedAccount(profileId: String): String = prefs.getString(linkedKeyFor(profileId), "") ?: ""
+
+    fun setLinkedAccount(profileId: String, account: String) {
+        if (account.isBlank()) {
+            prefs.edit().remove(linkedKeyFor(profileId)).apply()
+        } else {
+            prefs.edit().putString(linkedKeyFor(profileId), account).apply()
+        }
+    }
+
+    fun clearProfile(profileId: String) {
+        prefs.edit().remove(keyFor(profileId)).remove(linkedKeyFor(profileId)).apply()
+    }
+
     private fun keyFor(profileId: String): String = "profile_key_$profileId"
+
+    private fun linkedKeyFor(profileId: String): String = "profile_linked_$profileId"
 }

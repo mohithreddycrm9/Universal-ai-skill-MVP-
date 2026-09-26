@@ -15,6 +15,7 @@ data class LlmProfile(
     val baseUrl: String,
     val model: String,
     val apiKey: String = "",
+    val linkedAccount: String = "",
     val inputCostPer1M: Double = 0.0,
     val outputCostPer1M: Double = 0.0,
     val isBuiltIn: Boolean = false,
