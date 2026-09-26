@@ -16,10 +16,21 @@ Open in Android Studio and run on API 26+.
 | Tab | What it does |
 | --- | --- |
 | **Chat** | Aurora UI, Fast/Balanced/Deep presets, prompt library, share-to-compose, streaming, drawer (search, pin, rename) |
-| **Models** | OpenAI-compatible, Anthropic, Google Generative API, Ollama + custom providers; test connection |
+| **Models** | OpenAI-compatible, **Hugging Face Hub** (search + run via Inference Providers), Anthropic, Google AI, Ollama, custom |
 | **Usage** | Requests, tokens, estimated USD (today / 7d / 30d), per-model and daily breakdown |
 | **Skills** | Featured catalog + custom URLs; per-conversation skill toggles |
 | **Settings** | Spend limits (daily/weekly USD), theme, voice, system prompt, sync & backup |
+
+### Hugging Face models
+
+1. Open **Models** → select **Hugging Face** (built-in) or add a new **Hugging Face** provider.
+2. Paste a [Hugging Face access token](https://huggingface.co/settings/tokens) with **Inference Providers** permission.
+3. Pick a **featured** model, search the Hub, or type any model id (e.g. `Qwen/Qwen2.5-7B-Instruct:fastest`).
+4. Tap **Test connection**, then chat.
+
+The app uses the OpenAI-compatible router at `https://router.huggingface.co/v1/` with streaming. If a model is not on the router, it falls back to the classic serverless inference API when possible.
+
+For **self-hosted** TGI or vLLM with an OpenAI-compatible URL, use **OpenAI-compatible** provider instead and point Base URL at your endpoint.
 
 ### Share from other apps
 

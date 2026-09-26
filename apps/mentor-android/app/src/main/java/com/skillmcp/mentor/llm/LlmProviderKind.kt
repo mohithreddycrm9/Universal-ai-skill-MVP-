@@ -2,6 +2,7 @@ package com.skillmcp.mentor.llm
 
 enum class LlmProviderKind(val label: String) {
     OPENAI_COMPAT("OpenAI-compatible"),
+    HUGGING_FACE("Hugging Face"),
     ANTHROPIC("Anthropic Claude"),
     GEMINI("Google Generative API"),
     OLLAMA("Ollama (local)"),
@@ -39,6 +40,16 @@ fun defaultLlmProfiles(): List<LlmProfile> =
             model = "gemini-2.0-flash",
             inputCostPer1M = 0.10,
             outputCostPer1M = 0.40,
+            isBuiltIn = true,
+        ),
+        LlmProfile(
+            id = "huggingface",
+            name = "Hugging Face",
+            kind = LlmProviderKind.HUGGING_FACE,
+            baseUrl = HuggingFaceDefaults.ROUTER_BASE_URL,
+            model = "meta-llama/Meta-Llama-3-8B-Instruct:fastest",
+            inputCostPer1M = 0.0,
+            outputCostPer1M = 0.0,
             isBuiltIn = true,
         ),
         LlmProfile(

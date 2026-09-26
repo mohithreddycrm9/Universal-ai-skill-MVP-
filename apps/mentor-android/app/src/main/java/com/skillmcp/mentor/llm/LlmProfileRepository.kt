@@ -26,12 +26,18 @@ class LlmProfileRepository(
                 }
             }
         }
+        ensureBuiltInProfile("huggingface", defaultLlmProfiles().find { it.id == "huggingface" })
         migrateLegacyGoogleProfileId()
         val prefs = userPreferences.current()
         if (prefs.activeLlmProfileId.isBlank()) {
             userPreferences.update { it.copy(activeLlmProfileId = "openai") }
         }
         migrateLegacyPrefsIfNeeded()
+    }
+
+    private suspend fun ensureBuiltInProfile(id: String, profile: LlmProfile?) {
+        if (profile == null || dao.getLlmProfile(id) != null) return
+        dao.upsertLlmProfile(profile.toEntity())
     }
 
     private suspend fun migrateLegacyGoogleProfileId() {

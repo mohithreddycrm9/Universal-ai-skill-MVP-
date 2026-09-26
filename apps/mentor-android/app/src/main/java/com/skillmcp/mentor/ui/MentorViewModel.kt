@@ -8,6 +8,9 @@ import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.data.MentorPrefs
 import com.skillmcp.mentor.data.db.SavedPromptEntity
 import com.skillmcp.mentor.data.db.SkillEntity
+import com.skillmcp.mentor.llm.HuggingFaceDefaults
+import com.skillmcp.mentor.llm.HuggingFaceHubApi
+import com.skillmcp.mentor.llm.HuggingFaceModelSummary
 import com.skillmcp.mentor.llm.ModelPreset
 import com.skillmcp.mentor.skills.SkillCatalog
 import com.skillmcp.mentor.llm.LlmProfile
@@ -360,17 +363,44 @@ class MentorViewModel(
 
     fun addCustomLlmProfile(name: String, kind: LlmProviderKind, baseUrl: String, model: String, apiKey: String) {
         val id = "custom-${UUID.randomUUID()}"
+        val resolvedBase =
+            when {
+                kind == LlmProviderKind.HUGGING_FACE && baseUrl.isBlank() -> HuggingFaceDefaults.ROUTER_BASE_URL
+                else -> baseUrl
+            }
+        val resolvedModel =
+            when {
+                kind == LlmProviderKind.HUGGING_FACE && model.isBlank() ->
+                    HuggingFaceDefaults.featuredChatModels.first().first
+                else -> model
+            }
         saveLlmProfile(
             LlmProfile(
                 id = id,
                 name = name,
                 kind = kind,
-                baseUrl = baseUrl,
-                model = model,
+                baseUrl = resolvedBase,
+                model = resolvedModel,
                 apiKey = apiKey,
             ),
         )
         viewModelScope.launch { repository.setActiveLlmProfile(id) }
+    }
+
+    fun updateLlmProfile(profile: LlmProfile) {
+        saveLlmProfile(profile)
+    }
+
+    fun searchHuggingFaceModels(
+        query: String,
+        accessToken: String,
+        onResult: (List<HuggingFaceModelSummary>) -> Unit,
+    ) {
+        viewModelScope.launch {
+            val result = HuggingFaceHubApi().searchModels(query, accessToken)
+            onResult(result.getOrElse { emptyList() })
+            result.exceptionOrNull()?.let { status.value = it.message }
+        }
     }
 
     fun testLlmProfile(profile: LlmProfile) {

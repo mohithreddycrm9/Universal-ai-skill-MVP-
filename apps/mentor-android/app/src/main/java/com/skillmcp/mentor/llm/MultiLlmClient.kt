@@ -35,6 +35,7 @@ class MultiLlmClient(
             val result =
                 when (profile.kind) {
                     LlmProviderKind.OPENAI_COMPAT -> openAiCompat(profile, system, history, userMessage)
+                    LlmProviderKind.HUGGING_FACE -> huggingFace(profile, system, history, userMessage)
                     LlmProviderKind.ANTHROPIC -> anthropic(profile, system, history, userMessage)
                     LlmProviderKind.GEMINI -> googleGenerative(profile, system, history, userMessage)
                     LlmProviderKind.OLLAMA -> ollama(profile, system, history, userMessage)
@@ -50,6 +51,60 @@ class MultiLlmClient(
                 append(extraContext.take(12_000))
             }
         }
+
+    private fun huggingFace(
+        profile: LlmProfile,
+        system: String,
+        history: List<ChatMessageDto>,
+        userMessage: String,
+    ): LlmChatResult {
+        val routerProfile =
+            profile.copy(
+                baseUrl = profile.baseUrl.ifBlank { HuggingFaceDefaults.ROUTER_BASE_URL },
+            )
+        return runCatching {
+            openAiCompat(routerProfile, system, history, userMessage)
+        }.getOrElse {
+            huggingFaceServerless(routerProfile, system, history, userMessage, it)
+        }
+    }
+
+    private fun huggingFaceServerless(
+        profile: LlmProfile,
+        system: String,
+        history: List<ChatMessageDto>,
+        userMessage: String,
+        routerError: Throwable,
+    ): LlmChatResult {
+        if (profile.apiKey.isBlank()) throw routerError
+        val modelId = HuggingFaceDefaults.serverlessModelId(profile.model)
+        val url = "https://api-inference.huggingface.co/models/$modelId"
+        val prompt = HuggingFacePrompt.toServerlessPrompt(system, history, userMessage)
+        val body =
+            JSONObject()
+                .put("inputs", prompt)
+                .put(
+                    "parameters",
+                    JSONObject()
+                        .put("max_new_tokens", 1024)
+                        .put("return_full_text", false)
+                        .put("temperature", 0.7),
+                )
+                .put("options", JSONObject().put("wait_for_model", true))
+                .toString()
+        val responseText =
+            postJson(url, body, profile) { builder ->
+                builder.header("Authorization", "Bearer ${profile.apiKey}")
+            }
+        val content =
+            when {
+                responseText.trimStart().startsWith("[") -> {
+                    JSONArray(responseText).optJSONObject(0)?.optString("generated_text")?.trim()
+                }
+                else -> JSONObject(responseText).optString("generated_text").trim()
+            } ?: error("Empty Hugging Face serverless response")
+        return LlmChatResult(content, null, profile.model, 0)
+    }
 
     private fun openAiCompat(
         profile: LlmProfile,

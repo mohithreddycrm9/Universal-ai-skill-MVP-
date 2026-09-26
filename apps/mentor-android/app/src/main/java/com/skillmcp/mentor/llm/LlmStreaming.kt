@@ -40,6 +40,8 @@ class LlmStreaming(
                     }
                 }
             when (profile.kind) {
+                LlmProviderKind.HUGGING_FACE ->
+                    streamHuggingFace(profile, system, history, userMessage, onChunk, temperature)
                 LlmProviderKind.OPENAI_COMPAT,
                 LlmProviderKind.OLLAMA,
                 -> streamOpenAiCompat(profile, system, history, userMessage, onChunk, temperature)
@@ -53,6 +55,34 @@ class LlmStreaming(
             }.copy(latencyMs = System.currentTimeMillis() - started)
         }
 
+    private fun streamHuggingFace(
+        profile: LlmProfile,
+        system: String,
+        history: List<ChatMessageDto>,
+        userMessage: String,
+        onChunk: (String) -> Unit,
+        temperature: Double,
+    ): LlmChatResult {
+        val resolved =
+            profile.copy(
+                baseUrl = profile.baseUrl.ifBlank { HuggingFaceDefaults.ROUTER_BASE_URL },
+            )
+        return try {
+            streamOpenAiCompat(resolved, system, history, userMessage, onChunk, temperature)
+        } catch (routerError: Exception) {
+            val client = MultiLlmClient(http)
+            val result =
+                client.chat(
+                    profile = resolved,
+                    systemPrompt = system,
+                    history = history,
+                    userMessage = userMessage,
+                ).getOrElse { throw routerError }
+            onChunk(result.content)
+            result
+        }
+    }
+
     private fun streamOpenAiCompat(
         profile: LlmProfile,
         system: String,
@@ -61,7 +91,13 @@ class LlmStreaming(
         onChunk: (String) -> Unit,
         temperature: Double,
     ): LlmChatResult {
-        val base = profile.baseUrl.trimEnd('/') + "/"
+        val resolvedBase =
+            if (profile.kind == LlmProviderKind.HUGGING_FACE && profile.baseUrl.isBlank()) {
+                HuggingFaceDefaults.ROUTER_BASE_URL
+            } else {
+                profile.baseUrl
+            }
+        val base = resolvedBase.trimEnd('/') + "/"
         val url =
             if (profile.kind == LlmProviderKind.OLLAMA && !base.contains("/v1")) {
                 "${base}api/chat"
