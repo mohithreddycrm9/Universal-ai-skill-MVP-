@@ -64,4 +64,8 @@ Complete IARC questionnaire: no violence; user-generated chat; reference AI/LLM.
 
 - Monitor Play vitals (crashes, ANRs)
 - Bump `versionCode` every release; update `versionName` as needed
-- CI: `.github/workflows/mentor-android.yml` runs tests, lint, `assembleRelease`
+- CI: `.github/workflows/mentor-android.yml` runs **debug** build, unit tests, Paparazzi, and lint on every PR.
+- **Signed release AAB** runs only on `main` when GitHub secrets are set:
+  - `MENTOR_RELEASE_KEYSTORE_B64` (base64-encoded upload keystore)
+  - `MENTOR_KEYSTORE_PASSWORD`, `MENTOR_KEY_ALIAS`, `MENTOR_KEY_PASSWORD`
+- Local `./gradlew :app:bundleRelease` **fails** if `MENTOR_RELEASE_KEYSTORE` is unset (no silent unsigned bundles).

@@ -297,7 +297,7 @@ interface MentorDao {
         SavedPromptEntity::class,
     ],
     version = 5,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class MentorDatabase : RoomDatabase() {
     abstract fun mentorDao(): MentorDao

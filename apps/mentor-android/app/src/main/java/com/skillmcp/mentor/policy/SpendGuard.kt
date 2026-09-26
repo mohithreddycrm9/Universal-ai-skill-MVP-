@@ -1,6 +1,7 @@
 package com.skillmcp.mentor.policy
 
 import com.skillmcp.mentor.data.db.MentorDao
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 enum class SpendBlockReason {
@@ -105,5 +106,5 @@ object SpendGuard {
         return "${((spent / budget) * 100).toInt()}%"
     }
 
-    private fun format(v: Double): String = String.format("%.2f", v)
+    private fun format(v: Double): String = String.format(Locale.US, "%.2f", v)
 }

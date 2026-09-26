@@ -98,6 +98,10 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun isTrustedInternalIntent(intent: Intent): Boolean =
-        intent.getBooleanExtra(AppLaunch.EXTRA_INTERNAL, false)
+    /** Only handles explicit in-app launches (widget, shortcuts, notifications); no public intent-filter. */
+    private fun isTrustedInternalIntent(intent: Intent): Boolean {
+        val component = intent.component ?: return false
+        if (component.packageName != packageName) return false
+        return component.className == MainActivity::class.java.name
+    }
 }

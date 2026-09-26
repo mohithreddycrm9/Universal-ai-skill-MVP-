@@ -18,6 +18,17 @@ android {
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+        javaCompileOptions {
+            annotationProcessorOptions {
+                argument("room.schemaLocation", "$projectDir/schemas")
+            }
+        }
+    }
+
+    lint {
+        lintConfig = file("lint.xml")
+        warningsAsErrors = false
+        abortOnError = true
     }
 
     signingConfigs {
@@ -88,7 +99,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("androidx.security:security-crypto:1.1.0")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
@@ -112,4 +123,24 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")
     testImplementation("app.cash.paparazzi:paparazzi:1.3.5")
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+tasks.matching { it.name == "bundleRelease" || it.name == "assembleRelease" }.configureEach {
+    doFirst {
+        val keystorePath = System.getenv("MENTOR_RELEASE_KEYSTORE")
+        if (keystorePath.isNullOrBlank()) {
+            throw GradleException(
+                "Release build requires MENTOR_RELEASE_KEYSTORE (and MENTOR_KEYSTORE_PASSWORD, " +
+                    "MENTOR_KEY_ALIAS, MENTOR_KEY_PASSWORD). See GO_LIVE.md.",
+            )
+        }
+        val file = file(keystorePath)
+        if (!file.exists()) {
+            throw GradleException("Release keystore not found at: $keystorePath")
+        }
+    }
 }

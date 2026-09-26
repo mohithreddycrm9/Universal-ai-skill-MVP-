@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Universal AI</string>
     <string name="widget_title">Universal AI quick actions</string>
-    <string name="widget_description">Morning brief, meal plan, and open chat</string>
+    <string name="widget_description" translatable="false">Morning brief, meal plan, and open chat</string>
     <string name="widget_subtitle">Quick workflows from your home screen</string>
     <string name="widget_morning_brief">Brief</string>
     <string name="widget_meal_plan">Meals</string>
@@ -15,9 +15,8 @@
     <string name="shortcut_meal_long">Weekly meals and grocery list</string>
     <string name="shortcut_chat">Open chat</string>
     <string name="shortcut_chat_long">Start a new conversation</string>
-    <!-- Optional: OAuth 2.0 Web client ID for on-device Google sign-in when connecting Google AI -->
     <string name="google_web_client_id" translatable="false"></string>
-    <string name="support_email">support@example.com</string>
-    <string name="support_email_label">Support: support@example.com</string>
-    <string name="privacy_policy_url">https://example.com/universal-ai/privacy</string>
+    <string name="support_email" translatable="false">mohithreddycrm9@gmail.com</string>
+    <string name="support_email_label">Support: mohithreddycrm9@gmail.com</string>
+    <string name="privacy_policy_url" translatable="false">https://raw.githubusercontent.com/mohithreddycrm9/Universal-ai-skill-MVP-/main/apps/mentor-android/app/src/main/assets/legal/privacy_policy.html</string>
 </resources>

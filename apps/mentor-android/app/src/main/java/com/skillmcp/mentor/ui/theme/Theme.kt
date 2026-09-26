@@ -13,6 +13,13 @@ import androidx.compose.ui.platform.LocalContext
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+fun ThemeMode.userLabel(): String =
+    when (this) {
+        ThemeMode.SYSTEM -> "Match phone"
+        ThemeMode.LIGHT -> "Light"
+        ThemeMode.DARK -> "Dark"
+    }
+
 fun ThemeMode.resolvesDark(systemDark: Boolean): Boolean =
     when (this) {
         ThemeMode.SYSTEM -> systemDark

@@ -76,10 +76,6 @@ class UserPreferences(
     private val context: Context,
     private val secureStore: LlmSecureStore,
 ) {
-    init {
-        migrateSecretsFromDataStore()
-    }
-
     val prefsFlow: Flow<MentorPrefs> =
         context.dataStore.data.map { prefs ->
             MentorPrefs(
@@ -168,9 +164,8 @@ class UserPreferences(
         }
     }
 
-    private fun migrateSecretsFromDataStore() {
-        runBlocking {
-            val snapshot = context.dataStore.data.first()
+    suspend fun ensureSecretsMigratedFromDataStore() {
+        val snapshot = context.dataStore.data.first()
             val legacyEleven = snapshot[KEY_ELEVEN_KEY] ?: ""
             val legacyBackup = snapshot[KEY_BACKUP_TOKEN] ?: ""
             if (legacyEleven.isNotBlank() && secureStore.getAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS).isBlank()) {
@@ -179,12 +174,11 @@ class UserPreferences(
             if (legacyBackup.isNotBlank() && secureStore.getAppSecret(LlmSecureStore.SECRET_BACKUP_TOKEN).isBlank()) {
                 secureStore.setAppSecret(LlmSecureStore.SECRET_BACKUP_TOKEN, legacyBackup)
             }
-            if (legacyEleven.isNotBlank() || legacyBackup.isNotBlank()) {
-                context.dataStore.edit { prefs ->
-                    prefs.remove(KEY_ELEVEN_KEY)
-                    prefs.remove(KEY_BACKUP_TOKEN)
-                    prefs.remove(KEY_LLM_KEY)
-                }
+        if (legacyEleven.isNotBlank() || legacyBackup.isNotBlank()) {
+            context.dataStore.edit { prefs ->
+                prefs.remove(KEY_ELEVEN_KEY)
+                prefs.remove(KEY_BACKUP_TOKEN)
+                prefs.remove(KEY_LLM_KEY)
             }
         }
     }

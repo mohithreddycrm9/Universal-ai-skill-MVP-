@@ -153,6 +153,19 @@ fun LlmProfile.isConfigured(): Boolean =
         else -> apiKey.isNotBlank()
     }
 
+fun connectSignInBlurb(kind: LlmProviderKind): String {
+    val methods = connectInfoFor(kind).signInMethods
+    val parts =
+        buildList {
+            if (LlmSignInMethod.API_KEY in methods) add("paste an API key")
+            if (LlmSignInMethod.GOOGLE in methods) add("Google")
+            if (LlmSignInMethod.EMAIL in methods) add("email")
+            if (LlmSignInMethod.PHONE in methods) add("mobile")
+        }
+    val joined = parts.joinToString(", ").replaceFirstChar { it.uppercase() }
+    return "$joined. Credentials stay encrypted on this device."
+}
+
 fun LlmProfile.connectionLabel(): String =
     when {
         !isConfigured() -> "Setup required"

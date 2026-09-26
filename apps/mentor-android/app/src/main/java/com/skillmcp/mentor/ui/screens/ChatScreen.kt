@@ -55,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.skillmcp.mentor.llm.ModelPreset
+import com.skillmcp.mentor.llm.connectSignInBlurb
 import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.ui.components.PromptLibrarySheet
 import androidx.compose.ui.Modifier
@@ -108,6 +109,27 @@ fun ChatScreen(vm: MentorViewModel) {
     LaunchedEffect(state.messages.size, extraItems, state.streamPreview) {
         val last = state.messages.size + extraItems - 1
         if (last >= 0) listState.animateScrollToItem(last)
+    }
+
+    val raisePreview by vm.spendRaisePreview.collectAsState()
+    raisePreview?.let { (daily, weekly) ->
+        AlertDialog(
+            onDismissRequest = vm::dismissSpendRaisePreview,
+            title = { Text("Raise spend limits?") },
+            text = {
+                Text(
+                    "Estimated daily cap → $${"%.2f".format(daily)}\n" +
+                        "Estimated weekly cap → $${"%.2f".format(weekly)}\n\n" +
+                        "Amounts are estimates from Usage, not your provider bill.",
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = vm::confirmRaiseSpendLimits) { Text("Confirm") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = vm::dismissSpendRaisePreview) { Text("Cancel") }
+            },
+        )
     }
 
     state.pendingShare?.let { share ->
@@ -267,7 +289,7 @@ fun ChatScreen(vm: MentorViewModel) {
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                "Get an API key in your browser (Google, email, or mobile) or paste a key. Credentials stay encrypted on this device.",
+                                connectSignInBlurb(profile.kind),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -309,14 +331,14 @@ fun ChatScreen(vm: MentorViewModel) {
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = vm::bumpSpendLimits) { Text("Raise limit") }
+                                Button(onClick = vm::previewRaiseSpendLimits) { Text("Raise limit") }
                                 if (state.spendGuard.blockReason == SpendBlockReason.DAILY) {
-                                    androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("settings") }) {
+                                    androidx.compose.material3.TextButton(onClick = vm::dismissSpendBlockMessage) {
                                         Text("Wait until tomorrow")
                                     }
                                 } else {
-                                    androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("settings") }) {
-                                        Text("Adjust in Settings")
+                                    androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("usage") }) {
+                                        Text("Adjust on Usage")
                                     }
                                 }
                             }
@@ -433,13 +455,27 @@ fun ChatScreen(vm: MentorViewModel) {
                     }
                 }
 
-                state.status?.let {
-                    Text(
-                        it,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                state.status?.let { msg ->
+                    Column(Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                        Text(
+                            msg,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        state.statusDetails?.let { details ->
+                            var show by remember { mutableStateOf(false) }
+                            androidx.compose.material3.TextButton(onClick = { show = !show }) {
+                                Text(if (show) "Hide details" else "Details")
+                            }
+                            if (show) {
+                                Text(
+                                    details,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
                 }
 
                 ComposerBar(

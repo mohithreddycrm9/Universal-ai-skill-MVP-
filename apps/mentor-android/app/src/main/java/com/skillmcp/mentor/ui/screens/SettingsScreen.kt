@@ -1,7 +1,9 @@
 package com.skillmcp.mentor.ui.screens
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,6 +44,7 @@ import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.LegalDocumentSheet
 import com.skillmcp.mentor.ui.components.TabSuggestions
 import com.skillmcp.mentor.ui.theme.ThemeMode
+import com.skillmcp.mentor.ui.theme.userLabel
 
 @Composable
 fun SettingsScreen(vm: MentorViewModel) {
@@ -219,7 +222,7 @@ fun SettingsScreen(vm: MentorViewModel) {
                 Text("Add abilities & tools")
             }
             OutlinedButton(onClick = { vm.requestOpenTab("usage") }, modifier = Modifier.fillMaxWidth()) {
-                Text("Usage & spend limits")
+                Text("Usage")
             }
             Text(
                 "Add the home screen widget: long-press launcher → Widgets → Universal AI quick actions.",
@@ -227,7 +230,16 @@ fun SettingsScreen(vm: MentorViewModel) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             OutlinedButton(onClick = { showPrivacy = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Privacy policy")
+                Text("Privacy policy (in app)")
+            }
+            OutlinedButton(
+                onClick = {
+                    val url = context.getString(com.skillmcp.mentor.R.string.privacy_policy_url)
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Privacy policy (web)")
             }
             OutlinedButton(onClick = { showTerms = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Terms of use")
@@ -243,59 +255,45 @@ fun SettingsScreen(vm: MentorViewModel) {
             }
             Text(
                 "API keys and backup tokens are stored in EncryptedSharedPreferences (Android Keystore). " +
-                    "They are not included in backup or sync unless you explicitly opt in below.",
+                    "They are not included in backup or sync payloads.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            RowSwitch(
-                label = "Include API keys in encrypted backup (not recommended)",
-                checked = prefs.backupIncludeApiKeys,
-                onCheckedChange = { vm.updatePrefs { p -> p.copy(backupIncludeApiKeys = it) } },
             )
 
             Text("About", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             Text("Universal AI ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-            Text(
-                context.getString(com.skillmcp.mentor.R.string.support_email_label),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            val supportEmail = context.getString(com.skillmcp.mentor.R.string.support_email)
+            TextButton(
+                onClick = {
+                    context.startActivity(
+                        Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:$supportEmail")
+                        },
+                    )
+                },
+            ) {
+                Text(
+                    context.getString(com.skillmcp.mentor.R.string.support_email_label),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
 
             Text("Response style", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             com.skillmcp.mentor.llm.ModelPreset.entries.forEach { preset ->
-                Button(
-                    onClick = { vm.setModelPreset(preset) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = state.prefs.modelPreset != preset,
-                ) {
-                    Text("${preset.label} — ${preset.hint}")
+                val selected = state.prefs.modelPreset == preset
+                if (selected) {
+                    Button(onClick = { }, modifier = Modifier.fillMaxWidth()) {
+                        Text("✓ ${preset.label} — ${preset.hint}")
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { vm.setModelPreset(preset) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("${preset.label} — ${preset.hint}")
+                    }
                 }
             }
-
-            Text("Spend limits (USD)", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            Text(
-                "Limits use estimated costs from Usage — not exact billing. You'll see an 80% warning before sends are blocked.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = if (state.prefs.dailyBudgetUsd > 0) state.prefs.dailyBudgetUsd.toString() else "",
-                onValueChange = { v ->
-                    vm.updatePrefs { p -> p.copy(dailyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
-                },
-                label = { Text("Daily budget (0 = off)") },
-                singleLine = true,
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = if (state.prefs.weeklyBudgetUsd > 0) state.prefs.weeklyBudgetUsd.toString() else "",
-                onValueChange = { v ->
-                    vm.updatePrefs { p -> p.copy(weeklyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
-                },
-                label = { Text("Weekly budget (0 = off)") },
-                singleLine = true,
-            )
 
             Text("Assistant", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             OutlinedTextField(
@@ -319,12 +317,18 @@ fun SettingsScreen(vm: MentorViewModel) {
 
             Text("Appearance", style = MaterialTheme.typography.titleMedium)
             ThemeMode.entries.forEach { mode ->
-                Button(
-                    onClick = { vm.updatePrefs { it.copy(themeMode = mode) } },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = prefs.themeMode != mode,
-                ) {
-                    Text("Theme: ${mode.name}")
+                val selected = prefs.themeMode == mode
+                if (selected) {
+                    Button(onClick = { }, modifier = Modifier.fillMaxWidth()) {
+                        Text("✓ ${mode.userLabel()}")
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { vm.updatePrefs { it.copy(themeMode = mode) } },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(mode.userLabel())
+                    }
                 }
             }
             Text("Accent hue")
@@ -367,7 +371,7 @@ fun SettingsScreen(vm: MentorViewModel) {
 
             Text("Sync & backup", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Run relay: cd apps/sync-relay && npm start → ws://YOUR_IP:8787/sync",
+                "Optional: point to your own WebSocket sync relay (for example ws://YOUR_IP:8787/sync).",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

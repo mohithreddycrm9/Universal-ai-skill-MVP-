@@ -59,6 +59,7 @@ class MentorRepository(
     val defaultProjectId = "default"
 
     suspend fun bootstrap() {
+        userPreferences.ensureSecretsMigratedFromDataStore()
         llmProfileRepository.ensureDefaults()
         ensureDefaultProject()
         seedDefaultPrompts()

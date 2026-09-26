@@ -45,7 +45,7 @@ import com.skillmcp.mentor.ui.components.PopularUseCaseCard
 import com.skillmcp.mentor.ui.components.TabSuggestions
 
 @Composable
-fun SkillsScreen(vm: MentorViewModel) {
+fun SkillsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
     val state by vm.uiState.collectAsState()
     var sourceUrl by remember { mutableStateOf("") }
     var confirmFetch by remember { mutableStateOf(false) }
@@ -62,7 +62,7 @@ fun SkillsScreen(vm: MentorViewModel) {
             }
             item {
                 TabSuggestions(
-                    title = "Ask about extensions",
+                    title = "Ask about abilities",
                     suggestions = ScreenSuggestions.forScreen(SuggestionScreen.EXTENSIONS),
                     onSelect = vm::openChatWithSuggestion,
                 )

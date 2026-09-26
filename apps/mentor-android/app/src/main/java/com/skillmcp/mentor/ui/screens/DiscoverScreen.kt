@@ -116,29 +116,6 @@ fun DiscoverScreen(vm: MentorViewModel) {
                     }
                 }
             }
-            item {
-                Text("Advanced", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Models, extensions, and detailed usage.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            item {
-                OutlinedButton(onClick = { vm.requestOpenTab("models") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Models & connection")
-                }
-            }
-            item {
-                OutlinedButton(onClick = { vm.requestOpenTab("skills") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Add abilities & tools")
-                }
-            }
-            item {
-                OutlinedButton(onClick = { vm.requestOpenTab("usage") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Usage & spend limits")
-                }
-            }
         }
     }
 }

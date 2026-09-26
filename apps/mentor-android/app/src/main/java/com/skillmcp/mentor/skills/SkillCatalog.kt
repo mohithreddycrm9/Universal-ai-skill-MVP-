@@ -64,14 +64,6 @@ object SkillCatalog {
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "sqlite-skill",
-                title = "SQLite assistant",
-                description = "Schema-aware SQL help and safe query guidance.",
-                category = "Data",
-                sourceUrl = "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/tree/main/examples/skills/benign/csv-normalize",
-                trustTier = "Curated",
-            ),
-            CatalogSkill(
                 id = "huggingface-skills",
                 title = "Hugging Face agents",
                 description = "ML workflows, datasets, and inference patterns.",

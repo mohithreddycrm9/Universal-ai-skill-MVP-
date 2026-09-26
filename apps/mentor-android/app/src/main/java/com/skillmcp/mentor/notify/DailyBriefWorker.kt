@@ -72,7 +72,6 @@ class DailyBriefWorker(
         private const val WORK_NAME = "daily_brief_reminder"
 
         fun ensureChannel(context: Context) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel =
                 NotificationChannel(

@@ -28,6 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import com.skillmcp.mentor.llm.connectionLabel
 import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.ui.MentorViewModel
@@ -39,12 +42,19 @@ import com.skillmcp.mentor.ui.components.ScreenHeader
 import com.skillmcp.mentor.ui.components.TabSuggestions
 import java.util.UUID
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModelsScreen(vm: MentorViewModel) {
+fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
     val state by vm.uiState.collectAsState()
     var showAddKind by remember { mutableStateOf(false) }
 
     AppBackground {
+        if (onBack != null) {
+            TopAppBar(
+                title = { Text("Models") },
+                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+            )
+        }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -52,7 +62,7 @@ fun ModelsScreen(vm: MentorViewModel) {
             item {
                 ScreenHeader(
                     title = "Models",
-                    subtitle = "Choose a provider, sign in with Google, email, phone, or paste an API key.",
+                    subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
                 )
             }
             item {
@@ -74,7 +84,7 @@ fun ModelsScreen(vm: MentorViewModel) {
             item {
                 if (!showAddKind) {
                     OutlinedButton(onClick = { showAddKind = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Add custom OpenAI-compatible endpoint")
+                        Text("Add other AI service (advanced)")
                     }
                 } else {
                     GlassCard {
@@ -151,16 +161,18 @@ private fun ProviderCard(
                 },
             modifier = Modifier.padding(start = 48.dp, bottom = 8.dp),
         )
-        OutlinedButton(
-            onClick = onConnect,
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        ) {
-            Text(if (configured) "Update login or API key" else "Connect account")
+        if (profile.kind != LlmProviderKind.OLLAMA) {
+            OutlinedButton(
+                onClick = onConnect,
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Text(if (configured) "Update login or API key" else "Connect account")
+            }
         }
     }
 }

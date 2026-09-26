@@ -57,6 +57,7 @@ fun appLockAuthenticators(context: Context): AppLockAuthenticators {
 @Composable
 fun BiometricGate(
     enabled: Boolean,
+    onLockUnavailable: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     if (!enabled) {
@@ -67,7 +68,14 @@ fun BiometricGate(
     val activity = context as? FragmentActivity
     var unlocked by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val auth = remember { appLockAuthenticators(context) }
+    var auth by remember { mutableStateOf(appLockAuthenticators(context)) }
+
+    LaunchedEffect(enabled, lifecycleOwner) {
+        auth = appLockAuthenticators(context)
+        if (!auth.canPrompt) {
+            onLockUnavailable()
+        }
+    }
 
     DisposableEffect(lifecycleOwner, enabled) {
         val observer =
@@ -75,13 +83,23 @@ fun BiometricGate(
                 if (enabled && event == Lifecycle.Event.ON_STOP) {
                     unlocked = false
                 }
+                if (enabled && event == Lifecycle.Event.ON_RESUME) {
+                    auth = appLockAuthenticators(context)
+                    if (!auth.canPrompt) {
+                        onLockUnavailable()
+                    }
+                }
             }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     fun showPrompt() {
-        if (activity == null || !auth.canPrompt) return
+        auth = appLockAuthenticators(context)
+        if (activity == null || !auth.canPrompt) {
+            onLockUnavailable()
+            return
+        }
         val executor = ContextCompat.getMainExecutor(context)
         val prompt =
             BiometricPrompt(
@@ -102,14 +120,14 @@ fun BiometricGate(
         prompt.authenticate(info)
     }
 
-    LaunchedEffect(enabled, activity, auth.allowed) {
+    LaunchedEffect(enabled, activity, auth.allowed, unlocked) {
         if (!enabled || unlocked || activity == null || !auth.canPrompt) {
             return@LaunchedEffect
         }
         showPrompt()
     }
 
-    if (unlocked) {
+    if (unlocked || !auth.canPrompt) {
         content()
     } else {
         Column(
@@ -122,16 +140,19 @@ fun BiometricGate(
                 when {
                     auth.hasBiometric -> "Use fingerprint or face to continue."
                     auth.hasDeviceCredential -> "Use your device PIN, pattern, or password to continue."
-                    else ->
-                        "Add a screen lock in Android Settings before using app lock."
+                    else -> "Set a screen lock in Android Settings, or app lock will turn off automatically."
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
             )
-            if (auth.canPrompt && activity != null) {
-                Button(onClick = { showPrompt() }) {
-                    Text(if (auth.hasBiometric) "Unlock" else "Unlock with device PIN")
-                }
+            Button(onClick = { showPrompt() }) {
+                Text(
+                    when {
+                        auth.hasBiometric -> "Unlock"
+                        auth.hasDeviceCredential -> "Unlock with device PIN"
+                        else -> "Unlock"
+                    },
+                )
             }
         }
     }

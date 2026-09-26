@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -19,6 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -49,6 +53,12 @@ enum class MentorTab(val route: String, val label: String, val showInBar: Boolea
     Settings("settings", "Settings"),
 }
 
+fun MentorTab.barParentRoute(): String =
+    when (this) {
+        MentorTab.Models, MentorTab.Usage, MentorTab.Skills -> MentorTab.Discover.route
+        else -> route
+    }
+
 @Composable
 fun MentorApp(container: AppContainer) {
     val vm: MentorViewModel =
@@ -57,8 +67,13 @@ fun MentorApp(container: AppContainer) {
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route ?: MentorTab.Chat.route
     val state by vm.uiState.collectAsState()
+    val guidedVisible by vm.guidedSetupVisible.collectAsState()
     val connectProfileId by vm.connectLlmProfileId.collectAsState()
     val connectProfile = state.llmProfiles.find { it.id == connectProfileId }
+    var returnRoute by remember { mutableStateOf(MentorTab.Discover.route) }
+
+    val highlightedTab =
+        MentorTab.entries.find { it.route == current }?.barParentRoute() ?: current
 
     LaunchedEffect(vm) {
         vm.openChatRequests.collect {
@@ -72,21 +87,41 @@ fun MentorApp(container: AppContainer) {
 
     LaunchedEffect(vm) {
         vm.openTabRequests.collect { route ->
+            val from = current
+            if (route in listOf("models", "usage", "skills")) {
+                returnRoute = from
+            }
             val dest = MentorTab.entries.find { it.route == route }?.route ?: MentorTab.Chat.route
             nav.navigate(dest) {
-                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
                 launchSingleTop = true
-                restoreState = true
             }
         }
     }
 
-    BiometricGate(enabled = state.prefs.requireBiometricUnlock) {
+    val onAdvancedBack: () -> Unit = {
+        nav.navigate(returnRoute) {
+            popUpTo(returnRoute) { inclusive = false }
+            launchSingleTop = true
+        }
+    }
+
+    if (current in listOf("models", "usage", "skills")) {
+        BackHandler(onBack = onAdvancedBack)
+    }
+
+    BiometricGate(
+        enabled = state.prefs.requireBiometricUnlock,
+        onLockUnavailable = vm::onAppLockUnavailable,
+    ) {
         GuidedSetupSheet(
-            visible = !state.prefs.hasCompletedGuidedSetup,
+            visible = !state.prefs.hasCompletedGuidedSetup && guidedVisible && connectProfileId == null,
             useCases = state.rankedUseCases,
-            onConnectOpenAi = { vm.openConnectLlm("openai") },
+            onConnectOpenAi = {
+                vm.hideGuidedSetupForConnect()
+                vm.openConnectLlm("openai")
+            },
             onSendTestMessage = {
+                vm.hideGuidedSetupForConnect()
                 vm.openChatWithSuggestion("Say hello in one sentence — this is my setup test.")
             },
             onPickUseCase = { vm.startPopularUseCase(it) },
@@ -110,7 +145,7 @@ fun MentorApp(container: AppContainer) {
                     tonalElevation = 0.dp,
                 ) {
                     MentorTab.entries.filter { it.showInBar }.forEach { tab ->
-                        val selected = current == tab.route
+                        val selected = highlightedTab == tab.route
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
@@ -142,9 +177,9 @@ fun MentorApp(container: AppContainer) {
             ) {
                 composable(MentorTab.Chat.route) { ChatScreen(vm) }
                 composable(MentorTab.Discover.route) { DiscoverScreen(vm) }
-                composable(MentorTab.Models.route) { ModelsScreen(vm) }
-                composable(MentorTab.Usage.route) { UsageScreen(vm) }
-                composable(MentorTab.Skills.route) { SkillsScreen(vm) }
+                composable(MentorTab.Models.route) { ModelsScreen(vm, onBack = onAdvancedBack) }
+                composable(MentorTab.Usage.route) { UsageScreen(vm, onBack = onAdvancedBack) }
+                composable(MentorTab.Skills.route) { SkillsScreen(vm, onBack = onAdvancedBack) }
                 composable(MentorTab.Settings.route) { SettingsScreen(vm) }
             }
         }

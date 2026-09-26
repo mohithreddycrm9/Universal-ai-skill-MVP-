@@ -14,8 +14,8 @@ Use as a guide when filling the Play Console form. Adjust if your hosted backup/
 
 ## Security practices
 
-- Data encrypted in transit: **Yes** (HTTPS to providers)
-- Data encrypted at rest: **Yes** (EncryptedSharedPreferences for secrets; Room for chats)
+- Data encrypted in transit: **Yes** (HTTPS to providers; user may configure HTTP for local Ollama)
+- Data encrypted at rest: **Partial** — API keys and tokens in **EncryptedSharedPreferences** (Android Keystore). Chat history and usage in **local SQLite (Room)** on device, not SQLCipher-encrypted.
 - Users can request deletion: **Yes** (Settings → Erase all local data; uninstall)
 
 ## Data types NOT collected by the developer

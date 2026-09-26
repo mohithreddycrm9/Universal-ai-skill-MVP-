@@ -4,37 +4,60 @@ import com.skillmcp.mentor.policy.SpendLimitException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
+data class UserFacingError(
+    val summary: String,
+    val details: String? = null,
+)
+
 object UserFacingErrors {
-    fun message(throwable: Throwable): String {
+    fun parse(throwable: Throwable): UserFacingError {
         val raw = throwable.message?.trim().orEmpty()
-        when {
+        return when {
             throwable is UnknownHostException ->
-                return "No network connection. Check Wi‑Fi or mobile data and try again."
+                UserFacingError("No network connection. Check Wi‑Fi or mobile data and try again.")
             throwable is SocketTimeoutException ->
-                return "The request timed out. Try again or pick a smaller model."
+                UserFacingError("The request timed out. Try again or pick a smaller model.")
             raw.contains("Backup URL not configured", ignoreCase = true) ->
-                return "Backup is not configured."
+                UserFacingError("Backup is not configured.")
             throwable is SpendLimitException ->
-                return throwable.check.message ?: "Estimated spend limit reached."
+                UserFacingError(
+                    throwable.check.message ?: "Estimated spend limit reached.",
+                    details = raw.takeIf { it.isNotBlank() },
+                )
             raw.contains("Spend limit", ignoreCase = true) ||
                 raw.contains("estimated spend", ignoreCase = true) ||
                 raw.contains("budget", ignoreCase = true) ->
-                return raw.take(280)
+                UserFacingError(raw.take(280), details = raw.takeIf { it.length > 280 })
             raw.contains("API key", ignoreCase = true) || raw.contains("401", ignoreCase = true) ->
-                return "Authentication failed. Open Models and update your API key or sign-in."
+                UserFacingError(
+                    "Authentication failed. Open Models and update your API key or sign-in.",
+                    details = raw.takeIf { it.isNotBlank() },
+                )
             raw.contains("403", ignoreCase = true) ->
-                return "Access denied by the provider. Check your key permissions."
+                UserFacingError("Access denied by the provider. Check your key permissions.", details = raw)
             raw.contains("429", ignoreCase = true) ->
-                return "Rate limited by the provider. Wait a moment and try again."
+                UserFacingError("Rate limited by the provider. Wait a moment and try again.", details = raw)
             raw.contains("HTTP 5", ignoreCase = true) ->
-                return "The model provider returned a server error. Try again later."
+                UserFacingError(
+                    "The model provider returned a server error. Try again later.",
+                    details = raw,
+                )
             raw.contains("HTTP 4", ignoreCase = true) ->
-                return "The model provider rejected the request. Check model id and account."
-            raw.length > 180 -> return "Something went wrong while contacting the model. Check Models and try again."
-            raw.isNotEmpty() -> return raw
-            else -> return "Something went wrong. Please try again."
+                UserFacingError(
+                    "The model provider rejected the request. Check model id and account.",
+                    details = raw,
+                )
+            raw.length > 180 ->
+                UserFacingError(
+                    "Something went wrong while contacting the model. Check Models and try again.",
+                    details = raw,
+                )
+            raw.isNotEmpty() -> UserFacingError(raw)
+            else -> UserFacingError("Something went wrong. Please try again.")
         }
     }
+
+    fun message(throwable: Throwable): String = parse(throwable).summary
 
     fun redactForStorage(throwable: Throwable): String =
         message(throwable).take(500)

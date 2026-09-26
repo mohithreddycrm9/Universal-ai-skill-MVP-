@@ -8,10 +8,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,12 +33,19 @@ import com.skillmcp.mentor.ui.components.StatCard
 import com.skillmcp.mentor.ui.components.TabSuggestions
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UsageScreen(vm: MentorViewModel) {
+fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
     val state by vm.uiState.collectAsState()
     val totals = state.usageTotals
 
     AppBackground {
+        if (onBack != null) {
+            TopAppBar(
+                title = { Text("Usage") },
+                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+            )
+        }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -113,6 +124,32 @@ fun UsageScreen(vm: MentorViewModel) {
             }
             item {
                 Text("Daily", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+            }
+            item {
+                Text("Spend limits (USD)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Estimated caps — not exact billing. Warnings appear in Chat at 80%.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    value = if (state.prefs.dailyBudgetUsd > 0) state.prefs.dailyBudgetUsd.toString() else "",
+                    onValueChange = { v ->
+                        vm.updatePrefs { p -> p.copy(dailyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
+                    },
+                    label = { Text("Daily budget (0 = off)") },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    value = if (state.prefs.weeklyBudgetUsd > 0) state.prefs.weeklyBudgetUsd.toString() else "",
+                    onValueChange = { v ->
+                        vm.updatePrefs { p -> p.copy(weeklyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
+                    },
+                    label = { Text("Weekly budget (0 = off)") },
+                    singleLine = true,
+                )
             }
             items(state.usageByDay) { day ->
                 GlassCard {

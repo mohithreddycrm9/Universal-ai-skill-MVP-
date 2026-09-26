@@ -1,6 +1,9 @@
 package com.skillmcp.mentor.ui
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -36,6 +39,7 @@ import com.skillmcp.mentor.mentor.AgentEventHint
 import com.skillmcp.mentor.mentor.BuildSuggestion
 import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.mentor.UiMessage
+import com.skillmcp.mentor.util.UserFacingError
 import com.skillmcp.mentor.util.UserFacingErrors
 import com.skillmcp.mentor.voice.ElevenLabsVoiceClient
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -82,6 +86,7 @@ data class MentorUiState(
     val isSending: Boolean = false,
     val isListening: Boolean = false,
     val status: String? = null,
+    val statusDetails: String? = null,
     val activeStep: String = "",
     val lastCommand: String = "",
     val streamPreview: String = "",
@@ -110,6 +115,7 @@ class MentorViewModel(
     val isSending = MutableStateFlow(false)
     val isListening = MutableStateFlow(false)
     val status = MutableStateFlow<String?>(null)
+    val statusDetails = MutableStateFlow<String?>(null)
     val activeStep = MutableStateFlow("")
     val lastCommand = MutableStateFlow("")
     val usageWindow = MutableStateFlow(UsageWindow.WEEK)
@@ -228,6 +234,7 @@ class MentorViewModel(
     )
 
     private val spendGuardFlow = repository.observeSpendGuard()
+    private val rankedUseCasesFlow = MutableStateFlow(UseCaseCatalog.featured)
 
     private val coreData =
         combine(
@@ -241,7 +248,8 @@ class MentorViewModel(
                 Quintuple(chat, meta, prompts, preview, toggles)
             },
             spendGuardFlow,
-        ) { q, spend ->
+            rankedUseCasesFlow,
+        ) { q, spend, ranked ->
             val chat = q.first
             val meta = q.second
             CoreSlice(
@@ -262,7 +270,7 @@ class MentorViewModel(
                 skillToggles = q.fifth,
                 spendGuard = spend,
                 catalogSkills = SkillCatalog.featuredForUi(meta.skills),
-                rankedUseCases = rankUseCases(UseCaseCatalog.featured),
+                rankedUseCases = ranked,
             )
         }
 
@@ -295,26 +303,37 @@ class MentorViewModel(
         val rankedUseCases: List<PopularUseCase>,
     )
 
-    private fun rankUseCases(cases: List<PopularUseCase>): List<PopularUseCase> {
-        val tops = container.usageAnalytics.topIds(UsageAnalytics.EVENT_USE_CASE)
-        if (tops.isEmpty()) return cases
-        val order = tops.mapIndexed { index, pair -> pair.first to index }.toMap()
-        return cases.sortedBy { order[it.id] ?: Int.MAX_VALUE }
+    private fun refreshRankedUseCases() {
+        viewModelScope.launch {
+            val tops = container.usageAnalytics.topIds(UsageAnalytics.EVENT_USE_CASE)
+            rankedUseCasesFlow.value =
+                if (tops.isEmpty()) {
+                    UseCaseCatalog.featured
+                } else {
+                    val order = tops.mapIndexed { index, pair -> pair.first to index }.toMap()
+                    UseCaseCatalog.featured.sortedBy { order[it.id] ?: Int.MAX_VALUE }
+                }
+        }
     }
 
     private val interactionState =
         combine(
             combine(draft, isSending, isListening) { d, s, l -> Triple(d, s, l) },
-            combine(status, activeStep, lastCommand) { st, step, cmd -> Triple(st, step, cmd) },
+            combine(status, statusDetails, activeStep, lastCommand) { st, details, step, cmd ->
+                Quad(st, details, step, cmd)
+            },
         ) { a, b ->
-            InteractionSlice(a.first, a.second, a.third, b.first, b.second, b.third)
+            InteractionSlice(a.first, a.second, a.third, b.first, b.second, b.third, b.fourth)
         }
+
+    private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
     private data class InteractionSlice(
         val draft: String,
         val isSending: Boolean,
         val isListening: Boolean,
         val status: String?,
+        val statusDetails: String?,
         val activeStep: String,
         val lastCommand: String,
     )
@@ -348,6 +367,7 @@ class MentorViewModel(
                 isSending = interaction.isSending,
                 isListening = interaction.isListening,
                 status = interaction.status,
+                statusDetails = interaction.statusDetails,
                 activeStep = interaction.activeStep,
                 lastCommand = interaction.lastCommand,
                 streamPreview = core.streamPreview,
@@ -362,7 +382,11 @@ class MentorViewModel(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
+    private val guidedSetupVisibleInner = MutableStateFlow(true)
+    val guidedSetupVisible: StateFlow<Boolean> = guidedSetupVisibleInner
+
     init {
+        refreshRankedUseCases()
         viewModelScope.launch {
             repository.bootstrap()
             repository.startSyncIfConfigured()
@@ -432,6 +456,7 @@ class MentorViewModel(
     }
 
     fun completeGuidedSetup() {
+        guidedSetupVisibleInner.value = false
         viewModelScope.launch {
             prefs.update { it.copy(hasCompletedGuidedSetup = true, hasSeenWelcome = true) }
         }
@@ -449,16 +474,33 @@ class MentorViewModel(
         pendingShareConsent.value = null
     }
 
-    fun bumpSpendLimits() {
+    val spendRaisePreview = MutableStateFlow<Pair<Double, Double>?>(null)
+
+    fun previewRaiseSpendLimits() {
         viewModelScope.launch {
-            prefs.update { p ->
-                p.copy(
-                    dailyBudgetUsd = if (p.dailyBudgetUsd > 0) p.dailyBudgetUsd * 1.25 else 5.0,
-                    weeklyBudgetUsd = if (p.weeklyBudgetUsd > 0) p.weeklyBudgetUsd * 1.25 else 25.0,
-                )
-            }
-            status.value = "Spend limits raised by 25%"
+            val p = prefs.current()
+            val daily = if (p.dailyBudgetUsd > 0) p.dailyBudgetUsd * 1.25 else 5.0
+            val weekly = if (p.weeklyBudgetUsd > 0) p.weeklyBudgetUsd * 1.25 else 25.0
+            spendRaisePreview.value = daily to weekly
         }
+    }
+
+    fun confirmRaiseSpendLimits() {
+        val preview = spendRaisePreview.value ?: return
+        spendRaisePreview.value = null
+        viewModelScope.launch {
+            prefs.update { p -> p.copy(dailyBudgetUsd = preview.first, weeklyBudgetUsd = preview.second) }
+            status.value =
+                "Daily cap set to $${"%.2f".format(preview.first)} · weekly $${"%.2f".format(preview.second)} (estimates)"
+        }
+    }
+
+    fun dismissSpendRaisePreview() {
+        spendRaisePreview.value = null
+    }
+
+    fun dismissSpendBlockMessage() {
+        status.value = null
     }
 
     fun exportChatsMarkdown() {
@@ -477,7 +519,9 @@ class MentorViewModel(
         container.usageAnalytics.setOptIn(enabled)
     }
 
-    fun analyticsOptIn(): Boolean = container.usageAnalytics.isOptIn()
+    fun analyticsOptIn(): Boolean = container.usageAnalytics.isOptInCached()
+
+    suspend fun loadAnalyticsOptIn(): Boolean = container.usageAnalytics.isOptIn()
 
     fun showWidgetHint() {
         markWelcomeSeen()
@@ -486,6 +530,31 @@ class MentorViewModel(
 
     fun setRequireBiometric(enabled: Boolean) {
         viewModelScope.launch { prefs.update { it.copy(requireBiometricUnlock = enabled) } }
+    }
+
+    fun onAppLockUnavailable() {
+        viewModelScope.launch {
+            prefs.update { it.copy(requireBiometricUnlock = false) }
+            status.value =
+                "App lock was turned off because this device has no screen lock. " +
+                    "Set a PIN in Android Settings to use lock again."
+        }
+    }
+
+    fun hideGuidedSetupForConnect() {
+        guidedSetupVisibleInner.value = false
+    }
+
+    fun showGuidedSetupIfNeeded() {
+        viewModelScope.launch {
+            if (!prefs.current().hasCompletedGuidedSetup) {
+                guidedSetupVisibleInner.value = true
+            }
+        }
+    }
+
+    fun clearStatusDetails() {
+        statusDetails.value = null
     }
 
     fun setDailyBriefReminder(enabled: Boolean) {
@@ -522,6 +591,7 @@ class MentorViewModel(
         viewModelScope.launch {
             isSending.value = true
             status.value = null
+            statusDetails.value = null
             streamPreview.value = ""
             val result =
                 repository.sendUserMessage(text) { partial -> streamPreview.value = partial }
@@ -530,29 +600,55 @@ class MentorViewModel(
             if (result.isSuccess) {
                 draft.value = ""
                 val reply = result.getOrNull() ?: return@launch
-                if (prefs.current().speakResponses) speak(reply)
-                if (prefs.current().voiceHandsFree) {
-                    toggleListen()
+                val p = prefs.current()
+                if (p.speakResponses) {
+                    speakAndThen(reply) {
+                        if (p.voiceHandsFree) startHandsFreeTurn(autoSend = true)
+                    }
+                } else if (p.voiceHandsFree) {
+                    startHandsFreeTurn(autoSend = true)
                 }
             } else {
-                status.value =
-                    result.exceptionOrNull()?.let(UserFacingErrors::message) ?: "Send failed"
+                val parsed =
+                    result.exceptionOrNull()?.let(UserFacingErrors::parse)
+                        ?: UserFacingError("Send failed", null)
+                status.value = parsed.summary
+                statusDetails.value = parsed.details
             }
         }
     }
 
     fun toggleListen() {
-        if (isListening.value) return
+        startHandsFreeTurn(autoSend = false)
+    }
+
+    private fun hasMicPermission(): Boolean =
+        ContextCompat.checkSelfPermission(appContext, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+
+    fun startHandsFreeTurn(autoSend: Boolean) {
+        if (isListening.value || isSending.value) return
+        if (!hasMicPermission()) {
+            status.value = "Microphone permission is required for voice input."
+            return
+        }
         viewModelScope.launch {
             isListening.value = true
             val locale = prefs.current().voiceLocaleTag
             voice.listenOnce(locale).also { isListening.value = false }
-                .onSuccess { draft.value = it }
-                .onFailure { status.value = it.message }
+                .onSuccess { heard ->
+                    draft.value = heard
+                    if (autoSend && heard.isNotBlank()) sendMessage()
+                }
+                .onFailure { err -> status.value = err.message ?: "Voice input failed" }
         }
     }
 
     fun speak(text: String) {
+        speakAndThen(text, onDone = {})
+    }
+
+    private fun speakAndThen(text: String, onDone: () -> Unit) {
         viewModelScope.launch {
             val p = prefs.current()
             val eleven =
@@ -562,6 +658,7 @@ class MentorViewModel(
                     null
                 }
             voice.speak(text, p.voiceLocaleTag, eleven)
+            onDone()
         }
     }
 
@@ -589,6 +686,7 @@ class MentorViewModel(
 
     fun dismissConnectLlm() {
         connectLlmProfileIdInner.value = null
+        showGuidedSetupIfNeeded()
     }
 
     fun requestOpenTab(route: String) {

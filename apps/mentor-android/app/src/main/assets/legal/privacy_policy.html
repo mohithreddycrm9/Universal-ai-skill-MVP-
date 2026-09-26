@@ -16,7 +16,7 @@
   <p>Universal AI is a bring-your-own-key assistant. You control which model providers you connect and which API keys you store.</p>
   <h2>Data we store on your device</h2>
   <ul>
-    <li>Chat history, skills, and usage statistics in a local database.</li>
+    <li>Chat history, skills, and usage statistics in a local SQLite database (Room) on your device.</li>
     <li>API keys and tokens in Android encrypted storage (EncryptedSharedPreferences).</li>
     <li>App preferences (theme, budgets, reminders) in DataStore.</li>
   </ul>
@@ -30,6 +30,8 @@
     <li><strong>Notifications</strong> — optional daily brief reminder.</li>
     <li><strong>Biometric</strong> — optional app unlock.</li>
   </ul>
+  <h2>On-device analytics (optional)</h2>
+  <p>If you enable <strong>Help improve Discover</strong> in Settings, the app stores anonymous counts of which workflows and skills you use. Data stays on your device and is not uploaded.</p>
   <h2>Your choices</h2>
   <p>You can disconnect providers, clear credentials, disable backup/sync, and uninstall the app to remove on-device data. Backup is off by default.</p>
   <h2>Contact</h2>

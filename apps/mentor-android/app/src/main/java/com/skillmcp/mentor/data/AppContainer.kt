@@ -6,6 +6,7 @@ import com.skillmcp.mentor.BuildConfig
 import com.skillmcp.mentor.backup.BackupRepository
 import com.skillmcp.mentor.backup.PayloadEncryptor
 import com.skillmcp.mentor.data.db.MentorDatabase
+import com.skillmcp.mentor.data.db.MentorMigrations
 import com.skillmcp.mentor.mentor.BuildSuggestionEngine
 import com.skillmcp.mentor.data.LlmSecureStore
 import com.skillmcp.mentor.llm.LlmProfileRepository
@@ -30,9 +31,10 @@ class AppContainer(context: Context) {
 
     private val database: MentorDatabase =
         Room.databaseBuilder(appContext, MentorDatabase::class.java, "mentor.db")
+            .addMigrations(*MentorMigrations.ALL)
             .apply {
                 if (BuildConfig.DEBUG) {
-                    fallbackToDestructiveMigration()
+                    fallbackToDestructiveMigrationOnDowngrade()
                 }
             }
             .build()
