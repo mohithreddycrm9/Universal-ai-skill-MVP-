@@ -68,4 +68,12 @@ class AppContainer(context: Context) {
             encryptor = encryptor,
             userPreferences = userPreferences,
         )
+
+    val localDataWiper =
+        LocalDataWiper(
+            dao = database.mentorDao(),
+            secureStore = llmSecureStore,
+            userPreferences = userPreferences,
+            llmProfileRepository = llmProfileRepository,
+        )
 }

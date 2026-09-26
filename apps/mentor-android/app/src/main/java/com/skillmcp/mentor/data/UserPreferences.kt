@@ -109,6 +109,10 @@ class UserPreferences(
 
     fun current(): MentorPrefs = runBlocking { prefsFlow.first() }
 
+    suspend fun resetToDefaults() {
+        context.dataStore.edit { it.clear() }
+    }
+
     suspend fun update(transform: (MentorPrefs) -> MentorPrefs) {
         val next = transform(current())
         secureStore.setAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS, next.elevenLabsApiKey)

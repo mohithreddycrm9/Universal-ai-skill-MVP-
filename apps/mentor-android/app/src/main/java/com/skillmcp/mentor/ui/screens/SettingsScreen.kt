@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.skillmcp.mentor.BuildConfig
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
@@ -49,11 +52,53 @@ fun SettingsScreen(vm: MentorViewModel) {
             if (granted) vm.setDailyBriefReminder(true)
         }
     var showPrivacy by remember { mutableStateOf(false) }
+    var showTerms by remember { mutableStateOf(false) }
+    var showLicenses by remember { mutableStateOf(false) }
+    var confirmErase by remember { mutableStateOf(false) }
     if (showPrivacy) {
         LegalDocumentSheet(
             title = "Privacy policy",
             assetPath = "legal/privacy_policy.html",
             onDismiss = { showPrivacy = false },
+        )
+    }
+    if (showTerms) {
+        LegalDocumentSheet(
+            title = "Terms of use",
+            assetPath = "legal/terms_of_service.html",
+            onDismiss = { showTerms = false },
+        )
+    }
+    if (showLicenses) {
+        LegalDocumentSheet(
+            title = "Open source licenses",
+            assetPath = "legal/open_source_licenses.html",
+            onDismiss = { showLicenses = false },
+        )
+    }
+    if (confirmErase) {
+        AlertDialog(
+            onDismissRequest = { confirmErase = false },
+            title = { Text("Erase all local data?") },
+            text = {
+                Text(
+                    "Deletes chats, usage history, saved prompts, skills, and all stored API keys on this device. " +
+                        "This cannot be undone.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmErase = false
+                        vm.wipeAllLocalData()
+                    },
+                ) {
+                    Text("Erase")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmErase = false }) { Text("Cancel") }
+            },
         )
     }
     val onDailyBriefToggle: (Boolean) -> Unit = { enabled ->
@@ -112,8 +157,28 @@ fun SettingsScreen(vm: MentorViewModel) {
             OutlinedButton(onClick = { showPrivacy = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Privacy policy")
             }
+            OutlinedButton(onClick = { showTerms = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("Terms of use")
+            }
+            OutlinedButton(onClick = { showLicenses = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("Open source licenses")
+            }
+            OutlinedButton(
+                onClick = { confirmErase = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Erase all local data")
+            }
             Text(
                 "API keys and backup tokens are stored in encrypted storage on this device.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Text("About", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text("Universal AI ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            Text(
+                context.getString(com.skillmcp.mentor.R.string.support_email_label),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -232,7 +297,7 @@ fun SettingsScreen(vm: MentorViewModel) {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = prefs.backupUploadUrl,
-                onValueChange = { vm.updatePrefs { p -> p.copy(backupUploadUrl = it) } },
+                onValueChange = vm::updateBackupUploadUrl,
                 label = { Text("Encrypted backup PUT URL") },
             )
             OutlinedTextField(

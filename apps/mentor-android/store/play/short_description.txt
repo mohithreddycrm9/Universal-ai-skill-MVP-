@@ -1,0 +1,1 @@
+Your models, your keys—chat, skills, usage tracking, and local Ollama.

@@ -57,5 +57,9 @@ class LlmSecureStore(context: Context) {
 
     private fun linkedKeyFor(profileId: String): String = "profile_linked_$profileId"
 
+    fun wipeAll() {
+        prefs.edit().clear().apply()
+    }
+
     private fun appSecretKey(secretId: String): String = "app_secret_$secretId"
 }

@@ -86,6 +86,12 @@ In the app: **Settings → WebSocket sync URL** → `ws://YOUR_LAN_IP:8787/sync`
 
 Payloads are **encrypted on device** before they hit the relay.
 
+## Go live
+
+See **[GO_LIVE.md](GO_LIVE.md)** for the full Play Store checklist, signed AAB commands, and store listing files under `store/play/`.
+
+Before publishing, update `support_email` and `privacy_policy_url` in `app/src/main/res/values/strings.xml`.
+
 ## Production / Play Store
 
 - **Version** `1.0.0` (see `app/build.gradle.kts`)

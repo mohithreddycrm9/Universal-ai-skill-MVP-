@@ -1,0 +1,25 @@
+Universal AI is a personal assistant that lets you bring your own API keys and choose the model you trust—OpenAI-compatible APIs, Anthropic Claude, Google AI, Hugging Face Hub, or Ollama on your network.
+
+WHY UNIVERSAL AI
+• Connect providers with API key, Google, email, or mobile sign-in flows
+• Track estimated spend with daily and weekly budgets
+• Skill packs and plugins (/calc, /time, /fetch, and more)
+• Popular workflows: morning brief, meal planning, writing polish, study help
+• Home screen widget and app shortcuts for one-tap starters
+• Optional biometric lock and encrypted credential storage
+
+CHAT & PRODUCTIVITY
+• Streaming replies with Fast, Balanced, or Deep presets
+• Conversation drawer with search, pin, and rename
+• Share text from other apps into the composer
+• Prompt library for reusable starters
+
+PRIVACY BY DESIGN
+• No central chat server—we send requests only to providers you configure
+• Chats stay on your phone unless you enable optional encrypted backup or sync
+• Erase all local data anytime in Settings
+
+REQUIREMENTS
+You need API keys or tokens from your chosen providers. Local Ollama is optional.
+
+Support contact is listed in the app Settings screen.

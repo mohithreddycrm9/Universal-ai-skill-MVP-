@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.data.LaunchAction
+import com.skillmcp.mentor.backup.BackupScheduler
 import com.skillmcp.mentor.notify.DailyBriefWorker
 import com.skillmcp.mentor.data.MentorPrefs
 import com.skillmcp.mentor.data.db.SavedPromptEntity
@@ -581,12 +582,27 @@ class MentorViewModel(
         }
     }
 
+    fun updateBackupUploadUrl(url: String) {
+        viewModelScope.launch {
+            prefs.update { it.copy(backupUploadUrl = url) }
+            BackupScheduler.syncSchedule(appContext, url.trim())
+        }
+    }
+
     fun runBackupNow() {
         viewModelScope.launch {
             container.backupRepository.uploadIfConfigured().fold(
                 onSuccess = { status.value = it },
                 onFailure = { status.value = it.message ?: "Backup failed" },
             )
+        }
+    }
+
+    fun wipeAllLocalData() {
+        viewModelScope.launch {
+            container.localDataWiper.wipeAllUserContent()
+            repository.bootstrap()
+            status.value = "All on-device data erased"
         }
     }
 

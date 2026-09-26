@@ -17,4 +17,7 @@
     <string name="shortcut_chat_long">Start a new conversation</string>
     <!-- Optional: OAuth 2.0 Web client ID for on-device Google sign-in when connecting Google AI -->
     <string name="google_web_client_id" translatable="false"></string>
+    <string name="support_email">support@example.com</string>
+    <string name="support_email_label">Support: support@example.com</string>
+    <string name="privacy_policy_url">https://example.com/universal-ai/privacy</string>
 </resources>

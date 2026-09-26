@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Transaction
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Update
@@ -203,6 +204,38 @@ interface MentorDao {
 
     @Query("DELETE FROM llm_profiles WHERE id = :id")
     suspend fun deleteLlmProfile(id: String)
+
+    @Query("DELETE FROM chat_messages")
+    suspend fun deleteAllMessages()
+
+    @Query("DELETE FROM projects")
+    suspend fun deleteAllProjects()
+
+    @Query("DELETE FROM skills")
+    suspend fun deleteAllSkills()
+
+    @Query("DELETE FROM conversation_skills")
+    suspend fun deleteAllConversationSkills()
+
+    @Query("DELETE FROM saved_prompts")
+    suspend fun deleteAllSavedPrompts()
+
+    @Query("DELETE FROM build_events")
+    suspend fun deleteAllBuildEvents()
+
+    @Query("DELETE FROM llm_usage")
+    suspend fun deleteAllLlmUsage()
+
+    @Transaction
+    suspend fun wipeUserTables() {
+        deleteAllMessages()
+        deleteAllProjects()
+        deleteAllSkills()
+        deleteAllConversationSkills()
+        deleteAllSavedPrompts()
+        deleteAllBuildEvents()
+        deleteAllLlmUsage()
+    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLlmUsage(row: LlmUsageEntity)

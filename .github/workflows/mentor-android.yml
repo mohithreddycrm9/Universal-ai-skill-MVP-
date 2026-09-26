@@ -27,5 +27,11 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest --no-daemon
       - name: Lint
         run: ./gradlew :app:lintDebug --no-daemon
-      - name: Assemble release
-        run: ./gradlew :app:assembleRelease --no-daemon
+      - name: Bundle release (AAB)
+        run: ./gradlew :app:bundleRelease --no-daemon
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-ai-release-aab
+          path: apps/mentor-android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
