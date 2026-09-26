@@ -230,9 +230,11 @@ class MentorViewModel(
         }
     }
 
-    fun updateBuildGoal(goal: String) {
-        viewModelScope.launch { repository.updateBuildGoal(goal) }
+    fun updateFocusTopic(topic: String) {
+        viewModelScope.launch { repository.updateFocusTopic(topic) }
     }
+
+    fun updateBuildGoal(goal: String) = updateFocusTopic(goal)
 
     class Factory(
         private val container: AppContainer,

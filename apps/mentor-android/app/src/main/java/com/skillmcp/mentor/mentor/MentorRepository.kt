@@ -6,6 +6,8 @@ import com.skillmcp.mentor.data.db.ChatMessageEntity
 import com.skillmcp.mentor.data.db.MentorDao
 import com.skillmcp.mentor.data.db.ProjectEntity
 import com.skillmcp.mentor.data.db.SkillEntity
+import com.skillmcp.mentor.llm.LlmProfileRepository
+import com.skillmcp.mentor.llm.MultiLlmClient
 import com.skillmcp.mentor.skills.GitHubSkillImporter
 import com.skillmcp.mentor.sync.SyncCoordinator
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +25,8 @@ data class UiMessage(
 
 class MentorRepository(
     private val dao: MentorDao,
-    private val llmClient: LlmClient,
+    private val multiLlmClient: MultiLlmClient,
+    private val llmProfileRepository: LlmProfileRepository,
     private val buildSuggestionEngine: BuildSuggestionEngine,
     private val userPreferences: UserPreferences,
     private val skillImporter: GitHubSkillImporter,
@@ -31,14 +34,19 @@ class MentorRepository(
 ) {
     val defaultProjectId = "default"
 
+    suspend fun bootstrap() {
+        llmProfileRepository.ensureDefaults()
+        ensureDefaultProject()
+    }
+
     suspend fun ensureDefaultProject() {
         val existing = dao.allProjects().any { it.id == defaultProjectId }
         if (!existing) {
             dao.upsertProject(
                 ProjectEntity(
                     id = defaultProjectId,
-                    name = "My project",
-                    goal = userPreferences.current().buildGoal,
+                    name = "Conversations",
+                    goal = userPreferences.current().focusTopic,
                     updatedAt = System.currentTimeMillis(),
                 ),
             )
@@ -52,28 +60,15 @@ class MentorRepository(
 
     fun observeSkills() = dao.observeSkills()
 
-    fun observeBuildEvents(projectId: String = defaultProjectId) = dao.observeBuildEvents(projectId)
+    fun observeLlmProfiles() = llmProfileRepository.observeProfiles()
 
-    fun observeSuggestions(
-        projectId: String = defaultProjectId,
-        activeStep: String?,
-        changedFiles: List<String>,
-        lastCommand: String?,
-        lastExit: Int?,
-    ): Flow<List<BuildSuggestion>> =
-        dao.observeBuildEvents(projectId).map { events ->
-            val prefs = userPreferences.current()
-            buildSuggestionEngine.compute(
-                BuildSuggestionsInput(
-                    goal = prefs.buildGoal,
-                    activeStep = activeStep,
-                    changedFiles = changedFiles,
-                    lastCommand = lastCommand,
-                    lastCommandExitCode = lastExit,
-                    recentEvents = events.map { AgentEventHint(it.kind, it.summary) },
-                ),
-            )
-        }
+    fun observeUsageTotals(sinceMs: Long) = llmProfileRepository.observeUsageTotals(sinceMs)
+
+    fun observeUsageByModel(sinceMs: Long) = llmProfileRepository.observeUsageByModel(sinceMs)
+
+    fun observeUsageByDay(sinceMs: Long) = llmProfileRepository.observeUsageByDay(sinceMs)
+
+    fun observeBuildEvents(projectId: String = defaultProjectId) = dao.observeBuildEvents(projectId)
 
     suspend fun recordBuildEvent(kind: String, summary: String? = null, projectId: String = defaultProjectId) {
         dao.insertBuildEvent(
@@ -94,8 +89,9 @@ class MentorRepository(
         onAssistantDelta: (String) -> Unit = {},
     ): Result<String> =
         withContext(Dispatchers.IO) {
-            ensureDefaultProject()
+            bootstrap()
             val prefs = userPreferences.current()
+            val profile = llmProfileRepository.activeProfile()
             val historyList =
                 dao.observeMessages(projectId).first().map { ChatMessageDto(it.role, it.content) }
 
@@ -111,38 +107,45 @@ class MentorRepository(
                 }
 
             val result =
-                llmClient.chat(
-                    baseUrl = prefs.llmBaseUrl,
-                    apiKey = prefs.llmApiKey,
-                    model = prefs.llmModel,
-                    systemPrompt = prefs.mentorSystemPrompt,
+                multiLlmClient.chat(
+                    profile = profile,
+                    systemPrompt = prefs.assistantSystemPrompt,
                     history = historyList.filter { it.role == "user" || it.role == "assistant" },
                     userMessage = text,
-                    skillContext = skillContext,
+                    extraContext = skillContext,
                 )
 
-            result.onSuccess { reply ->
-                onAssistantDelta(reply)
+            result.onSuccess { chat ->
+                onAssistantDelta(chat.content)
+                llmProfileRepository.recordUsage(profile, chat, success = true)
                 dao.insertMessage(
                     ChatMessageEntity(
                         UUID.randomUUID().toString(),
                         projectId,
                         "assistant",
-                        reply,
+                        chat.content,
                         System.currentTimeMillis(),
                     ),
                 )
                 dao.upsertProject(
                     ProjectEntity(
                         id = projectId,
-                        name = "My project",
-                        goal = prefs.buildGoal,
+                        name = "Conversations",
+                        goal = prefs.focusTopic,
                         updatedAt = System.currentTimeMillis(),
                     ),
                 )
                 syncCoordinator.publishStateSnapshot()
             }
-            result
+            result.onFailure { err ->
+                llmProfileRepository.recordUsage(
+                    profile,
+                    com.skillmcp.mentor.llm.LlmChatResult("", null, profile.model, 0),
+                    success = false,
+                    errorMessage = err.message,
+                )
+            }
+            result.map { it.content }
         }
 
     suspend fun importSkill(repoUrl: String): Result<SkillEntity> =
@@ -169,18 +172,25 @@ class MentorRepository(
         syncCoordinator.publishStateSnapshot()
     }
 
-    suspend fun updateBuildGoal(goal: String) {
-        userPreferences.update { it.copy(buildGoal = goal) }
+    suspend fun updateFocusTopic(topic: String) {
+        userPreferences.update { it.copy(focusTopic = topic) }
         dao.upsertProject(
             ProjectEntity(
                 id = defaultProjectId,
-                name = "My project",
-                goal = goal,
+                name = "Conversations",
+                goal = topic,
                 updatedAt = System.currentTimeMillis(),
             ),
         )
         syncCoordinator.publishStateSnapshot()
     }
+
+    suspend fun setActiveLlmProfile(id: String) = llmProfileRepository.setActiveProfile(id)
+
+    suspend fun saveLlmProfile(profile: com.skillmcp.mentor.llm.LlmProfile) =
+        llmProfileRepository.upsertProfile(profile)
+
+    suspend fun deleteLlmProfile(id: String) = llmProfileRepository.deleteProfile(id)
 
     fun startSyncIfConfigured() {
         syncCoordinator.startFromPrefs()

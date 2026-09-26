@@ -91,10 +91,24 @@ class BuildSuggestionEngine {
         }
         if (!goal.isNullOrEmpty()) {
             add(
-                label = "Next build step",
-                prompt = "Given my goal \"$goal\", what is the single best next step I should implement now?",
+                label = "Plan next step",
+                prompt = "Given my focus \"$goal\", what is the single best next step I should take now?",
                 because = "goal_set",
                 priority = 70,
+            )
+            add(
+                label = "Explain simply",
+                prompt = "Explain \"$goal\" in simple terms with a short example.",
+                because = "learn_topic",
+                priority = 68,
+            )
+        }
+        if (events.isEmpty() && goal.isNullOrEmpty() && input.activeStep.isNullOrBlank()) {
+            add(
+                label = "What can you do?",
+                prompt = "What kinds of tasks can you help me with? Give 5 examples across different topics.",
+                because = "onboarding",
+                priority = 60,
             )
         }
         if (input.changedFiles.isNotEmpty()) {

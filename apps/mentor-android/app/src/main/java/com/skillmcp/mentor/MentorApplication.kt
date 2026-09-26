@@ -16,6 +16,7 @@ class MentorApplication : Application() {
         super.onCreate()
         container = AppContainer(this)
         scheduleDailyBackup()
+        // Warm LLM profile defaults on startup (async via repository on first chat too).
     }
 
     private fun scheduleDailyBackup() {
