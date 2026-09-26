@@ -58,9 +58,7 @@ fun ConnectLlmSheet(
     val webClientId = remember { context.getString(R.string.google_web_client_id) }
 
     var method by remember(profile.id) {
-        mutableStateOf(
-            if (profile.kind == LlmProviderKind.OLLAMA) LlmSignInMethod.API_KEY else LlmSignInMethod.API_KEY,
-        )
+        mutableStateOf(info.signInMethods.first())
     }
     var apiKey by remember(profile.id) { mutableStateOf(profile.apiKey) }
     var linked by remember(profile.id) { mutableStateOf(profile.linkedAccount) }
@@ -153,7 +151,7 @@ fun ConnectLlmSheet(
                     ) {
                         Text("Open ${method.label} in browser")
                     }
-                    if (method == LlmSignInMethod.GOOGLE) {
+                    if (method == LlmSignInMethod.GOOGLE && webClientId.isNotBlank()) {
                         OutlinedButton(
                             onClick = {
                                 scope.launch {
@@ -164,15 +162,8 @@ fun ConnectLlmSheet(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = webClientId.isNotBlank(),
                         ) {
-                            Text(
-                                if (webClientId.isNotBlank()) {
-                                    "Sign in with Google on device"
-                                } else {
-                                    "On-device Google sign-in (optional build config)"
-                                },
-                            )
+                            Text("Sign in with Google on device")
                         }
                     }
                     if (info.requiresApiKey) {
@@ -222,6 +213,7 @@ fun ConnectLlmSheet(
                         model = updated.model
                     },
                     onSearch = vm::searchHuggingFaceModels,
+                    pickOnly = true,
                 )
             }
 

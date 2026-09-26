@@ -31,7 +31,13 @@ fun connectInfoFor(kind: LlmProviderKind): LlmProviderConnectInfo =
                 headline = "Connect with your OpenAI account or API key",
                 apiKeyHint = "Create a secret key at platform.openai.com and paste it here. Keys stay encrypted on device.",
                 apiKeyPlaceholder = "sk-…",
-                signInMethods = listOf(LlmSignInMethod.API_KEY, LlmSignInMethod.EMAIL, LlmSignInMethod.GOOGLE),
+                signInMethods =
+                    listOf(
+                        LlmSignInMethod.API_KEY,
+                        LlmSignInMethod.EMAIL,
+                        LlmSignInMethod.GOOGLE,
+                        LlmSignInMethod.PHONE,
+                    ),
                 signInDestinations =
                     listOf(
                         LlmSignInDestination(

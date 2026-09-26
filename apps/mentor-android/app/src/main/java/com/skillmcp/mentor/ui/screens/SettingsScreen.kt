@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.skillmcp.mentor.security.appLockAuthenticators
 import com.skillmcp.mentor.BuildConfig
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.mentor.ScreenSuggestions
@@ -47,6 +48,7 @@ fun SettingsScreen(vm: MentorViewModel) {
     val prefs = state.prefs
     val scroll = rememberScrollState()
     val context = LocalContext.current
+    val appLockAuth = remember { appLockAuthenticators(context) }
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) vm.setDailyBriefReminder(true)
@@ -143,7 +145,15 @@ fun SettingsScreen(vm: MentorViewModel) {
                 label = "Require biometric unlock",
                 checked = prefs.requireBiometricUnlock,
                 onCheckedChange = vm::setRequireBiometric,
+                enabled = appLockAuth.canPrompt,
             )
+            if (!appLockAuth.canPrompt) {
+                Text(
+                    "Set a screen lock (PIN, pattern, or password) in Android Settings to enable app lock.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             RowSwitch(
                 label = "Daily morning brief reminder",
                 checked = prefs.dailyBriefReminder,
@@ -318,12 +328,13 @@ private fun RowSwitch(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label)
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Text(label, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }

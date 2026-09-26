@@ -30,6 +30,15 @@ fun accentFromHue(hue: Float, dark: Boolean): Color {
     }
 }
 
+/** Text/icon color that meets contrast on filled primary buttons and chips. */
+fun contentColorOn(background: Color): Color {
+    val r = background.red
+    val g = background.green
+    val b = background.blue
+    val luminance = 0.2126f * r + 0.7152f * g + 0.0722f * b
+    return if (luminance > 0.55f) Color(0xFF171717) else Color.White
+}
+
 private val LightScheme =
     lightColorScheme(
         primary = Color(0xFF1D4ED8),
@@ -108,10 +117,11 @@ fun CodeMentorTheme(
             darkTheme -> DarkScheme
             else -> LightScheme
         }
+    val onAccent = contentColorOn(accent)
     val colorScheme =
         base.copy(
             primary = accent,
-            onPrimary = if (darkTheme) DarkScheme.onPrimary else Color.White,
+            onPrimary = onAccent,
         )
 
     val scaledTypography =

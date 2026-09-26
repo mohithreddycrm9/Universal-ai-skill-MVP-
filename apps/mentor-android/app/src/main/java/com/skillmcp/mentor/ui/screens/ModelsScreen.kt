@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -150,7 +151,15 @@ private fun ProviderCard(
                 },
             modifier = Modifier.padding(start = 48.dp, bottom = 8.dp),
         )
-        OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = onConnect,
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        ) {
             Text(if (configured) "Update login or API key" else "Connect account")
         }
     }

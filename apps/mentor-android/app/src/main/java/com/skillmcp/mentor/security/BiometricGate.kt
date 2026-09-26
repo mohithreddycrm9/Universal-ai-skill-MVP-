@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.security
 
+import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,33 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
+data class AppLockAuthenticators(
+    val allowed: Int,
+    val hasBiometric: Boolean,
+    val hasDeviceCredential: Boolean,
+) {
+    val canPrompt: Boolean = allowed != 0
+}
+
+fun appLockAuthenticators(context: Context): AppLockAuthenticators {
+    val manager = BiometricManager.from(context)
+    val hasBiometric =
+        manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+            BiometricManager.BIOMETRIC_SUCCESS
+    val hasDeviceCredential =
+        manager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL,
+        ) == BiometricManager.BIOMETRIC_SUCCESS
+    val allowed =
+        when {
+            hasBiometric -> BiometricManager.Authenticators.BIOMETRIC_STRONG
+            hasDeviceCredential -> BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            else -> 0
+        }
+    return AppLockAuthenticators(allowed = allowed, hasBiometric = hasBiometric, hasDeviceCredential = hasDeviceCredential)
+}
+
 @Composable
 fun BiometricGate(
     enabled: Boolean,
@@ -39,11 +67,7 @@ fun BiometricGate(
     val activity = context as? FragmentActivity
     var unlocked by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val canAuth =
-        remember {
-            BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
-                BiometricManager.BIOMETRIC_SUCCESS
-        }
+    val auth = remember { appLockAuthenticators(context) }
 
     DisposableEffect(lifecycleOwner, enabled) {
         val observer =
@@ -56,11 +80,8 @@ fun BiometricGate(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(enabled, activity) {
-        if (!enabled || unlocked || activity == null || !canAuth) {
-            if (!canAuth) unlocked = true
-            return@LaunchedEffect
-        }
+    fun showPrompt() {
+        if (activity == null || !auth.canPrompt) return
         val executor = ContextCompat.getMainExecutor(context)
         val prompt =
             BiometricPrompt(
@@ -76,9 +97,16 @@ fun BiometricGate(
             BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Unlock Universal AI")
                 .setSubtitle("Confirm it's you to open chats and API keys")
-                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                .setAllowedAuthenticators(auth.allowed)
                 .build()
         prompt.authenticate(info)
+    }
+
+    LaunchedEffect(enabled, activity, auth.allowed) {
+        if (!enabled || unlocked || activity == null || !auth.canPrompt) {
+            return@LaunchedEffect
+        }
+        showPrompt()
     }
 
     if (unlocked) {
@@ -91,36 +119,19 @@ fun BiometricGate(
         ) {
             Text("Locked", style = MaterialTheme.typography.headlineSmall)
             Text(
-                if (canAuth) "Use fingerprint or face to continue." else "Biometrics unavailable on this device.",
+                when {
+                    auth.hasBiometric -> "Use fingerprint or face to continue."
+                    auth.hasDeviceCredential -> "Use your device PIN, pattern, or password to continue."
+                    else ->
+                        "Add a screen lock in Android Settings before using app lock."
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
             )
-            if (canAuth && activity != null) {
-                Button(
-                    onClick = {
-                        val executor = ContextCompat.getMainExecutor(context)
-                        val prompt =
-                            BiometricPrompt(
-                                activity,
-                                executor,
-                                object : BiometricPrompt.AuthenticationCallback() {
-                                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                        unlocked = true
-                                    }
-                                },
-                            )
-                        val info =
-                            BiometricPrompt.PromptInfo.Builder()
-                                .setTitle("Unlock Universal AI")
-                                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-                                .build()
-                        prompt.authenticate(info)
-                    },
-                ) {
-                    Text("Unlock")
+            if (auth.canPrompt && activity != null) {
+                Button(onClick = { showPrompt() }) {
+                    Text(if (auth.hasBiometric) "Unlock" else "Unlock with device PIN")
                 }
-            } else {
-                Button(onClick = { unlocked = true }) { Text("Continue without biometrics") }
             }
         }
     }
