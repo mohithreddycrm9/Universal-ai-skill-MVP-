@@ -1,5 +1,10 @@
 package com.skillmcp.mentor.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
@@ -31,6 +38,27 @@ fun SettingsScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
     val prefs = state.prefs
     val scroll = rememberScrollState()
+    val context = LocalContext.current
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) vm.setDailyBriefReminder(true)
+        }
+    val onDailyBriefToggle: (Boolean) -> Unit = { enabled ->
+        if (!enabled) {
+            vm.setDailyBriefReminder(false)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted =
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED
+            if (granted) {
+                vm.setDailyBriefReminder(true)
+            } else {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            vm.setDailyBriefReminder(true)
+        }
+    }
 
     AppBackground {
         Column(
@@ -50,6 +78,23 @@ fun SettingsScreen(vm: MentorViewModel) {
                 title = "Ask about settings",
                 suggestions = ScreenSuggestions.forScreen(SuggestionScreen.SETTINGS),
                 onSelect = vm::openChatWithSuggestion,
+            )
+
+            Text("Privacy & convenience", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            RowSwitch(
+                label = "Require biometric unlock",
+                checked = prefs.requireBiometricUnlock,
+                onCheckedChange = vm::setRequireBiometric,
+            )
+            RowSwitch(
+                label = "Daily morning brief reminder",
+                checked = prefs.dailyBriefReminder,
+                onCheckedChange = onDailyBriefToggle,
+            )
+            Text(
+                "Add the home screen widget: long-press launcher → Widgets → Universal AI quick actions.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Text("Response style", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)

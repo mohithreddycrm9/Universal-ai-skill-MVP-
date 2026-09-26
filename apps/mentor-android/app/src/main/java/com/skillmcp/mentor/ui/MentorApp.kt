@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -27,6 +28,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.skillmcp.mentor.data.AppContainer
+import com.skillmcp.mentor.security.BiometricGate
+import com.skillmcp.mentor.ui.components.WelcomeSheet
 import com.skillmcp.mentor.ui.screens.ChatScreen
 import com.skillmcp.mentor.ui.screens.ModelsScreen
 import com.skillmcp.mentor.ui.screens.SettingsScreen
@@ -48,6 +51,7 @@ fun MentorApp(container: AppContainer) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route ?: MentorTab.Chat.route
+    val state by vm.uiState.collectAsState()
 
     LaunchedEffect(vm) {
         vm.openChatRequests.collect {
@@ -59,49 +63,67 @@ fun MentorApp(container: AppContainer) {
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
-                tonalElevation = 6.dp,
-            ) {
-                MentorTab.entries.forEach { tab ->
-                    val selected = current == tab.route
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            nav.navigate(tab.route) {
-                                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(tabIcon(tab), contentDescription = tab.label) },
-                        label = { Text(tab.label) },
-                        colors =
-                            NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                    )
-                }
+    LaunchedEffect(vm) {
+        vm.openTabRequests.collect { route ->
+            val dest = MentorTab.entries.find { it.route == route }?.route ?: MentorTab.Chat.route
+            nav.navigate(dest) {
+                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
             }
-        },
-    ) { padding ->
-        NavHost(
-            navController = nav,
-            startDestination = MentorTab.Chat.route,
-            modifier = Modifier.padding(padding),
-        ) {
-            composable(MentorTab.Chat.route) { ChatScreen(vm) }
-            composable(MentorTab.Models.route) { ModelsScreen(vm) }
-            composable(MentorTab.Usage.route) { UsageScreen(vm) }
-            composable(MentorTab.Skills.route) { SkillsScreen(vm) }
-            composable(MentorTab.Settings.route) { SettingsScreen(vm) }
+        }
+    }
+
+    BiometricGate(enabled = state.prefs.requireBiometricUnlock) {
+        WelcomeSheet(
+            visible = !state.prefs.hasSeenWelcome,
+            onDismiss = vm::markWelcomeSeen,
+            onAddWidgetHint = vm::showWidgetHint,
+        )
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.surface,
+            bottomBar = {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                    tonalElevation = 6.dp,
+                ) {
+                    MentorTab.entries.forEach { tab ->
+                        val selected = current == tab.route
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                nav.navigate(tab.route) {
+                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(tabIcon(tab), contentDescription = tab.label) },
+                            label = { Text(tab.label) },
+                            colors =
+                                NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
+                        )
+                    }
+                }
+            },
+        ) { padding ->
+            NavHost(
+                navController = nav,
+                startDestination = MentorTab.Chat.route,
+                modifier = Modifier.padding(padding),
+            ) {
+                composable(MentorTab.Chat.route) { ChatScreen(vm) }
+                composable(MentorTab.Models.route) { ModelsScreen(vm) }
+                composable(MentorTab.Usage.route) { UsageScreen(vm) }
+                composable(MentorTab.Skills.route) { SkillsScreen(vm) }
+                composable(MentorTab.Settings.route) { SettingsScreen(vm) }
+            }
         }
     }
 }

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.skillmcp.mentor.data.AppContainer
+import com.skillmcp.mentor.data.LaunchAction
+import com.skillmcp.mentor.notify.DailyBriefWorker
 import com.skillmcp.mentor.data.MentorPrefs
 import com.skillmcp.mentor.data.db.SavedPromptEntity
 import com.skillmcp.mentor.data.db.SkillEntity
@@ -96,6 +98,9 @@ class MentorViewModel(
 
     private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val openChatRequests: SharedFlow<Unit> = openChatRequestsInner.asSharedFlow()
+
+    private val openTabInner = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val openTabRequests: SharedFlow<String> = openTabInner.asSharedFlow()
 
     private val sinceMs =
         usageWindow.map { window ->
@@ -300,7 +305,31 @@ class MentorViewModel(
                     draft.value = text
                     container.shareTextHolder.consume()
                     status.value = "Shared text ready to send"
+                    openChatRequestsInner.tryEmit(Unit)
                 }
+            }
+        }
+        viewModelScope.launch {
+            container.launchIntentHolder.actions.collect { action ->
+                if (action == null) return@collect
+                when (action) {
+                    is LaunchAction.UseCase -> {
+                        val useCase = UseCaseCatalog.featured.find { it.id == action.id }
+                        if (useCase != null) {
+                            startPopularUseCase(useCase)
+                        } else {
+                            openChatWithSuggestion("Help me with workflow: ${action.id}")
+                        }
+                    }
+                    is LaunchAction.OpenTab -> openTabInner.tryEmit(action.route)
+                    is LaunchAction.Draft -> openChatWithSuggestion(action.text)
+                }
+                container.launchIntentHolder.consume()
+            }
+        }
+        viewModelScope.launch {
+            if (prefs.current().dailyBriefReminder) {
+                DailyBriefWorker.schedule(appContext)
             }
         }
     }
@@ -317,6 +346,30 @@ class MentorViewModel(
         draft.value = prompt
         status.value = null
         openChatRequestsInner.tryEmit(Unit)
+    }
+
+    fun markWelcomeSeen() {
+        viewModelScope.launch { prefs.update { it.copy(hasSeenWelcome = true) } }
+    }
+
+    fun showWidgetHint() {
+        markWelcomeSeen()
+        status.value = "Add widget: long-press home screen → Widgets → Universal AI"
+    }
+
+    fun setRequireBiometric(enabled: Boolean) {
+        viewModelScope.launch { prefs.update { it.copy(requireBiometricUnlock = enabled) } }
+    }
+
+    fun setDailyBriefReminder(enabled: Boolean) {
+        viewModelScope.launch {
+            prefs.update { it.copy(dailyBriefReminder = enabled) }
+            if (enabled) {
+                DailyBriefWorker.schedule(appContext)
+            } else {
+                DailyBriefWorker.cancel(appContext)
+            }
+        }
     }
 
     fun startPopularUseCase(useCase: PopularUseCase) {

@@ -49,6 +49,16 @@ The app uses the OpenAI-compatible router at `https://router.huggingface.co/v1/`
 
 For **self-hosted** TGI or vLLM with an OpenAI-compatible URL, use **OpenAI-compatible** provider instead and point Base URL at your endpoint.
 
+### Nice extras
+
+- **Home screen widget** — Morning brief, meal plan, open chat
+- **App shortcuts** — long-press launcher icon for quick workflows
+- **Deep links** — `universalai://usecase/daily-brief` (and other use case ids)
+- **Welcome tour** — first launch overview
+- **Biometric lock** — optional in Settings
+- **Daily brief notification** — optional reminder (enable in Settings)
+- **Smarter Share** — shared URLs get a summarize prompt in chat
+
 ### Share from other apps
 
 Use **Share** on text in any app and pick **Universal AI**. The text lands in the composer so you can add context and send.
