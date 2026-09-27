@@ -21,7 +21,7 @@ object UserFacingErrors {
                 UserFacingError("Backup is not configured.")
             throwable is SpendLimitException ->
                 UserFacingError(
-                    throwable.check.message ?: "Estimated spend limit reached.",
+                    throwable.check.message ?: "Message limit reached.",
                     details = raw.takeIf { it.isNotBlank() },
                 )
             raw.contains("Spend limit", ignoreCase = true) ||

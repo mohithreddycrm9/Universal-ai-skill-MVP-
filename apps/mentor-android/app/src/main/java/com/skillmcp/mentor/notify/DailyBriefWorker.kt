@@ -24,7 +24,7 @@ class DailyBriefWorker(
     override suspend fun doWork(): Result {
         ensureChannel(applicationContext)
         val container = (applicationContext as MentorApplication).container
-        val prefs = container.userPreferences.current()
+        val prefs = container.userPreferences.get()
         val brief = container.morningBriefCollector.collect(prefs)
         val body = brief.lines.joinToString("\n")
         val launchToken = container.internalLaunchToken.ensureToken()

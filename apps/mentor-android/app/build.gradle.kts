@@ -148,6 +148,7 @@ dependencies {
 
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.work:work-testing:2.10.0")
 }
 
 ksp {

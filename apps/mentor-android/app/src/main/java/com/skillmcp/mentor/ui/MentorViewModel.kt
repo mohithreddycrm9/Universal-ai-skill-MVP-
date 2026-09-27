@@ -39,6 +39,7 @@ import com.skillmcp.mentor.mentor.AgentEventHint
 import com.skillmcp.mentor.mentor.BuildSuggestion
 import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.mentor.UiMessage
+import com.skillmcp.mentor.util.UrlSecurityPolicy
 import com.skillmcp.mentor.util.UserFacingError
 import com.skillmcp.mentor.util.UserFacingErrors
 import com.skillmcp.mentor.llm.ChatVisionAttachment
@@ -505,12 +506,10 @@ class MentorViewModel(
 
     fun dismissSpendBlockMessage() {
         viewModelScope.launch {
-            val until = com.skillmcp.mentor.policy.SpendPolicy.nextLocalMidnightMs()
+            val until = com.skillmcp.mentor.policy.SpendPolicy.nextRollingDayDismissMs()
             prefs.update { it.copy(spendDailyBlockDismissedUntilMs = until) }
             status.value =
-                "Limit reminder hidden until " +
-                    com.skillmcp.mentor.policy.SpendPolicy.formatResetTime(until) +
-                    " (local midnight)."
+                "Limit reminder hidden for 24 hours (rolling window, same as the daily message limit)."
         }
     }
 
@@ -830,6 +829,10 @@ class MentorViewModel(
 
     fun saveLlmConnection(profile: LlmProfile, activate: Boolean) {
         viewModelScope.launch {
+            UrlSecurityPolicy.validateLlmBaseUrl(profile.kind, profile.baseUrl)?.let {
+                status.value = it
+                return@launch
+            }
             repository.saveLlmProfile(profile)
             if (activate) repository.setActiveLlmProfile(profile.id)
             status.value =
@@ -866,6 +869,10 @@ class MentorViewModel(
                 kind == LlmProviderKind.HUGGING_FACE && baseUrl.isBlank() -> HuggingFaceDefaults.ROUTER_BASE_URL
                 else -> baseUrl
             }
+        UrlSecurityPolicy.validateLlmBaseUrl(kind, resolvedBase)?.let {
+            status.value = it
+            return
+        }
         val resolvedModel =
             when {
                 kind == LlmProviderKind.HUGGING_FACE && model.isBlank() ->
@@ -966,8 +973,22 @@ class MentorViewModel(
 
     fun updateBackupUploadUrl(url: String) {
         viewModelScope.launch {
+            UrlSecurityPolicy.httpsRequiredError(url, "Backup URL")?.let {
+                status.value = it
+                return@launch
+            }
             prefs.update { it.copy(backupUploadUrl = url) }
             BackupScheduler.syncSchedule(appContext, url.trim())
+        }
+    }
+
+    fun updateSyncWebSocketUrl(url: String) {
+        viewModelScope.launch {
+            UrlSecurityPolicy.httpsRequiredError(url, "Sync WebSocket URL")?.let {
+                status.value = it
+                return@launch
+            }
+            updatePrefs { it.copy(syncWebSocketUrl = url) }
         }
     }
 

@@ -30,3 +30,11 @@ jobs:
           path: docs
       - uses: actions/deploy-pages@v4
         id: deployment
+      - name: Verify mentor privacy policy (200 text/html)
+        run: |
+          url="https://mohithreddycrm9.github.io/Universal-ai-skill-MVP-/mentor-privacy-policy.html"
+          code=$(curl -fsSL -o /tmp/privacy.html -w "%{http_code}" "$url" || echo "000")
+          type=$(curl -fsSL -I "$url" 2>/dev/null | awk -F': ' 'tolower($1)=="content-type"{print $2}' | tr -d '\r' | head -1)
+          echo "HTTP $code Content-Type: $type"
+          test "$code" = "200"
+          echo "$type" | grep -qi 'text/html'

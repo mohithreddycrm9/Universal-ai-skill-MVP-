@@ -10,7 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -86,26 +86,21 @@ internal fun ChatScreenPreviewContent(state: MentorUiState) {
     val profile = state.activeLlmProfile
     AppBackground {
         Column(Modifier.fillMaxSize()) {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
-                    Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                        Text("Lumina", fontWeight = FontWeight.Bold)
-                        profile?.let {
-                            Text(
-                                it.name,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
+                    Text(
+                        "Meals this week",
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2,
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Default.Menu, contentDescription = null)
+                        Icon(Icons.Default.Menu, contentDescription = "Chats")
                     }
                 },
                 colors =
-                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                     ),
             )

@@ -8,7 +8,7 @@ class InternalLaunchToken(
     private val userPreferences: UserPreferences,
 ) {
     suspend fun ensureToken(): String {
-        val current = userPreferences.current().internalLaunchToken
+        val current = userPreferences.get().internalLaunchToken
         if (current.isNotBlank()) return current
         val token = UUID.randomUUID().toString()
         userPreferences.update { it.copy(internalLaunchToken = token) }

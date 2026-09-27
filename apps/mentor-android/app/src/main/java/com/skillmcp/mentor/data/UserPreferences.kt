@@ -154,8 +154,11 @@ class UserPreferences(
 
     fun current(): MentorPrefs = cache.get()
 
+    /** Loads persisted settings from DataStore; use at startup instead of [current] before the cache is warm. */
+    suspend fun get(): MentorPrefs = prefsFlow.first().also { cache.set(it) }
+
     suspend fun warmCache() {
-        cache.set(prefsFlow.first())
+        get()
     }
 
     init {
@@ -169,7 +172,7 @@ class UserPreferences(
     }
 
     suspend fun update(transform: (MentorPrefs) -> MentorPrefs) {
-        val next = transform(current())
+        val next = transform(get())
         secureStore.setAppSecret(LlmSecureStore.SECRET_ELEVEN_LABS, next.elevenLabsApiKey)
         secureStore.setAppSecret(LlmSecureStore.SECRET_BACKUP_TOKEN, next.backupBearerToken)
         context.dataStore.edit { prefs ->

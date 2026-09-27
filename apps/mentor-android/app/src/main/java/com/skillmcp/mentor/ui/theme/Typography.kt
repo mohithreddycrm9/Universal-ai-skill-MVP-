@@ -5,7 +5,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.sp
+
+private fun readableBody(fontFamily: FontFamily): TextStyle =
+    TextStyle(
+        fontFamily = fontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        lineBreak = LineBreak.Simple,
+        hyphens = Hyphens.None,
+    )
 
 @Composable
 fun mentorTypography(fontFamily: FontFamily): Typography =
@@ -25,6 +37,8 @@ fun mentorTypography(fontFamily: FontFamily): Typography =
                 fontSize = 18.sp,
                 lineHeight = 24.sp,
                 letterSpacing = (-0.25).sp,
+                lineBreak = LineBreak.Simple,
+                hyphens = Hyphens.None,
             ),
         titleMedium =
             TextStyle(
@@ -32,21 +46,11 @@ fun mentorTypography(fontFamily: FontFamily): Typography =
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
                 lineHeight = 24.sp,
+                lineBreak = LineBreak.Simple,
+                hyphens = Hyphens.None,
             ),
-        bodyLarge =
-            TextStyle(
-                fontFamily = fontFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-            ),
-        bodyMedium =
-            TextStyle(
-                fontFamily = fontFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-            ),
+        bodyLarge = readableBody(fontFamily),
+        bodyMedium = readableBody(fontFamily),
         labelSmall =
             TextStyle(
                 fontFamily = fontFamily,

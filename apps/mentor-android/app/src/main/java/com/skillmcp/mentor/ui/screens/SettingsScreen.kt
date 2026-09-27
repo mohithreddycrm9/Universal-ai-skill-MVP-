@@ -536,7 +536,7 @@ fun SettingsScreen(vm: MentorViewModel) {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = prefs.syncWebSocketUrl,
-                onValueChange = { vm.updatePrefs { p -> p.copy(syncWebSocketUrl = it) } },
+                onValueChange = vm::updateSyncWebSocketUrl,
                 label = { Text("WebSocket sync URL") },
             )
             OutlinedTextField(

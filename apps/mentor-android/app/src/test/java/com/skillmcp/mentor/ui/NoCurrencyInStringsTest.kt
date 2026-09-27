@@ -30,16 +30,31 @@ class NoCurrencyInStringsTest {
                 .filter { it.isFile && it.extension == "kt" }
                 .toList()
         assertFalse("No UI kotlin files found", files.isEmpty())
-        val staticTextLine = Regex("Text\\s*\\(\\s*\"[^\"\\$]*\"")
+        val bannedInUi =
+            listOf(
+                Regex("""\$\d"""),
+                Regex("""(?i)\bUSD\b"""),
+                Regex("""(?i)\bprice\b"""),
+                Regex("""(?i)\bspend\b"""),
+                Regex("""(?i)\bcost\b"""),
+            )
+        val stringLiteral = Regex(""""(?:[^"\\]|\\.)*"""")
         files.forEach { file ->
             file.readLines().forEach { line ->
-                if (!line.contains("Text(\"")) return@forEach
-                if (line.contains("\${")) return@forEach
-                if (!staticTextLine.containsMatchIn(line)) return@forEach
-                assertFalse(
-                    "${file.path} contains currency in static Text literal: $line",
-                    line.contains('$') || line.contains('₹') || line.contains('\u20B9'),
-                )
+                if (line.trimStart().startsWith("//")) return@forEach
+                stringLiteral.findAll(line).forEach { match ->
+                    val literal = match.value
+                    if (literal.contains('$')) return@forEach
+                    if (literal.contains('₹') || literal.contains('\u20B9')) {
+                        assertFalse("${file.path} contains currency symbol in: $line", true)
+                    }
+                    bannedInUi.forEach { pattern ->
+                        assertFalse(
+                            "${file.path} contains banned pricing copy ($pattern): $line",
+                            pattern.containsMatchIn(literal),
+                        )
+                    }
+                }
             }
         }
     }

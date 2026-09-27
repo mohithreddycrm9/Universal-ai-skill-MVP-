@@ -22,6 +22,7 @@ fun ScreenHeader(
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
+            softWrap = true,
         )
         subtitle?.let {
             Text(
@@ -29,6 +30,7 @@ fun ScreenHeader(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
+                softWrap = true,
             )
         }
     }

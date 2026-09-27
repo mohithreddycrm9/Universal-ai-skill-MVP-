@@ -18,7 +18,10 @@ object ScreenSuggestions {
             QuickSuggestion("Multilingual", "Best provider setup for multilingual chat?"),
             QuickSuggestion("Latency", "Tips to reduce latency on mobile networks."),
             QuickSuggestion("Reasoning vs fast", "When to use Fast vs Balanced vs Deep presets?"),
-            QuickSuggestion("On-device path", "How do I run models on my home Ollama server from this phone?"),
+            QuickSuggestion(
+                "Run on your computer (Ollama)",
+                "How do I run models on my home Ollama server from this phone?",
+            ),
         )
 
     val usage: List<QuickSuggestion> =

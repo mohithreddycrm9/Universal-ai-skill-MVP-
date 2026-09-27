@@ -12,7 +12,7 @@ class BackupWorker(
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         val container = (applicationContext as MentorApplication).container
-        val prefs = container.userPreferences.current()
+        val prefs = container.userPreferences.get()
         if (prefs.backupUploadUrl.isBlank()) {
             return Result.success()
         }

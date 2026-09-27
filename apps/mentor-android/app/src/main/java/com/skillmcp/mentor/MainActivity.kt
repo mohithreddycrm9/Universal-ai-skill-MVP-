@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
@@ -23,9 +25,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as MentorApplication).container
-        if (savedInstanceState == null) {
-            routeLaunchIntent(intent, container)
-            handleShareIntent(intent, container)
+        lifecycleScope.launch {
+            container.userPreferences.get()
+            if (savedInstanceState == null) {
+                routeLaunchIntent(intent, container)
+                handleShareIntent(intent, container)
+            }
         }
         setContent {
             val prefs by container.userPreferences.prefsFlow.collectAsState(
@@ -47,11 +52,14 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         val container = (application as MentorApplication).container
-        routeLaunchIntent(intent, container)
-        handleShareIntent(intent, container)
+        lifecycleScope.launch {
+            container.userPreferences.get()
+            routeLaunchIntent(intent, container)
+            handleShareIntent(intent, container)
+        }
     }
 
-    private fun routeLaunchIntent(intent: Intent?, container: com.skillmcp.mentor.data.AppContainer) {
+    private suspend fun routeLaunchIntent(intent: Intent?, container: com.skillmcp.mentor.data.AppContainer) {
         if (intent == null) return
         val trusted = isTrustedInternalLaunch(intent, container)
         when (intent.action) {
@@ -116,11 +124,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun isTrustedInternalLaunch(
+    private suspend fun isTrustedInternalLaunch(
         intent: Intent,
         container: com.skillmcp.mentor.data.AppContainer,
     ): Boolean {
-        val token = container.userPreferences.current().internalLaunchToken
+        val token = container.userPreferences.get().internalLaunchToken
         return container.internalLaunchToken.matches(intent, token)
     }
 }

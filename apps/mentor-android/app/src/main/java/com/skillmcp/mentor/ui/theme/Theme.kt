@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -130,13 +131,17 @@ fun CodeMentorTheme(
         }
 
     val baseType = mentorTypography(fontFamily)
-    val s = fontScale.coerceIn(0.85f, 1.35f)
+    val s = fontScale.coerceIn(0.85f, 2f)
+    fun TextStyle.scaled() = copy(fontSize = fontSize * s, lineHeight = lineHeight * s)
     val scaledTypography =
         baseType.copy(
-            headlineLarge = baseType.headlineLarge.copy(fontSize = baseType.headlineLarge.fontSize * s),
-            bodyLarge = baseType.bodyLarge.copy(fontSize = baseType.bodyLarge.fontSize * s),
-            bodyMedium = baseType.bodyMedium.copy(fontSize = baseType.bodyMedium.fontSize * s),
-            titleLarge = baseType.titleLarge.copy(fontSize = baseType.titleLarge.fontSize * s),
+            headlineLarge = baseType.headlineLarge.scaled(),
+            headlineMedium = baseType.headlineMedium.scaled(),
+            titleLarge = baseType.titleLarge.scaled(),
+            titleMedium = baseType.titleMedium.scaled(),
+            bodyLarge = baseType.bodyLarge.scaled(),
+            bodyMedium = baseType.bodyMedium.scaled(),
+            labelLarge = baseType.labelLarge.scaled(),
         )
 
     MaterialTheme(

@@ -73,13 +73,13 @@ class MentorRepository(
     suspend fun bootstrap(): String? {
         userPreferences.warmCache()
         userPreferences.ensureSecretsMigratedFromDataStore()
-        val migrated = MessageLimitMigrator.applyIfNeeded(userPreferences.current())
+        val migrated = MessageLimitMigrator.applyIfNeeded(userPreferences.get())
         var notice: String? = null
         if (migrated != null) {
             userPreferences.update { migrated }
             if (migrated.dailyMessageLimit > 0 || migrated.weeklyMessageLimit > 0) {
                 notice =
-                    "Spend budgets are now daily message limits " +
+                    "Your limits are now daily message caps " +
                         "(${migrated.dailyMessageLimit}/day, ${migrated.weeklyMessageLimit}/week). " +
                         "Change them in Activity."
             }

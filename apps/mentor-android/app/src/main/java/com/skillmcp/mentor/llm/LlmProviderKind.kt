@@ -1,7 +1,7 @@
 package com.skillmcp.mentor.llm
 
 enum class LlmProviderKind(val label: String) {
-    OPENAI_COMPAT("Other AI service (advanced)"),
+    OPENAI_COMPAT("OpenAI"),
     HUGGING_FACE("Hugging Face"),
     ANTHROPIC("Anthropic Claude"),
     GEMINI("Google Generative API"),

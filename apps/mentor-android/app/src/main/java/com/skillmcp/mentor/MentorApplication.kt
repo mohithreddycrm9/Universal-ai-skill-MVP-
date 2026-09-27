@@ -24,19 +24,17 @@ class MentorApplication : Application() {
         PDFBoxResourceLoader.init(applicationContext)
         container = AppContainer(this)
         applicationScope.launch(Dispatchers.IO) {
-            container.userPreferences.warmCache()
+            container.userPreferences.ensureSecretsMigratedFromDataStore()
+            val prefs = container.userPreferences.get()
             container.internalLaunchToken.ensureToken()
+            applyAppLanguage(prefs.appLanguageTag)
+            BackupScheduler.syncSchedule(this@MentorApplication, prefs.backupUploadUrl)
         }
-        applyAppLanguage(container.userPreferences.current().appLanguageTag)
         applicationScope.launch {
             container.userPreferences.prefsFlow
                 .map { it.appLanguageTag }
                 .distinctUntilChanged()
                 .collect { applyAppLanguage(it) }
         }
-        BackupScheduler.syncSchedule(
-            this,
-            container.userPreferences.current().backupUploadUrl,
-        )
     }
 }
