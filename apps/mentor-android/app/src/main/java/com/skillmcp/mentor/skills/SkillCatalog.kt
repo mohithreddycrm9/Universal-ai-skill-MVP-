@@ -1,0 +1,88 @@
+package com.skillmcp.mentor.skills
+
+import com.skillmcp.mentor.data.db.SkillEntity
+
+data class CatalogSkill(
+    val id: String,
+    val title: String,
+    val description: String,
+    val category: String,
+    val sourceUrl: String,
+    val trustTier: String = "Curated",
+    val needsNetwork: Boolean = true,
+)
+
+object SkillCatalog {
+    val featured: List<CatalogSkill> =
+        listOf(
+            CatalogSkill(
+                id = "universal-skill-trust",
+                title = "Skill trust & safety",
+                description = "Discover, verify, and use agent skills with a security-first workflow.",
+                category = "Agent tooling",
+                sourceUrl = "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+                trustTier = "Official",
+            ),
+            CatalogSkill(
+                id = "anthropic-skills",
+                title = "Anthropic skill examples",
+                description = "Reference skill packs for writing, analysis, and workflows.",
+                category = "Productivity",
+                sourceUrl = "https://github.com/anthropics/skills",
+                trustTier = "Curated",
+            ),
+            CatalogSkill(
+                id = "openai-cookbook",
+                title = "OpenAI cookbook patterns",
+                description = "Prompting and API patterns for assistants and tools.",
+                category = "Coding",
+                sourceUrl = "https://github.com/openai/openai-cookbook",
+                trustTier = "Curated",
+            ),
+            CatalogSkill(
+                id = "cursor-skills",
+                title = "Cursor agent skills",
+                description = "Patterns for IDE agents, hooks, and project context.",
+                category = "Coding",
+                sourceUrl = "https://github.com/getcursor/cursor",
+                trustTier = "Curated",
+            ),
+            CatalogSkill(
+                id = "langchain-templates",
+                title = "LangChain templates",
+                description = "Chains and agents for retrieval, tools, and chat.",
+                category = "Agent tooling",
+                sourceUrl = "https://github.com/langchain-ai/langchain",
+                trustTier = "Curated",
+            ),
+            CatalogSkill(
+                id = "microsoft-ai-skills",
+                title = "Microsoft AI samples",
+                description = "Samples for copilots, RAG, and responsible AI checks.",
+                category = "Enterprise",
+                sourceUrl = "https://github.com/microsoft/ai-agents-for-beginners",
+                trustTier = "Curated",
+            ),
+            CatalogSkill(
+                id = "huggingface-skills",
+                title = "Hugging Face agents",
+                description = "ML workflows, datasets, and inference patterns.",
+                category = "ML",
+                sourceUrl = "https://github.com/huggingface/agents-course",
+                trustTier = "Curated",
+            ),
+        )
+
+    /** Remote catalog minus packs already shipped offline or installed. */
+    fun featuredForUi(installed: List<SkillEntity>): List<CatalogSkill> {
+        val bundledTitles = BundledSkills.packs.map { it.title.lowercase() }.toSet()
+        val installedTitles = installed.map { it.title.lowercase() }.toSet()
+        return featured.filter { entry ->
+            val titleKey = entry.title.lowercase()
+            titleKey !in bundledTitles && titleKey !in installedTitles
+        }
+    }
+
+    fun isBundledInstalled(pack: BundledSkillPack, installed: List<SkillEntity>): Boolean =
+        installed.any { it.title.equals(pack.title, ignoreCase = true) }
+}

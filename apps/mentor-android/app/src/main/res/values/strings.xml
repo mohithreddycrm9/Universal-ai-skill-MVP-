@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumina</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_discover">Discover</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_activity">Activity</string>
+    <string name="widget_title">Lumina quick actions</string>
+    <string name="welcome_title">Welcome to Lumina</string>
+    <string name="unlock_app_title">Unlock Lumina</string>
+    <string name="settings_widget_hint_prefix">Add the home screen widget: long-press launcher → Widgets → </string>
+    <string name="widget_picker_hint_prefix">Add widget: long-press home screen → Widgets → </string>
+    <string name="voice_tile_label">Lumina voice</string>
+    <string name="chat_export_all_header">Lumina — chat export</string>
+    <string name="widget_description" translatable="false">Morning brief, meal plan, and open chat</string>
+    <string name="widget_subtitle">Quick workflows from your home screen</string>
+    <string name="widget_morning_brief">Brief</string>
+    <string name="widget_meal_plan">Meals</string>
+    <string name="widget_open_chat">Chat</string>
+    <string name="widget_ask_anything">Ask anything…</string>
+    <string name="tile_voice_chat">Voice chat</string>
+    <string name="shortcut_morning_brief">Morning brief</string>
+    <string name="shortcut_morning_brief_long">Plan your top 3 tasks today</string>
+    <string name="shortcut_polish">Polish message</string>
+    <string name="shortcut_polish_long">Rewrite a text or email</string>
+    <string name="shortcut_meal">Meal plan</string>
+    <string name="shortcut_meal_long">Weekly meals and grocery list</string>
+    <string name="shortcut_chat">Open chat</string>
+    <string name="shortcut_chat_long">Start a new conversation</string>
+    <string name="google_web_client_id" translatable="false"></string>
+    <string name="support_email" translatable="false">mohithreddycrm9@gmail.com</string>
+    <string name="support_email_label">Support: mohithreddycrm9@gmail.com</string>
+    <string name="privacy_policy_url" translatable="false">https://mohithreddycrm9.github.io/Universal-ai-skill-MVP-/mentor-privacy-policy.html</string>
+    <string name="action_back">Back</string>
+    <string name="settings_models_keys">Models &amp; API keys</string>
+    <string name="settings_restore_backup">Restore from backup URL</string>
+</resources>

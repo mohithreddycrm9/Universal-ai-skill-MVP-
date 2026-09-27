@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumina</string>
+    <string name="nav_chat">చాట్</string>
+    <string name="nav_discover">కనుగొనండి</string>
+    <string name="nav_settings">సెట్టింగ్‌లు</string>
+    <string name="nav_activity">కార్యకలాపం</string>
+    <string name="widget_title">Lumina శార్ట్‌కట్‌లు</string>
+    <string name="welcome_title">Luminaకు స్వాగతం</string>
+    <string name="unlock_app_title">Lumina అన్‌లాక్ చేయండి</string>
+    <string name="settings_widget_hint_prefix">హోమ్ స్క్రీన్ విడ్జెట్ జోడించండి: లాంచర్‌ను నొక్కి పట్టుకోండి → విడ్జెట్‌లు → </string>
+    <string name="widget_picker_hint_prefix">విడ్జెట్ జోడించండి: హోమ్ స్క్రీన్‌ను నొక్కి పట్టుకోండి → విడ్జెట్‌లు → </string>
+    <string name="voice_tile_label">Lumina వాయిస్</string>
+    <string name="chat_export_all_header">Lumina — చాట్ ఎగుమతి</string>
+    <string name="widget_subtitle">హోమ్ స్క్రీన్ నుండి త్వరిత పనులు</string>
+    <string name="widget_morning_brief">బ్రీఫ్</string>
+    <string name="widget_meal_plan">భోజనం</string>
+    <string name="widget_open_chat">చాట్</string>
+    <string name="widget_ask_anything">ఏదైనా అడగండి…</string>
+    <string name="tile_voice_chat">వాయిస్ చాట్</string>
+    <string name="shortcut_morning_brief">ఉదయం బ్రీఫ్</string>
+    <string name="shortcut_morning_brief_long">ఈ రోజు మీ టాప్ 3 పనులు</string>
+    <string name="shortcut_polish">సందేశం మెరుగుపరచండి</string>
+    <string name="shortcut_polish_long">టెక్స్ట్ లేదా ఇమెయిల్ మార్చండి</string>
+    <string name="shortcut_meal">భోజన ప్రణాళిక</string>
+    <string name="shortcut_meal_long">వారపు భోజనం మరియు కిరాణా జాబితా</string>
+    <string name="shortcut_chat">చాట్ తెరవండి</string>
+    <string name="shortcut_chat_long">కొత్త సంభాషణ ప్రారంభించండి</string>
+    <string name="support_email_label">సహాయం: mohithreddycrm9@gmail.com</string>
+    <string name="action_back">వెనక్కి</string>
+    <string name="settings_models_keys">మోడల్స్ &amp; API కీలు</string>
+    <string name="settings_restore_backup">బ్యాకప్ URL నుండి పునరుద్ధరించు</string>
+</resources>

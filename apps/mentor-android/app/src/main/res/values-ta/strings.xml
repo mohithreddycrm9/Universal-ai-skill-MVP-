@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumina</string>
+    <string name="nav_chat">அரட்டை</string>
+    <string name="nav_discover">கண்டறி</string>
+    <string name="nav_settings">அமைப்புகள்</string>
+    <string name="nav_activity">செயல்பாடு</string>
+    <string name="widget_title">Lumina விரைவு செயல்கள்</string>
+    <string name="welcome_title">Lumina-க்கு வரவேற்கிறோம்</string>
+    <string name="unlock_app_title">Lumina-ஐ திறக்கவும்</string>
+    <string name="settings_widget_hint_prefix">முகப்புத் திரை விட்ஜெட்டைச் சேர்க்கவும்: லாஞ்சரை நீண்டு அழுத்தவும் → விட்ஜெட்கள் → </string>
+    <string name="widget_picker_hint_prefix">விட்ஜெட்டைச் சேர்க்கவும்: முகப்புத் திரையை நீண்டு அழுத்தவும் → விட்ஜெட்கள் → </string>
+    <string name="voice_tile_label">Lumina குரல்</string>
+    <string name="chat_export_all_header">Lumina — அரட்டை ஏற்றுமதி</string>
+    <string name="widget_subtitle">முகப்புத் திரையிலிருந்து விரைவு பணிகள்</string>
+    <string name="widget_morning_brief">சுருக்கம்</string>
+    <string name="widget_meal_plan">உணவு</string>
+    <string name="widget_open_chat">அரட்டை</string>
+    <string name="widget_ask_anything">எதையும் கேளுங்கள்…</string>
+    <string name="tile_voice_chat">குரல் அரட்டை</string>
+    <string name="shortcut_morning_brief">காலை சுருக்கம்</string>
+    <string name="shortcut_morning_brief_long">இன்றைய முக்கிய 3 பணிகள்</string>
+    <string name="shortcut_polish">செய்தியை மெருகேற்று</string>
+    <string name="shortcut_polish_long">உரை அல்லது மின்னஞ்சலை மாற்று</string>
+    <string name="shortcut_meal">உணவு திட்டம்</string>
+    <string name="shortcut_meal_long">வார உணவு மற்றும் கடை பட்டியல்</string>
+    <string name="shortcut_chat">அரட்டை திற</string>
+    <string name="shortcut_chat_long">புதிய உரையாடல் தொடங்கு</string>
+    <string name="support_email_label">ஆதரவு: mohithreddycrm9@gmail.com</string>
+    <string name="action_back">பின்செல்</string>
+    <string name="settings_models_keys">மாடல்கள் மற்றும் API விசைகள்</string>
+    <string name="settings_restore_backup">காப்பு URL இலிருந்து மீட்டமை</string>
+</resources>

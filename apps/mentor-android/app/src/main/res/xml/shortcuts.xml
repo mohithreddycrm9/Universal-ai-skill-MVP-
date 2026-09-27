@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="morning_brief"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_morning_brief"
+        android:shortcutLongLabel="@string/shortcut_morning_brief_long">
+        <intent
+            android:action="com.skillmcp.mentor.USE_CASE"
+            android:targetPackage="com.skillmcp.mentor"
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
+            <extra
+                android:name="use_case_id"
+                android:value="daily-brief" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="polish_message"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_polish"
+        android:shortcutLongLabel="@string/shortcut_polish_long">
+        <intent
+            android:action="com.skillmcp.mentor.USE_CASE"
+            android:targetPackage="com.skillmcp.mentor"
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
+            <extra
+                android:name="use_case_id"
+                android:value="rewrite-message" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="meal_plan"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_meal"
+        android:shortcutLongLabel="@string/shortcut_meal_long">
+        <intent
+            android:action="com.skillmcp.mentor.USE_CASE"
+            android:targetPackage="com.skillmcp.mentor"
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
+            <extra
+                android:name="use_case_id"
+                android:value="meal-grocery" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="new_chat"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_chat"
+        android:shortcutLongLabel="@string/shortcut_chat_long">
+        <intent
+            android:action="com.skillmcp.mentor.OPEN_TAB"
+            android:targetPackage="com.skillmcp.mentor"
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
+            <extra
+                android:name="tab_route"
+                android:value="chat" />
+            <extra
+                android:name="internal_launch"
+                android:value="true" />
+        </intent>
+    </shortcut>
+</shortcuts>

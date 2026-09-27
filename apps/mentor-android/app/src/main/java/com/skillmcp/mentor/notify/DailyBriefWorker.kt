@@ -1,0 +1,108 @@
+package com.skillmcp.mentor.notify
+
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import com.skillmcp.mentor.MentorApplication
+import com.skillmcp.mentor.TrustedLaunchActivity
+import com.skillmcp.mentor.R
+import com.skillmcp.mentor.navigation.AppLaunch
+import java.util.concurrent.TimeUnit
+
+class DailyBriefWorker(
+    appContext: Context,
+    params: WorkerParameters,
+) : CoroutineWorker(appContext, params) {
+    override suspend fun doWork(): Result {
+        ensureChannel(applicationContext)
+        val container = (applicationContext as MentorApplication).container
+        val prefs = container.userPreferences.current()
+        val brief = container.morningBriefCollector.collect(prefs)
+        val body = brief.lines.joinToString("\n")
+        val launchToken = container.internalLaunchToken.ensureToken()
+        val openBriefIntent =
+            Intent(applicationContext, TrustedLaunchActivity::class.java).apply {
+                action = AppLaunch.ACTION_USE_CASE
+                putExtra(AppLaunch.EXTRA_USE_CASE_ID, "daily-brief")
+                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, launchToken)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        val continueIntent =
+            Intent(applicationContext, TrustedLaunchActivity::class.java).apply {
+                action = AppLaunch.ACTION_OPEN_TAB
+                putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
+                putExtra(AppLaunch.EXTRA_DRAFT, brief.chatPrompt)
+                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, launchToken)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        val openPending =
+            PendingIntent.getActivity(
+                applicationContext,
+                1001,
+                openBriefIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        val continuePending =
+            PendingIntent.getActivity(
+                applicationContext,
+                1002,
+                continueIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        val notification =
+            NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("Morning brief")
+                .setContentText(body.lines().firstOrNull() ?: "Your brief is ready")
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setContentIntent(openPending)
+                .addAction(0, "Continue in chat", continuePending)
+                .setAutoCancel(true)
+                .build()
+        val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(NOTIFICATION_ID, notification)
+        return Result.success()
+    }
+
+    companion object {
+        const val CHANNEL_ID = "daily_brief"
+        private const val NOTIFICATION_ID = 42
+        private const val WORK_NAME = "daily_brief_reminder"
+
+        fun ensureChannel(context: Context) {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channel =
+                NotificationChannel(
+                    CHANNEL_ID,
+                    "Daily brief",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = "Optional reminder to run your morning brief"
+                }
+            nm.createNotificationChannel(channel)
+        }
+
+        fun schedule(context: Context) {
+            val request =
+                PeriodicWorkRequestBuilder<DailyBriefWorker>(24, TimeUnit.HOURS)
+                    .build()
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                WORK_NAME,
+                ExistingPeriodicWorkPolicy.UPDATE,
+                request,
+            )
+        }
+
+        fun cancel(context: Context) {
+            WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        }
+    }
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Lumina</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; padding: 16px; color: #1a1a1a; }
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p><strong>Last updated:</strong> September 2026</p>
+  <p>Lumina (Mentor) is a bring-your-own-key assistant. You choose which model providers to connect and which API keys to store on your device.</p>
+  <h2>Data we store on your device</h2>
+  <ul>
+    <li>Chat history, skills, and usage statistics in a local SQLite database (Room) on your device.</li>
+    <li>API keys and tokens in Android encrypted storage (EncryptedSharedPreferences).</li>
+    <li>App preferences (theme, budgets, reminders) in DataStore.</li>
+    <li>Optional encrypted backup payloads you upload to a URL you configure.</li>
+  </ul>
+  <h2>Data sent to third parties</h2>
+  <p>When you send a message, the app contacts the LLM provider you selected using credentials you supplied. We do not operate a central chat server.</p>
+  <p><strong>Attachments:</strong> Images are resized on device and sent via your provider’s vision API when supported. PDF text may be extracted on device and included in the prompt.</p>
+  <p><strong>Morning brief:</strong> Optional calendar reads (with permission), weather from Open-Meteo, and news from public RSS feeds when you enable those sections.</p>
+  <p>Optional features (encrypted backup, sync, ElevenLabs voice, Hugging Face search) only run when you configure them.</p>
+  <h2>Backup and API keys</h2>
+  <p>When backup includes API keys, they are encrypted before upload. A passphrase lets you restore on another device; without it, restore may work only on this device.</p>
+  <h2>Permissions</h2>
+  <ul>
+    <li><strong>Internet</strong> — model APIs, weather, news, optional sync/backup.</li>
+    <li><strong>Microphone</strong> — voice input when you tap the mic.</li>
+    <li><strong>Notifications</strong> — optional daily brief reminder.</li>
+    <li><strong>Calendar</strong> — optional morning brief; event titles/times only when granted.</li>
+    <li><strong>Biometric</strong> — optional app unlock.</li>
+  </ul>
+  <h2>On-device analytics (optional)</h2>
+  <p>If you enable <strong>Help improve Discover</strong> in Settings, the app stores anonymous counts of which workflows and skills you use. Data stays on your device and is not uploaded.</p>
+  <h2>Your choices</h2>
+  <p>You can disconnect providers, clear credentials, disable backup/sync, and uninstall the app to remove on-device data. Backup is off by default.</p>
+  <h2>Contact</h2>
+  <p>For privacy questions, contact the developer listed on the app store listing.</p>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumina</string>
+    <string name="nav_chat">चैट</string>
+    <string name="nav_discover">खोजें</string>
+    <string name="nav_settings">सेटिंग्स</string>
+    <string name="nav_activity">गतिविधि</string>
+    <string name="widget_title">Lumina शॉर्टकट</string>
+    <string name="welcome_title">Lumina में आपका स्वागत है</string>
+    <string name="unlock_app_title">Lumina अनलॉक करें</string>
+    <string name="settings_widget_hint_prefix">होम स्क्रीन विजेट जोड़ें: लॉन्चर दबाकर रखें → विजेट → </string>
+    <string name="widget_picker_hint_prefix">विजेट जोड़ें: होम स्क्रीन दबाकर रखें → विजेट → </string>
+    <string name="voice_tile_label">Lumina वॉइस</string>
+    <string name="chat_export_all_header">Lumina — चैट निर्यात</string>
+    <string name="widget_subtitle">होम स्क्रीन से त्वरित कार्य</string>
+    <string name="widget_morning_brief">ब्रीफ</string>
+    <string name="widget_meal_plan">भोजन</string>
+    <string name="widget_open_chat">चैट</string>
+    <string name="widget_ask_anything">कुछ भी पूछें…</string>
+    <string name="tile_voice_chat">वॉइस चैट</string>
+    <string name="support_email_label">सहायता: mohithreddycrm9@gmail.com</string>
+    <string name="shortcut_morning_brief">सुबह का ब्रीफ</string>
+    <string name="shortcut_morning_brief_long">आज के शीर्ष 3 कार्य</string>
+    <string name="shortcut_polish">संदेश सुधारें</string>
+    <string name="shortcut_polish_long">टेक्स्ट या ईमेल दोबारा लिखें</string>
+    <string name="shortcut_meal">भोजन योजना</string>
+    <string name="shortcut_meal_long">साप्ताहिक भोजन और किराना सूची</string>
+    <string name="shortcut_chat">चैट खोलें</string>
+    <string name="shortcut_chat_long">नई बातचीत शुरू करें</string>
+    <string name="action_back">वापस</string>
+    <string name="settings_models_keys">मॉडल और API कुंजी</string>
+    <string name="settings_restore_backup">बैकअप URL से पुनर्स्थापित करें</string>
+</resources>
