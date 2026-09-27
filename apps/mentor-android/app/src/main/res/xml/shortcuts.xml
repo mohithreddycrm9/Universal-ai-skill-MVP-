@@ -9,7 +9,7 @@
         <intent
             android:action="com.skillmcp.mentor.USE_CASE"
             android:targetPackage="com.skillmcp.mentor"
-            android:targetClass="com.skillmcp.mentor.MainActivity">
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
             <extra
                 android:name="use_case_id"
                 android:value="daily-brief" />
@@ -27,7 +27,7 @@
         <intent
             android:action="com.skillmcp.mentor.USE_CASE"
             android:targetPackage="com.skillmcp.mentor"
-            android:targetClass="com.skillmcp.mentor.MainActivity">
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
             <extra
                 android:name="use_case_id"
                 android:value="rewrite-message" />
@@ -45,7 +45,7 @@
         <intent
             android:action="com.skillmcp.mentor.USE_CASE"
             android:targetPackage="com.skillmcp.mentor"
-            android:targetClass="com.skillmcp.mentor.MainActivity">
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
             <extra
                 android:name="use_case_id"
                 android:value="meal-grocery" />
@@ -63,7 +63,7 @@
         <intent
             android:action="com.skillmcp.mentor.OPEN_TAB"
             android:targetPackage="com.skillmcp.mentor"
-            android:targetClass="com.skillmcp.mentor.MainActivity">
+            android:targetClass="com.skillmcp.mentor.TrustedLaunchActivity">
             <extra
                 android:name="tab_route"
                 android:value="chat" />

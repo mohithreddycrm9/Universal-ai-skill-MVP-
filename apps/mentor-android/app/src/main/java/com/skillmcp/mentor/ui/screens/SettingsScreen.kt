@@ -311,7 +311,7 @@ fun SettingsScreen(vm: MentorViewModel) {
                 onCheckedChange = vm::setCrashReportingOptIn,
             )
             Text(
-                "When enabled, uncaught errors are logged locally and can be wired to Crashlytics or Sentry in release builds.",
+                "When enabled, uncaught errors are recorded locally to help diagnose crashes.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

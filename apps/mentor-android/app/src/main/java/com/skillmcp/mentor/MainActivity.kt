@@ -10,13 +10,13 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.skillmcp.mentor.data.LaunchAction
 import com.skillmcp.mentor.data.resolvedDarkTheme
 import com.skillmcp.mentor.navigation.AppLaunch
 import com.skillmcp.mentor.ui.MentorApp
 import com.skillmcp.mentor.ui.theme.CodeMentorTheme
-class MainActivity : FragmentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)

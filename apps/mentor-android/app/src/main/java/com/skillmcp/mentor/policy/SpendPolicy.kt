@@ -19,20 +19,13 @@ object SpendPolicy {
         return String.format("%d:%02d %s", cal.get(Calendar.HOUR), cal.get(Calendar.MINUTE), if (cal.get(Calendar.AM_PM) == Calendar.AM) "AM" else "PM")
     }
 
-    fun applyDailyDismiss(
+    /** Hides the daily block card until midnight; does not clear the spend limit. */
+    fun shouldHideDailyBlockUi(
         check: SpendCheck,
         dismissedUntilMs: Long,
         nowMs: Long = System.currentTimeMillis(),
-    ): SpendCheck {
-        if (nowMs >= dismissedUntilMs || dismissedUntilMs == 0L) return check
-        if (check.blockReason != SpendBlockReason.DAILY) return check
-        return check.copy(
-            allowed = true,
-            message = null,
-            blockReason = SpendBlockReason.NONE,
-        )
-    }
-
-    fun shouldBypassDailyBlock(dismissedUntilMs: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
-        dismissedUntilMs > nowMs
+    ): Boolean =
+        !check.allowed &&
+            check.blockReason == SpendBlockReason.DAILY &&
+            dismissedUntilMs > nowMs
 }

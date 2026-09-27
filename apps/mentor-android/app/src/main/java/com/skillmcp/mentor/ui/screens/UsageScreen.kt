@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -43,15 +44,24 @@ fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
     var showInr by remember { mutableStateOf(false) }
 
     AppBackground {
-        if (onBack != null) {
-            SecondaryScreenTopBar(
-                title = "Usage",
-                subtitle = "Track requests, tokens, and estimated spend across your models.",
-                onBack = onBack,
-            )
-        }
+        Scaffold(
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            topBar = {
+                if (onBack != null) {
+                    SecondaryScreenTopBar(
+                        title = "Usage",
+                        subtitle = "Track requests, tokens, and estimated spend across your models.",
+                        onBack = onBack,
+                    )
+                }
+            },
+        ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (onBack == null) {
@@ -192,6 +202,7 @@ fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
                     }
                 }
             }
+        }
         }
     }
 }

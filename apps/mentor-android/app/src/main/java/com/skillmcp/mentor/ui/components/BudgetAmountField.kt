@@ -34,6 +34,8 @@ fun BudgetAmountField(
             text = cleaned
             if (cleaned.isEmpty()) {
                 onAmountCommitted(0.0)
+            } else if (cleaned == "." || cleaned.endsWith(".")) {
+                // Allow partial decimals like "0." without snapping to 0
             } else {
                 cleaned.toDoubleOrNull()?.let(onAmountCommitted)
             }

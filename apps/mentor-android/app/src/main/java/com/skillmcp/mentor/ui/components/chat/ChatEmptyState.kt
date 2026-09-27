@@ -5,12 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -59,7 +57,7 @@ fun ChatEmptyState(
         ) {
             Icon(
                 Icons.Outlined.AutoAwesome,
-                contentDescription = null,
+                contentDescription = "Assistant",
                 modifier = Modifier.padding(18.dp),
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -78,16 +76,22 @@ fun ChatEmptyState(
             modifier = Modifier.padding(top = 8.dp),
         )
         Spacer(Modifier.height(24.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxWidth().height(240.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(0.dp),
-            userScrollEnabled = false,
         ) {
-            items(starters.take(4)) { card ->
-                StarterGridCard(card)
+            starters.take(4).chunked(2).forEach { rowCards ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    rowCards.forEach { card ->
+                        StarterGridCard(card, modifier = Modifier.weight(1f))
+                    }
+                    if (rowCards.size == 1) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
@@ -95,16 +99,19 @@ fun ChatEmptyState(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StarterGridCard(card: ChatStarterCard) {
+private fun StarterGridCard(
+    card: ChatStarterCard,
+    modifier: Modifier = Modifier,
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth().pressableScale(),
+        modifier = modifier.fillMaxWidth().pressableScale(),
         onClick = card.onClick,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 1.dp,
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(card.icon, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+            Icon(card.icon, contentDescription = card.title, tint = MaterialTheme.colorScheme.secondary)
             Text(card.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text(
                 card.hint,
@@ -125,8 +132,7 @@ fun timeOfDayGreeting(name: String): String {
             in 17..20 -> "Good evening"
             else -> "Hello"
         }
-    val who = if (name.isBlank()) "there" else name
-    return "$period, $who 👋"
+    return if (name.isBlank()) "$period 👋" else "$period, $name 👋"
 }
 
 fun popularUseCasesToStarters(

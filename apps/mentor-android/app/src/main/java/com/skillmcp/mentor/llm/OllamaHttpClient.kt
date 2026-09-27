@@ -3,6 +3,7 @@ package com.skillmcp.mentor.llm
 import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
 import java.net.InetAddress
+import javax.net.ssl.HttpsURLConnection
 import java.util.concurrent.TimeUnit
 
 /** HTTPS for cloud APIs; cleartext only when the request host is a private/LAN address (Ollama). */
@@ -15,7 +16,13 @@ object OllamaHttpClient {
             .connectTimeout(connectSec, TimeUnit.SECONDS)
             .readTimeout(readSec, TimeUnit.SECONDS)
             .connectionSpecs(listOf(ConnectionSpec.MODERN_TLS, ConnectionSpec.CLEARTEXT))
-            .hostnameVerifier { hostname, _ -> isPrivateOrLocalHost(hostname) }
+            .hostnameVerifier { hostname, session ->
+                if (isPrivateOrLocalHost(hostname)) {
+                    true
+                } else {
+                    HttpsURLConnection.getDefaultHostnameVerifier().verify(hostname, session)
+                }
+            }
             .build()
 
     fun isPrivateOrLocalHost(host: String): Boolean {

@@ -23,7 +23,7 @@
     <string name="google_web_client_id" translatable="false"></string>
     <string name="support_email" translatable="false">mohithreddycrm9@gmail.com</string>
     <string name="support_email_label">Support: mohithreddycrm9@gmail.com</string>
-    <string name="privacy_policy_url" translatable="false">https://raw.githubusercontent.com/mohithreddycrm9/Universal-ai-skill-MVP-/main/docs/mentor-privacy-policy.html</string>
+    <string name="privacy_policy_url" translatable="false">https://mohithreddycrm9.github.io/Universal-ai-skill-MVP-/mentor-privacy-policy.html</string>
     <string name="action_back">Back</string>
     <string name="settings_models_keys">Models &amp; API keys</string>
     <string name="settings_restore_backup">Restore from backup URL</string>

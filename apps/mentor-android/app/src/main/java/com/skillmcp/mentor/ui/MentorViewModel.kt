@@ -134,6 +134,7 @@ class MentorViewModel(
     val pendingSkillInstall = MutableStateFlow<SkillInstallRequest?>(null)
     val lastExportMarkdown = MutableStateFlow<String?>(null)
     val pendingVision = MutableStateFlow<ChatVisionAttachment?>(null)
+    val pendingImagePreviewUri = MutableStateFlow<Uri?>(null)
     val pendingPdfExtract = MutableStateFlow<String?>(null)
     val backupPassphrasePrompt = MutableStateFlow(false)
     val backupRestorePassphrasePrompt = MutableStateFlow(false)
@@ -247,13 +248,7 @@ class MentorViewModel(
         val prefs: MentorPrefs,
     )
 
-    private val spendGuardFlow =
-        combine(repository.observeSpendGuard(), prefs.prefsFlow) { spend, mentorPrefs ->
-            com.skillmcp.mentor.policy.SpendPolicy.applyDailyDismiss(
-                spend,
-                mentorPrefs.spendDailyBlockDismissedUntilMs,
-            )
-        }
+    private val spendGuardFlow = repository.observeSpendGuard()
     private val messageCostsUsd = MutableStateFlow<Map<String, Double>>(emptyMap())
     private val streamCancelled = java.util.concurrent.atomic.AtomicBoolean(false)
     private val rankedUseCasesFlow = MutableStateFlow(UseCaseCatalog.featured)
@@ -653,11 +648,13 @@ class MentorViewModel(
                         return@launch
                     }
                     pendingVision.value = vision
+                    pendingImagePreviewUri.value = uri
                     pendingPdfExtract.value = null
                     status.value = "Image attached — describe what you want to know."
                 }
                 mimeType == "application/pdf" -> {
                     pendingVision.value = null
+                    pendingImagePreviewUri.value = null
                     pendingPdfExtract.value = PdfTextExtractor.extractText(appContext, uri)
                     status.value = "PDF text extracted and will be sent with your message."
                 }
@@ -672,6 +669,7 @@ class MentorViewModel(
 
     fun clearAttachment() {
         pendingVision.value = null
+        pendingImagePreviewUri.value = null
         pendingPdfExtract.value = null
     }
 
@@ -730,8 +728,7 @@ class MentorViewModel(
             streamPreview.value = ""
             val vision = pendingVision.value
             val pdf = pendingPdfExtract.value
-            pendingVision.value = null
-            pendingPdfExtract.value = null
+            val previewUri = pendingImagePreviewUri.value
             val result =
                 repository.sendUserMessage(
                     text = text,
@@ -743,6 +740,9 @@ class MentorViewModel(
             streamPreview.value = ""
             isSending.value = false
             if (result.isSuccess) {
+                pendingVision.value = null
+                pendingPdfExtract.value = null
+                pendingImagePreviewUri.value = null
                 draft.value = ""
                 val send = result.getOrNull() ?: return@launch
                 val reply = send.content
@@ -758,6 +758,9 @@ class MentorViewModel(
                     startHandsFreeTurn(autoSend = true)
                 }
             } else {
+                pendingVision.value = vision
+                pendingPdfExtract.value = pdf
+                pendingImagePreviewUri.value = previewUri
                 val parsed =
                     result.exceptionOrNull()?.let(UserFacingErrors::parse)
                         ?: UserFacingError("Send failed", null)
@@ -769,6 +772,11 @@ class MentorViewModel(
 
     fun toggleListen() {
         startHandsFreeTurn(autoSend = false)
+    }
+
+    fun cancelListening() {
+        voice.cancelListening()
+        isListening.value = false
     }
 
     private fun hasMicPermission(): Boolean =

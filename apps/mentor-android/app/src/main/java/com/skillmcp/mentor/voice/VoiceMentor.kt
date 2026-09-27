@@ -17,6 +17,8 @@ import java.util.UUID
 class VoiceMentor(private val context: Context) {
     private var tts: TextToSpeech? = null
     private var ttsReady = CompletableDeferred<Boolean>()
+    @Volatile
+    private var activeRecognizer: SpeechRecognizer? = null
 
     suspend fun ensureTts(): Boolean =
         withContext(Dispatchers.Main) {
@@ -87,6 +89,7 @@ class VoiceMentor(private val context: Context) {
                 return@withContext Result.failure(IllegalStateException("Speech recognition unavailable"))
             }
             val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+            activeRecognizer = recognizer
             val result = CompletableDeferred<Result<String>>()
             val intent =
                 Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -103,6 +106,7 @@ class VoiceMentor(private val context: Context) {
                     override fun onEndOfSpeech() = Unit
                     override fun onError(error: Int) {
                         result.complete(Result.failure(IllegalStateException("Speech error $error")))
+                        activeRecognizer = null
                         recognizer.destroy()
                     }
 
@@ -117,6 +121,7 @@ class VoiceMentor(private val context: Context) {
                         } else {
                             result.complete(Result.success(text))
                         }
+                        activeRecognizer = null
                         recognizer.destroy()
                     }
 
@@ -128,7 +133,17 @@ class VoiceMentor(private val context: Context) {
             result.await()
         }
 
+    fun cancelListening() {
+        activeRecognizer?.let { recognizer ->
+            runCatching { recognizer.stopListening() }
+            runCatching { recognizer.cancel() }
+            runCatching { recognizer.destroy() }
+        }
+        activeRecognizer = null
+    }
+
     fun shutdown() {
+        cancelListening()
         tts?.shutdown()
         tts = null
     }

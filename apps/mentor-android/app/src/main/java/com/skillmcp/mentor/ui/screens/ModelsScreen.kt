@@ -1,6 +1,7 @@
 package com.skillmcp.mentor.ui.screens
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import com.skillmcp.mentor.llm.connectionLabel
 import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.ui.MentorViewModel
@@ -47,15 +49,24 @@ fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
     var showAddKind by remember { mutableStateOf(false) }
 
     AppBackground {
-        if (onBack != null) {
-            SecondaryScreenTopBar(
-                title = "Models",
-                subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
-                onBack = onBack,
-            )
-        }
+        Scaffold(
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            topBar = {
+                if (onBack != null) {
+                    SecondaryScreenTopBar(
+                        title = "Models",
+                        subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
+                        onBack = onBack,
+                    )
+                }
+            },
+        ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (onBack == null) {
@@ -85,7 +96,7 @@ fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
             item {
                 if (!showAddKind) {
                     OutlinedButton(onClick = { showAddKind = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Add other AI service (advanced)")
+                        Text("Add OpenAI-compatible API")
                     }
                 } else {
                     GlassCard {
@@ -123,6 +134,7 @@ fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
                 }
             }
         }
+        }
     }
 }
 
@@ -134,12 +146,17 @@ private fun ProviderCard(
     onConnect: () -> Unit,
 ) {
     val configured = profile.isConfigured()
+    val statusColor =
+        if (configured) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
     GlassCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            androidx.compose.foundation.Canvas(Modifier.size(10.dp)) {
+                drawCircle(color = statusColor)
+            }
             RowWithRadio(
                 modifier = Modifier.weight(1f),
                 selected = selected,
@@ -147,9 +164,6 @@ private fun ProviderCard(
                 title = profile.name,
                 subtitle = "${profile.kind.label} · ${profile.model}",
             )
-            OutlinedButton(onClick = onConnect) {
-                Text(if (configured) "Edit" else "Connect")
-            }
         }
         Text(
             profile.connectionLabel(),
@@ -162,18 +176,8 @@ private fun ProviderCard(
                 },
             modifier = Modifier.padding(start = 48.dp, bottom = 8.dp),
         )
-        if (profile.kind != LlmProviderKind.OLLAMA) {
-            OutlinedButton(
-                onClick = onConnect,
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                    ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            ) {
-                Text(if (configured) "Update login or API key" else "Connect account")
-            }
+        Button(onClick = onConnect, modifier = Modifier.fillMaxWidth()) {
+            Text(if (configured) "Manage connection" else "Connect")
         }
     }
 }

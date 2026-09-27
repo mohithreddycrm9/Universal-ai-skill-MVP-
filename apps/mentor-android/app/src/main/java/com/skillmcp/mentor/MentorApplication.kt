@@ -2,6 +2,7 @@ package com.skillmcp.mentor
 
 import android.app.Application
 import com.skillmcp.mentor.analytics.CrashReporter
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.skillmcp.mentor.backup.BackupScheduler
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.util.applyAppLanguage
@@ -20,6 +21,7 @@ class MentorApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         CrashReporter.install(this)
+        PDFBoxResourceLoader.init(applicationContext)
         container = AppContainer(this)
         runBlocking { container.internalLaunchToken.ensureToken() }
         applyAppLanguage(container.userPreferences.current().appLanguageTag)

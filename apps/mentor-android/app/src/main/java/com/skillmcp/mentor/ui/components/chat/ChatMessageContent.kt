@@ -22,8 +22,10 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import com.skillmcp.mentor.ui.theme.BubbleShapeUser
 import com.skillmcp.mentor.ui.theme.contentColorOn
+import com.skillmcp.mentor.util.SpendFormat
 
 @Composable
 fun ChatMessageContent(
@@ -68,7 +70,7 @@ fun ChatMessageContent(
                 }
                 estimatedCostUsd?.takeIf { it > 0 }?.let { cost ->
                     Text(
-                        "~$${"%.4f".format(cost)}",
+                        SpendFormat.formatUsdEstimate(cost),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -89,10 +91,9 @@ private fun AssistantMarkdownText(
         parts.forEachIndexed { index, part ->
             if (index % 2 == 0) {
                 if (part.isNotBlank()) {
-                    Text(
-                        text = part.trim(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                    MarkdownText(
+                        markdown = part.trim(),
+                        style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                     )
                 }
             } else {

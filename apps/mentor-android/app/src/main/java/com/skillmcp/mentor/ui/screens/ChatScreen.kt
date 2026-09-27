@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -56,10 +57,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.skillmcp.mentor.llm.ModelPreset
-import com.skillmcp.mentor.llm.VisionCapabilities
 import com.skillmcp.mentor.llm.connectSignInBlurb
 import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.ui.components.PromptLibrarySheet
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -102,6 +103,8 @@ fun ChatScreen(vm: MentorViewModel) {
     var tagDraft by remember { mutableStateOf("") }
     val context = LocalContext.current
     val searchResults by vm.drawerSearchResults.collectAsState()
+    val pendingImageUri by vm.pendingImagePreviewUri.collectAsState()
+    val pendingPdf by vm.pendingPdfExtract.collectAsState()
     LaunchedEffect(drawerQuery) { vm.searchChats(drawerQuery) }
     val filteredChats =
         searchResults
@@ -319,14 +322,11 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     },
                     actions = {
-                        val canVision = state.activeLlmProfile?.let { VisionCapabilities.supportsVision(it) } == true
-                        if (canVision) {
-                            IconButton(
-                                onClick = { attachLauncher.launch(arrayOf("image/*", "application/pdf")) },
-                                modifier = Modifier.size(48.dp),
-                            ) {
-                                Icon(Icons.Default.AttachFile, contentDescription = "Attach image or PDF")
-                            }
+                        IconButton(
+                            onClick = { attachLauncher.launch(arrayOf("image/*", "application/pdf")) },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(Icons.Default.AttachFile, contentDescription = "Attach image or PDF")
                         }
                         IconButton(
                             onClick = { showPrompts = true },
@@ -383,7 +383,12 @@ fun ChatScreen(vm: MentorViewModel) {
                         )
                     }
                 }
-                if (!state.spendGuard.allowed) {
+                val hideDailyBlock =
+                    com.skillmcp.mentor.policy.SpendPolicy.shouldHideDailyBlockUi(
+                        state.spendGuard,
+                        state.prefs.spendDailyBlockDismissedUntilMs,
+                    )
+                if (!state.spendGuard.allowed && !hideDailyBlock) {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -528,7 +533,24 @@ fun ChatScreen(vm: MentorViewModel) {
                     }
                 }
 
-                val canVision = state.activeLlmProfile?.let { VisionCapabilities.supportsVision(it) } == true
+                if (pendingImageUri != null || !pendingPdf.isNullOrBlank()) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            if (pendingImageUri != null) "Image attached" else "PDF text ready to send",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        IconButton(onClick = vm::clearAttachment) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove attachment")
+                        }
+                    }
+                }
                 if (state.isSending) {
                     androidx.compose.material3.TextButton(
                         onClick = vm::cancelSend,
@@ -542,12 +564,9 @@ fun ChatScreen(vm: MentorViewModel) {
                     onDraftChange = vm::onDraftChange,
                     onSend = vm::sendMessage,
                     onMic = onMic,
-                    onAttach =
-                        if (canVision) {
-                            { attachLauncher.launch(arrayOf("image/*", "application/pdf")) }
-                        } else {
-                            null
-                        },
+                    onAttach = {
+                        attachLauncher.launch(arrayOf("image/*", "application/pdf"))
+                    },
                     isSending = state.isSending,
                     isListening = state.isListening,
                     modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 12.dp),
@@ -557,7 +576,7 @@ fun ChatScreen(vm: MentorViewModel) {
                 VoiceModeOverlay(
                     transcript = state.draft,
                     listening = true,
-                    onDismiss = { /* ends when listen completes */ },
+                    onDismiss = vm::cancelListening,
                 )
             }
         }

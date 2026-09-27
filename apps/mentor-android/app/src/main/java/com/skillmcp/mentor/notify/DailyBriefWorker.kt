@@ -11,8 +11,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.skillmcp.mentor.MainActivity
 import com.skillmcp.mentor.MentorApplication
+import com.skillmcp.mentor.TrustedLaunchActivity
 import com.skillmcp.mentor.R
 import com.skillmcp.mentor.navigation.AppLaunch
 import java.util.concurrent.TimeUnit
@@ -27,15 +27,16 @@ class DailyBriefWorker(
         val prefs = container.userPreferences.current()
         val brief = container.morningBriefCollector.collect(prefs)
         val body = brief.lines.joinToString("\n")
+        val launchToken = container.internalLaunchToken.ensureToken()
         val openBriefIntent =
-            Intent(applicationContext, MainActivity::class.java).apply {
+            Intent(applicationContext, TrustedLaunchActivity::class.java).apply {
                 action = AppLaunch.ACTION_USE_CASE
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, "daily-brief")
+                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, launchToken)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-        val launchToken = container.internalLaunchToken.ensureToken()
         val continueIntent =
-            Intent(applicationContext, MainActivity::class.java).apply {
+            Intent(applicationContext, TrustedLaunchActivity::class.java).apply {
                 action = AppLaunch.ACTION_OPEN_TAB
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
                 putExtra(AppLaunch.EXTRA_DRAFT, brief.chatPrompt)

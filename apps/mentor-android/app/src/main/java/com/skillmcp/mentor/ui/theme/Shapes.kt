@@ -9,7 +9,7 @@ val AppShapes =
     Shapes(
         extraSmall = RoundedCornerShape(8.dp),
         small = RoundedCornerShape(12.dp),
-        medium = RoundedCornerShape(16.dp),
+        medium = RoundedCornerShape(24.dp),
         large = RoundedCornerShape(MentorDimens.CardRadius),
         extraLarge = RoundedCornerShape(MentorDimens.SheetRadius),
     )

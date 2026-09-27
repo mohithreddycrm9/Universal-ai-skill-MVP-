@@ -249,8 +249,7 @@ class MentorRepository(
             val prefs = userPreferences.current()
             val spend =
                 SpendGuard.check(dao, prefs.dailyBudgetUsd, prefs.weeklyBudgetUsd)
-            val bypassDaily = SpendPolicy.shouldBypassDailyBlock(prefs.spendDailyBlockDismissedUntilMs)
-            if (!spend.allowed && !(bypassDaily && spend.blockReason == com.skillmcp.mentor.policy.SpendBlockReason.DAILY)) {
+            if (!spend.allowed) {
                 return@withContext Result.failure(SpendLimitException(spend))
             }
             val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }

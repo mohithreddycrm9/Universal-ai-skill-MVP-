@@ -35,7 +35,7 @@ class MorningBriefCollector(
                 lines += calendarLines()
             }
             if (prefs.morningBriefWeather) {
-                lines += weatherLine(prefs)
+                weatherLine(prefs)?.let { lines += it }
             }
             if (prefs.morningBriefNews) {
                 lines += newsHeadlines()
@@ -83,9 +83,14 @@ class MorningBriefCollector(
         }
     }
 
-    private fun weatherLine(prefs: MentorPrefs): String =
-        runCatching {
-            val (lat, lon, label) = resolveWeatherCoords(prefs)
+    private fun weatherLine(prefs: MentorPrefs): String? {
+        val city = prefs.weatherCity.trim()
+        if (city.isBlank()) {
+            return "Weather: add your city in Settings for a local forecast."
+        }
+        val coords = resolveWeatherCoords(city) ?: return "Weather: could not find \"$city\" — check the city name in Settings."
+        val (lat, lon, label) = coords
+        return runCatching {
             val request =
                 Request.Builder()
                     .url(
@@ -102,30 +107,25 @@ class MorningBriefCollector(
                 "Weather ($label): ${temp ?: "?"}°C, code $code (Open-Meteo)."
             }
         }.getOrElse { "Weather: could not fetch (offline?)." }
+    }
 
-    private fun resolveWeatherCoords(prefs: MentorPrefs): Triple<Double, Double, String> {
-        val city = prefs.weatherCity.trim()
-        if (city.isNotBlank()) {
-            val geo =
-                Request.Builder()
-                    .url("https://geocoding-api.open-meteo.com/v1/search?name=${java.net.URLEncoder.encode(city, "UTF-8")}&count=1")
-                    .get()
-                    .build()
-            http.newCall(geo).execute().use { response ->
-                if (response.isSuccessful) {
-                    val json = JSONObject(response.body?.string() ?: "{}")
-                    val results = json.optJSONArray("results")
-                    if (results != null && results.length() > 0) {
-                        val first = results.getJSONObject(0)
-                        val lat = first.getDouble("latitude")
-                        val lon = first.getDouble("longitude")
-                        val name = first.optString("name", city)
-                        return Triple(lat, lon, name)
-                    }
-                }
-            }
+    private fun resolveWeatherCoords(city: String): Triple<Double, Double, String>? {
+        val geo =
+            Request.Builder()
+                .url("https://geocoding-api.open-meteo.com/v1/search?name=${java.net.URLEncoder.encode(city, "UTF-8")}&count=1")
+                .get()
+                .build()
+        http.newCall(geo).execute().use { response ->
+            if (!response.isSuccessful) return null
+            val json = JSONObject(response.body?.string() ?: "{}")
+            val results = json.optJSONArray("results")
+            if (results == null || results.length() == 0) return null
+            val first = results.getJSONObject(0)
+            val lat = first.getDouble("latitude")
+            val lon = first.getDouble("longitude")
+            val name = first.optString("name", city)
+            return Triple(lat, lon, name)
         }
-        return Triple(28.6139, 77.2090, if (city.isBlank()) "default area" else city)
     }
 
     private fun newsHeadlines(): String =
