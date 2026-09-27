@@ -9,6 +9,15 @@ export function testConfig(overrides?: (config: AppConfig) => void): AppConfig {
   const config = loadConfig("config");
   config.trust.verifiedPublishers = ["fixture-org"];
   config.trust.allowUnknownPublisherApprove = false;
+  // Optional OSS adapters (STRIX, SkillSpector) are off in tests unless a case
+  // explicitly enables them — missing binaries return ERROR, which would block
+  // benign acquire paths (see federation.test.ts: disabled optional = no effect).
+  if (config.scanners.scanners.skillspector) {
+    config.scanners.scanners.skillspector.enabled = false;
+  }
+  if (config.scanners.scanners.strix) {
+    config.scanners.scanners.strix.enabled = false;
+  }
   overrides?.(config);
   return config;
 }
