@@ -26,8 +26,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * - throttles streaming updates to one scroll per [THROTTLE_MS].
  */
 @Stable
-class ChatScrollController(val listState: LazyListState) {
-    var followBottom by mutableStateOf(true)
+class ChatScrollController(
+    val listState: LazyListState,
+    initialFollowBottom: Boolean = true,
+) {
+    var followBottom by mutableStateOf(initialFollowBottom)
     private var userDragging by mutableStateOf(false)
 
     /** Show the jump-down button only when the user left the bottom and there is more below. */
@@ -90,8 +93,10 @@ class ChatScrollController(val listState: LazyListState) {
 }
 
 @Composable
-fun rememberChatScrollController(listState: LazyListState): ChatScrollController =
-    remember(listState) { ChatScrollController(listState) }
+fun rememberChatScrollController(
+    listState: LazyListState,
+    initialFollowBottom: Boolean = true,
+): ChatScrollController = remember(listState) { ChatScrollController(listState, initialFollowBottom) }
 
 /**
  * Runs the one auto-scroll effect. [contentVersion] changes whenever the list grows or the stream

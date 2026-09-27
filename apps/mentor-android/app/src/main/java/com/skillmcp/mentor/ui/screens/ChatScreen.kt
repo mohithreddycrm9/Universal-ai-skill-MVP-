@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
@@ -57,6 +57,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.skillmcp.mentor.llm.ModelPreset
@@ -100,7 +101,6 @@ fun ChatScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val listState = rememberLazyListState()
     var showPrompts by remember { mutableStateOf(false) }
     var drawerQuery by remember { mutableStateOf("") }
     var renameTarget by remember { mutableStateOf<UiConversation?>(null) }
@@ -121,7 +121,41 @@ fun ChatScreen(vm: MentorViewModel) {
             ?: stringResource(R.string.nav_chat)
     val hapticView = rememberHapticView()
     val reduceMotion = rememberReduceMotion()
-    val scrollController = com.skillmcp.mentor.ui.chat.rememberChatScrollController(listState)
+    // Per-chat scroll: a fresh list state per conversation, seeded from the persisted position.
+    val conversationKey = state.activeConversationId
+    val savedScroll = remember(conversationKey) { vm.chatScrollFor(conversationKey) }
+    val listState = remember(conversationKey) { LazyListState() }
+    val scrollController =
+        com.skillmcp.mentor.ui.chat.rememberChatScrollController(
+            listState,
+            initialFollowBottom = savedScroll?.atBottom ?: true,
+        )
+    // Messages of the previous chat can still be on screen for a frame after switching; wait for new ones.
+    val staleFirstId = remember(conversationKey) { state.messages.firstOrNull()?.id }
+    var scrollRestored by remember(conversationKey) { mutableStateOf(false) }
+    val firstId = state.messages.firstOrNull()?.id
+    LaunchedEffect(conversationKey, firstId) {
+        val saved = savedScroll
+        if (!scrollRestored && firstId != null && (staleFirstId == null || firstId != staleFirstId)) {
+            scrollRestored = true
+            if (saved != null && !saved.atBottom) listState.scrollToItem(saved.index, saved.offset)
+        }
+    }
+    LaunchedEffect(conversationKey, listState) {
+        snapshotFlow { listState.isScrollInProgress }
+            .collect { scrolling ->
+                if (!scrolling && listState.layoutInfo.totalItemsCount > 0) {
+                    vm.saveChatScroll(
+                        conversationKey,
+                        com.skillmcp.mentor.data.ChatScrollPosition(
+                            index = listState.firstVisibleItemIndex,
+                            offset = listState.firstVisibleItemScrollOffset,
+                            atBottom = scrollController.followBottom,
+                        ),
+                    )
+                }
+            }
+    }
     var prevSending by remember { mutableStateOf(false) }
     LaunchedEffect(state.isSending) {
         if (prevSending && !state.isSending) {

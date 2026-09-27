@@ -58,6 +58,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -121,7 +125,7 @@ data class MentorUiState(
     val showReplySlot: Boolean = false,
 )
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 class MentorViewModel(
     private val container: AppContainer,
     private val appContext: Context,
@@ -429,8 +433,35 @@ class MentorViewModel(
     private val guidedSetupVisibleInner = MutableStateFlow(true)
     val guidedSetupVisible: StateFlow<Boolean> = guidedSetupVisibleInner
 
+    private val chatUiStore by lazy { com.skillmcp.mentor.data.ChatUiStateStore(appContext) }
+    private var draftOwnerId: String? = null
+
+    /** Saved scroll position for [conversationId], or null to follow the latest message. */
+    fun chatScrollFor(conversationId: String): com.skillmcp.mentor.data.ChatScrollPosition? =
+        if (conversationId.isBlank()) null else chatUiStore.scroll(conversationId)
+
+    fun saveChatScroll(conversationId: String, position: com.skillmcp.mentor.data.ChatScrollPosition) {
+        chatUiStore.setScroll(conversationId, position)
+    }
+
     init {
         refreshRankedUseCases()
+        // Per-chat draft: save the outgoing chat's draft, load the incoming one, persist edits (debounced).
+        viewModelScope.launch {
+            repository.observeActiveConversationId()
+                .distinctUntilChanged()
+                .collectLatest { id ->
+                    val previous = draftOwnerId
+                    if (previous != null && previous != id) {
+                        chatUiStore.setDraft(previous, draft.value)
+                        draft.value = chatUiStore.draft(id)
+                    } else if (previous == null && draft.value.isBlank()) {
+                        draft.value = chatUiStore.draft(id)
+                    }
+                    draftOwnerId = id
+                    draft.drop(1).debounce(250).collect { text -> chatUiStore.setDraft(id, text) }
+                }
+        }
         viewModelScope.launch {
             val migrationNotice = repository.bootstrap()
             if (!migrationNotice.isNullOrBlank()) {
@@ -840,6 +871,7 @@ class MentorViewModel(
     }
 
     fun deleteConversation(id: String) {
+        chatUiStore.clear(id)
         viewModelScope.launch { repository.deleteConversation(id) }
     }
 
