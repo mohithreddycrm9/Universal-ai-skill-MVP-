@@ -121,7 +121,7 @@ fun MentorApp(container: AppContainer) {
         onLockUnavailable = vm::onAppLockUnavailable,
     ) {
         if (!state.prefs.hasSeenWelcome) {
-            OnboardingFlow(onFinished = vm::markWelcomeSeen)
+            OnboardingFlow(onFinished = vm::finishWelcome)
             return@BiometricGate
         }
         GuidedSetupSheet(

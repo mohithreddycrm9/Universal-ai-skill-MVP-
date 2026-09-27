@@ -564,6 +564,14 @@ class MentorViewModel(
         viewModelScope.launch { prefs.update { it.copy(hasSeenWelcome = true) } }
     }
 
+    /** Ends onboarding; a non-blank name (optional last page) becomes the profile name. */
+    fun finishWelcome(name: String) {
+        val trimmed = name.trim().take(80)
+        viewModelScope.launch {
+            prefs.update { it.copy(hasSeenWelcome = true, displayName = trimmed.ifEmpty { it.displayName }) }
+        }
+    }
+
     fun completeGuidedSetup() {
         guidedSetupVisibleInner.value = false
         viewModelScope.launch {

@@ -2,42 +2,59 @@ package com.skillmcp.mentor.ui.screens
 
 import com.skillmcp.mentor.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.School
-import androidx.compose.material.icons.outlined.ShoppingBag
-import androidx.compose.material.icons.outlined.Work
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.llm.isConfigured
+import com.skillmcp.mentor.mentor.PopularUseCase
 import com.skillmcp.mentor.mentor.UseCaseCatalog
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
-import com.skillmcp.mentor.ui.components.GlassCard
-import com.skillmcp.mentor.ui.components.StatCard
 import com.skillmcp.mentor.ui.components.discover.DiscoverCategorySections
 import com.skillmcp.mentor.ui.components.discover.DiscoverHeroCard
 import com.skillmcp.mentor.ui.components.discover.DiscoverSearchField
+import com.skillmcp.mentor.ui.components.discover.WorkflowVisualCard
+import com.skillmcp.mentor.ui.components.discover.displayName
+import com.skillmcp.mentor.ui.components.settings.SettingsDivider
+import com.skillmcp.mentor.ui.components.settings.SettingsGroup
+import com.skillmcp.mentor.ui.components.settings.SettingsNavRow
+import com.skillmcp.mentor.ui.theme.CategoryPalette
 import com.skillmcp.mentor.ui.theme.MentorDimens
 
 @Composable
@@ -72,86 +89,138 @@ internal fun DiscoverScreenContent(
     state: com.skillmcp.mentor.ui.MentorUiState,
     searchQuery: String = "",
     onSearchChange: (String) -> Unit = {},
-    filteredUseCases: List<com.skillmcp.mentor.mentor.PopularUseCase> = state.rankedUseCases,
+    filteredUseCases: List<PopularUseCase> = state.rankedUseCases,
     onConnect: (String) -> Unit,
-    onPopularUseCase: (com.skillmcp.mentor.mentor.PopularUseCase) -> Unit,
+    onPopularUseCase: (PopularUseCase) -> Unit,
     onOpenUsage: () -> Unit,
     onOpenModels: () -> Unit,
 ) {
     val profile = state.activeLlmProfile
+    var category by rememberSaveable { mutableStateOf<String?>(null) }
+    val filtering = searchQuery.isNotBlank() || category != null
+    val visible = filteredUseCases.filter { category == null || it.category == category }
     val workflowOfDay = state.rankedUseCases.firstOrNull()
 
     AppBackground {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 16.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = MentorDimens.ScreenHorizontal, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item {
-                DiscoverSearchField(query = searchQuery, onQueryChange = onSearchChange)
-            }
-            item {
-                DiscoverHeroCard(
-                    workflow = workflowOfDay,
-                    onTry = { workflowOfDay?.let { onPopularUseCase(it) } },
-                )
-            }
-            if (profile != null && !profile.isConfigured()) {
-                item {
-                    GlassCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                "Connect a model to start",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Text(
-                                "Pick a provider and add an API key or sign in in your browser.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Button(onClick = { onConnect(profile.id) }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Connect ${profile.name}")
-                            }
+            item("search") { DiscoverSearchField(query = searchQuery, onQueryChange = onSearchChange) }
+            item("chips") {
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CategoryChip(stringResource(R.string.discover_all), selected = category == null) { category = null }
+                    UseCaseCatalog.categories.forEach { c ->
+                        val style = CategoryPalette.styleFor(c)
+                        CategoryChip(style.displayName(c), selected = category == c) {
+                            category = if (category == c) null else c
                         }
                     }
                 }
             }
-            item {
-                DiscoverCategorySections(
-                    categories = UseCaseCatalog.categories,
-                    useCases = filteredUseCases,
-                    onUseCase = onPopularUseCase,
-                    iconForCategory = ::discoverCategoryIcon,
-                )
+            if (profile != null && !profile.isConfigured()) {
+                item("connect") { ConnectModelCard(profile.name) { onConnect(profile.id) } }
             }
-            item {
-                StatCard(
-                    title = stringResource(R.string.discover_messages_week),
-                    value = state.usageTotals.requestCount.toString(),
-                    subtitle = "${state.conversations.size} active chats",
-                )
+            if (!filtering && workflowOfDay != null) {
+                item("hero") { DiscoverHeroCard(workflow = workflowOfDay, onTry = { onPopularUseCase(workflowOfDay) }) }
             }
-            item {
-                OutlinedButton(onClick = onOpenUsage, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.discover_open_activity))
-                }
+            when {
+                visible.isEmpty() ->
+                    item("empty") {
+                        Text(
+                            stringResource(R.string.discover_no_results),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                        )
+                    }
+                filtering ->
+                    items(visible, key = { it.id }) { useCase ->
+                        WorkflowVisualCard(useCase, onClick = { onPopularUseCase(useCase) }, modifier = Modifier.fillMaxWidth())
+                    }
+                else ->
+                    item("sections") {
+                        DiscoverCategorySections(
+                            categories = UseCaseCatalog.categories,
+                            useCases = visible,
+                            onUseCase = onPopularUseCase,
+                        )
+                    }
             }
-            item {
-                OutlinedButton(onClick = onOpenModels, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.settings_models_keys))
+            if (!filtering) {
+                item("shortcuts") {
+                    SettingsGroup(title = stringResource(R.string.discover_shortcuts)) {
+                        SettingsNavRow(
+                            icon = Icons.Rounded.BarChart,
+                            title = stringResource(R.string.discover_open_activity),
+                            onClick = onOpenUsage,
+                        )
+                        SettingsDivider()
+                        SettingsNavRow(
+                            icon = Icons.Rounded.Key,
+                            title = stringResource(R.string.settings_models_keys),
+                            onClick = onOpenModels,
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-private fun discoverCategoryIcon(category: String): ImageVector =
-    when (category) {
-        "Write" -> Icons.Outlined.Edit
-        "Learn" -> Icons.Outlined.School
-        "Life" -> Icons.Outlined.Home
-        "Shop" -> Icons.Outlined.ShoppingBag
-        "Work" -> Icons.Outlined.Work
-        "Privacy" -> Icons.Outlined.Lock
-        else -> Icons.Outlined.Home
+@Composable
+private fun CategoryChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = if (selected) {
+            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+        } else {
+            null
+        },
+        shape = RoundedCornerShape(50),
+        modifier = Modifier.heightIn(min = 48.dp),
+    )
+}
+
+@Composable
+private fun ConnectModelCard(
+    profileName: String,
+    onConnect: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Link, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text(
+                    stringResource(R.string.discover_connect_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(start = 10.dp).semantics { heading() },
+                )
+            }
+            Text(
+                stringResource(R.string.discover_connect_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            Button(onClick = onConnect, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.discover_connect_action, profileName))
+            }
+        }
     }
+}
