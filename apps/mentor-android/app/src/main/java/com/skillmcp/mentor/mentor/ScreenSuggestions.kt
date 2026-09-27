@@ -62,7 +62,7 @@ object ScreenSuggestions {
             QuickSuggestion("Spend limits", "Recommended USD caps for light daily chat."),
             QuickSuggestion("Theme", "Best theme settings for reading long answers."),
             QuickSuggestion("BYOK why", "Why bring-your-own-key matters vs single-vendor apps."),
-            QuickSuggestion("Share to app", "How Share into Universal AI works from other apps."),
+            QuickSuggestion("Share to app", "How Share into Lumina works from other apps."),
         )
 
     fun forScreen(screen: SuggestionScreen): List<QuickSuggestion> =

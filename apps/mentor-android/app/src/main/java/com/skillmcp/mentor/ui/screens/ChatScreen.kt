@@ -63,6 +63,8 @@ import com.skillmcp.mentor.ui.components.PromptLibrarySheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.skillmcp.mentor.R
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -281,7 +283,7 @@ fun ChatScreen(vm: MentorViewModel) {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                            Text("Universal AI", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold)
                             state.activeLlmProfile?.let {
                                 Text(
                                     it.name,

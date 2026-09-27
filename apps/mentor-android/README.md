@@ -1,10 +1,10 @@
-# Universal AI (Android)
+# Lumina (Android)
 
 Personal AI for **everyday routines** — connect **any LLM** you choose (OpenAI-compatible, Anthropic, Google AI, **Hugging Face Hub**, Ollama), with usage spend transparency, skill packs, and on-device plugins. Positioned for the use cases people actually adopt: **writing**, **study & work**, **meal and trip planning**, and **shopping research**—without locking you to one vendor.
 
 ### Why people switch from a single chatbot app
 
-| Trend (2025–2026 consumer AI) | How Universal AI fits |
+| Trend (2025–2026 consumer AI) | How Lumina fits |
 | --- | --- |
 | Writing & rewording messages | Polish message, email, and translate starters + skills |
 | School & homework help | Study coach skill + tutor-style prompts |
@@ -70,7 +70,7 @@ For **self-hosted** TGI or vLLM with an OpenAI-compatible URL, use **OpenAI-comp
 
 ### Share from other apps
 
-Use **Share** on text in any app and pick **Universal AI**. The text lands in the composer so you can add context and send.
+Use **Share** on text in any app and pick **Lumina**. The text lands in the composer so you can add context and send.
 
 ### Spend guardrails
 

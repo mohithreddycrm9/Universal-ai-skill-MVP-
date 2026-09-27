@@ -1,4 +1,4 @@
-# Go live checklist — Universal AI (Play Store)
+# Go live checklist — Lumina (Play Store)
 
 Use this checklist before publishing **1.0.0** to Google Play.
 

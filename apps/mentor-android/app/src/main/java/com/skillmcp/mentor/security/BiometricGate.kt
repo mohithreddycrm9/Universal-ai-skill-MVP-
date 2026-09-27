@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.skillmcp.mentor.R
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -126,7 +127,7 @@ fun BiometricGate(
             )
         val info =
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock Universal AI")
+                .setTitle(context.getString(R.string.unlock_app_title))
                 .setSubtitle("Confirm it's you to open chats and API keys")
                 .setAllowedAuthenticators(auth.allowed)
                 .build()

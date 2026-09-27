@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">యూనివర్సల్ AI</string>
+    <string name="app_name">Lumina</string>
     <string name="nav_chat">చాట్</string>
     <string name="nav_discover">కనుగొనండి</string>
     <string name="nav_settings">సెట్టింగ్‌లు</string>
     <string name="nav_activity">కార్యకలాపం</string>
-    <string name="widget_title">యూనివర్సల్ AI శార్ట్‌కట్‌లు</string>
+    <string name="widget_title">Lumina శార్ట్‌కట్‌లు</string>
     <string name="widget_subtitle">హోమ్ స్క్రీన్ నుండి త్వరిత పనులు</string>
     <string name="widget_morning_brief">బ్రీఫ్</string>
     <string name="widget_meal_plan">భోజనం</string>

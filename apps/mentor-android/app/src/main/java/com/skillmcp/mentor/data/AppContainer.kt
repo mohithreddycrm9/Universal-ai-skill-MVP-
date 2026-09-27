@@ -85,7 +85,7 @@ class AppContainer(context: Context) {
             llmProfileRepository = llmProfileRepository,
         )
 
-    val chatExporter = ChatExporter(database.mentorDao())
+    val chatExporter = ChatExporter(database.mentorDao(), appContext)
     val usageAnalytics = UsageAnalytics(appContext)
     val internalLaunchToken = InternalLaunchToken(userPreferences)
 }

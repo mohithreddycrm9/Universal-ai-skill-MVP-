@@ -532,7 +532,9 @@ class MentorViewModel(
 
     fun showWidgetHint() {
         markWelcomeSeen()
-        status.value = "Add widget: long-press home screen → Widgets → Universal AI"
+        status.value =
+            appContext.getString(com.skillmcp.mentor.R.string.widget_picker_hint_prefix) +
+                appContext.getString(com.skillmcp.mentor.R.string.widget_title)
     }
 
     fun setRequireBiometric(enabled: Boolean) {

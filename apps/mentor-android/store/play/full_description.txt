@@ -1,4 +1,4 @@
-Universal AI is a personal assistant that lets you bring your own API keys and choose the model you trust—OpenAI-compatible APIs, Anthropic Claude, Google AI, Hugging Face Hub, or Ollama on your network.
+Lumina is a personal assistant that lets you bring your own API keys and choose the model you trust—OpenAI-compatible APIs, Anthropic Claude, Google AI, Hugging Face Hub, or Ollama on your network.
 
 WHY UNIVERSAL AI
 • Connect providers with API key, Google, email, or mobile sign-in flows

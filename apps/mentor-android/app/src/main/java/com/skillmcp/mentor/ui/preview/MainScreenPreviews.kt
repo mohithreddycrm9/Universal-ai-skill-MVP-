@@ -89,7 +89,7 @@ internal fun ChatScreenPreviewContent(state: MentorUiState) {
             CenterAlignedTopAppBar(
                 title = {
                     Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                        Text("Universal AI", fontWeight = FontWeight.Bold)
+                        Text("Lumina", fontWeight = FontWeight.Bold)
                         profile?.let {
                             Text(
                                 it.name,

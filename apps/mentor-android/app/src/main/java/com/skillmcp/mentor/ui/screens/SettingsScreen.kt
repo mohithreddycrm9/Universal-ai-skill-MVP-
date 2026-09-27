@@ -33,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.skillmcp.mentor.R
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.skillmcp.mentor.security.appLockAuthenticators
@@ -345,7 +347,9 @@ fun SettingsScreen(vm: MentorViewModel) {
                 Text("Activity")
             }
             Text(
-                "Add the home screen widget: long-press launcher → Widgets → Universal AI quick actions.",
+                stringResource(R.string.settings_widget_hint_prefix) +
+                    stringResource(R.string.widget_title) +
+                    ".",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -381,7 +385,7 @@ fun SettingsScreen(vm: MentorViewModel) {
             )
 
             Text("About", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            Text("Universal AI ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            Text("${stringResource(R.string.app_name)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
             val supportEmail = context.getString(com.skillmcp.mentor.R.string.support_email)
             TextButton(
                 onClick = {

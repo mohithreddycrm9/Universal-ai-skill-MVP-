@@ -116,7 +116,7 @@ object UseCaseCatalog {
             PopularUseCase(
                 id = "byok-privacy",
                 title = "My keys, my models",
-                subtitle = "Why Universal AI is different",
+                subtitle = "Why Lumina is different",
                 category = "Privacy",
                 prompt =
                     "Explain how this app lets me use my own API keys and Hugging Face models, track usage spend, " +

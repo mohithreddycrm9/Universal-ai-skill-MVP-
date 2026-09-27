@@ -17,7 +17,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.skillmcp.mentor.R
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.mentor.PopularUseCase
 
@@ -43,7 +45,7 @@ fun GuidedSetupSheet(
             Text("Setup (${step + 1}/4)", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             when (step) {
                 0 -> {
-                    Text("Welcome to Universal AI", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Text(
                         "We'll connect a model, try one message, and pick a starter workflow. You can change everything later in Settings.",
                         style = MaterialTheme.typography.bodyMedium,

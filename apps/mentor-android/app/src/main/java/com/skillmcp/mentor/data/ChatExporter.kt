@@ -1,12 +1,17 @@
 package com.skillmcp.mentor.data
 
+import android.content.Context
+import com.skillmcp.mentor.R
 import com.skillmcp.mentor.data.db.ChatMessageEntity
 import com.skillmcp.mentor.data.db.MentorDao
 import com.skillmcp.mentor.data.db.ProjectEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class ChatExporter(private val dao: MentorDao) {
+class ChatExporter(
+    private val dao: MentorDao,
+    private val appContext: Context,
+) {
     suspend fun exportConversationMarkdown(conversationId: String): String =
         withContext(Dispatchers.IO) {
             val project = dao.allProjects().find { it.id == conversationId }
@@ -30,7 +35,7 @@ class ChatExporter(private val dao: MentorDao) {
         withContext(Dispatchers.IO) {
             val projects = dao.allProjects().sortedBy { it.updatedAt }
             buildString {
-                appendLine("# Universal AI — chat export")
+                appendLine("# ${appContext.getString(R.string.chat_export_all_header)}")
                 appendLine()
                 projects.forEach { project ->
                     val messages =

@@ -1,6 +1,6 @@
 # Ollama on your LAN
 
-Universal AI talks to Ollama over **HTTP** on your local network. Android blocks cleartext by default; this app allows it only for:
+Lumina talks to Ollama over **HTTP** on your local network. Android blocks cleartext by default; this app allows it only for:
 
 - `localhost` / `127.0.0.1`
 - `10.0.2.2` (Android emulator → your PC; **not** available on a physical phone)

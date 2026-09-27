@@ -7,6 +7,7 @@ import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import com.skillmcp.mentor.MainActivity
+import com.skillmcp.mentor.R
 import com.skillmcp.mentor.MentorApplication
 import com.skillmcp.mentor.navigation.AppLaunch
 import kotlinx.coroutines.runBlocking
@@ -14,7 +15,7 @@ import kotlinx.coroutines.runBlocking
 class VoiceChatTileService : TileService() {
     override fun onStartListening() {
         qsTile?.apply {
-            label = "Universal AI voice"
+            label = getString(R.string.voice_tile_label)
             state = Tile.STATE_ACTIVE
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 subtitle = "Open chat with microphone"
