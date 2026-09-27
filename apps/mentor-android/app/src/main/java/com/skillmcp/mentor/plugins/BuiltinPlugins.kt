@@ -61,7 +61,7 @@ object BuiltinPlugins {
                 id = "fetch",
                 title = "Fetch page text",
                 description = "Pull plain text from a public HTTPS URL (max 24 KB).",
-                commands = listOf("/fetch https://example.com"),
+                commands = listOf("/fetch <https link>"),
                 kind = PluginKind.OPTIONAL,
             ),
         )

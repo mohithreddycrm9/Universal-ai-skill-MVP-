@@ -38,7 +38,7 @@ object ScreenSuggestions {
         listOf(
             QuickSuggestion("Meal skill", "Install meal planner skill and run my first weekly plan."),
             QuickSuggestion("Shop skill", "Use shopping research skill to compare two phones."),
-            QuickSuggestion("Study coach", "Sample first session with Study coach installed."),
+            QuickSuggestion("Study coach", "Run a first session with the Study coach skill."),
             QuickSuggestion("Built-in /calc", "Show a real-world example using /calc in chat."),
             QuickSuggestion("Optional /fetch", "When is /fetch appropriate for research?"),
             QuickSuggestion("Which skill?", "Which built-in skill fits learning a new language?"),

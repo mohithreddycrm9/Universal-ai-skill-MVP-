@@ -13,6 +13,10 @@ data class CatalogSkill(
 )
 
 object SkillCatalog {
+    /**
+     * Every entry points at a folder that contains a SKILL.md (checked 2026-09-27), so installing works.
+     * Earlier entries pointed at repositories without a SKILL.md and could never install.
+     */
     val featured: List<CatalogSkill> =
         listOf(
             CatalogSkill(
@@ -20,55 +24,63 @@ object SkillCatalog {
                 title = "Skill trust & safety",
                 description = "Discover, verify, and use agent skills with a security-first workflow.",
                 category = "Agent tooling",
-                sourceUrl = "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+                sourceUrl = "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/tree/main/skills/universal-skill-trust",
                 trustTier = "Official",
             ),
             CatalogSkill(
-                id = "anthropic-skills",
-                title = "Anthropic skill examples",
-                description = "Reference skill packs for writing, analysis, and workflows.",
+                id = "anthropic-pdf",
+                title = "PDF toolkit",
+                description = "Read, fill, merge, and summarize PDF documents step by step.",
                 category = "Productivity",
-                sourceUrl = "https://github.com/anthropics/skills",
+                sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/pdf",
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "openai-cookbook",
-                title = "OpenAI cookbook patterns",
-                description = "Prompting and API patterns for assistants and tools.",
-                category = "Coding",
-                sourceUrl = "https://github.com/openai/openai-cookbook",
+                id = "anthropic-docx",
+                title = "Word documents",
+                description = "Draft and revise .docx documents with tracked structure and styles.",
+                category = "Productivity",
+                sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/docx",
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "cursor-skills",
-                title = "Cursor agent skills",
-                description = "Patterns for IDE agents, hooks, and project context.",
-                category = "Coding",
-                sourceUrl = "https://github.com/getcursor/cursor",
+                id = "anthropic-internal-comms",
+                title = "Internal comms",
+                description = "Write status updates, newsletters, and FAQs in a clear company voice.",
+                category = "Writing",
+                sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/internal-comms",
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "langchain-templates",
-                title = "LangChain templates",
-                description = "Chains and agents for retrieval, tools, and chat.",
+                id = "anthropic-skill-creator",
+                title = "Skill creator",
+                description = "Design and test your own skill pack with a guided checklist.",
                 category = "Agent tooling",
-                sourceUrl = "https://github.com/langchain-ai/langchain",
+                sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "microsoft-ai-skills",
-                title = "Microsoft AI samples",
-                description = "Samples for copilots, RAG, and responsible AI checks.",
-                category = "Enterprise",
-                sourceUrl = "https://github.com/microsoft/ai-agents-for-beginners",
+                id = "anthropic-frontend-design",
+                title = "Frontend design",
+                description = "Plan distinctive, production-grade web UI with clear design choices.",
+                category = "Coding",
+                sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/frontend-design",
                 trustTier = "Curated",
             ),
             CatalogSkill(
-                id = "huggingface-skills",
-                title = "Hugging Face agents",
-                description = "ML workflows, datasets, and inference patterns.",
-                category = "ML",
-                sourceUrl = "https://github.com/huggingface/agents-course",
+                id = "wshobson-mobile-android-design",
+                title = "Android design (Material 3)",
+                description = "Material 3 and Jetpack Compose layout, navigation, and component guidance.",
+                category = "Coding",
+                sourceUrl = "https://github.com/wshobson/agents/tree/main/plugins/ui-design/skills/mobile-android-design",
+                trustTier = "Curated",
+            ),
+            CatalogSkill(
+                id = "wshobson-accessibility",
+                title = "Accessibility compliance",
+                description = "WCAG checks and mobile accessibility patterns for inclusive apps.",
+                category = "Coding",
+                sourceUrl = "https://github.com/wshobson/agents/tree/main/plugins/ui-design/skills/accessibility-compliance",
                 trustTier = "Curated",
             ),
         )
