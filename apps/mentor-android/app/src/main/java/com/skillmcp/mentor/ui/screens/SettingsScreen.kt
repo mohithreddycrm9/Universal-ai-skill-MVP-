@@ -1,6 +1,47 @@
 package com.skillmcp.mentor.ui.screens
 
 import android.Manifest
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.material.icons.rounded.CloudSync
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.Extension
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Gavel
+import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.QueryStats
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import com.skillmcp.mentor.ui.components.settings.SettingsBlock
+import com.skillmcp.mentor.ui.components.settings.SettingsDivider
+import com.skillmcp.mentor.ui.components.settings.SettingsGroup
+import com.skillmcp.mentor.ui.components.settings.SettingsNavRow
+import com.skillmcp.mentor.ui.components.settings.SettingsSwitchRow
+import com.skillmcp.mentor.ui.theme.BrandColors
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -48,7 +89,6 @@ import com.skillmcp.mentor.ui.components.TabSuggestions
 import com.skillmcp.mentor.ui.components.settings.SettingsProfileHeader
 import com.skillmcp.mentor.ui.theme.MentorDimens
 import com.skillmcp.mentor.ui.theme.ThemeMode
-import com.skillmcp.mentor.ui.theme.userLabel
 
 @Composable
 fun SettingsScreen(vm: MentorViewModel) {
@@ -59,6 +99,7 @@ fun SettingsScreen(vm: MentorViewModel) {
 }
 
 /** Stateless settings UI; snapshot tests pass a no-op PreviewSettingsActions (src/test). */
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreenContent(
     state: com.skillmcp.mentor.ui.MentorUiState,
@@ -114,10 +155,7 @@ fun SettingsScreenContent(
             title = { Text(stringResource(R.string.settings_restore_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Downloads the ciphertext from your backup URL and merges chats, messages, and skills. " +
-                            "Use the same passphrase you used when uploading a v2 backup.",
-                    )
+                    Text(stringResource(R.string.settings_restore_body))
                     OutlinedTextField(
                         value = restorePassphrase,
                         onValueChange = { restorePassphrase = it },
@@ -180,10 +218,7 @@ fun SettingsScreenContent(
             onDismissRequest = { confirmErase = false },
             title = { Text(stringResource(R.string.settings_erase_title)) },
             text = {
-                Text(
-                    "Deletes chats, usage history, saved prompts, skills, and all stored API keys on this device. " +
-                        "This cannot be undone.",
-                )
+                Text(stringResource(R.string.settings_erase_body))
             },
             confirmButton = {
                 TextButton(
@@ -217,387 +252,419 @@ fun SettingsScreenContent(
         }
     }
 
+    var showBackup by remember { mutableStateOf(false) }
+    var showVoiceAdvanced by remember { mutableStateOf(false) }
     AppBackground {
         Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .verticalScroll(scroll)
-                    .padding(MentorDimens.ScreenHorizontal),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            Text(
+                stringResource(R.string.nav_settings),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+            )
             SettingsProfileHeader(
                 displayName = prefs.displayName,
                 profile = state.activeLlmProfile,
-            )
-            com.skillmcp.mentor.ui.components.ScreenHeader(
-                title = stringResource(R.string.nav_settings),
-                subtitle = stringResource(R.string.settings_subtitle),
-            )
-            OutlinedTextField(
-                value = prefs.displayName,
-                onValueChange = { name -> vm.updatePrefs { p -> p.copy(displayName = name) } },
-                label = { Text(stringResource(R.string.settings_your_name)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                onClick = { vm.requestOpenTab("personalization") },
             )
 
+            SettingsGroup(title = stringResource(R.string.settings_group_assistant)) {
+                SettingsNavRow(
+                    icon = Icons.Rounded.AutoAwesome,
+                    title = stringResource(R.string.personalization_title),
+                    subtitle = stringResource(R.string.settings_personalization_sub),
+                    onClick = { vm.requestOpenTab("personalization") },
+                    tint = BrandColors.Coral,
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Hub,
+                    title = stringResource(R.string.settings_models_keys),
+                    subtitle = state.activeLlmProfile?.let { "${it.name} · ${it.model}" }
+                        ?: stringResource(R.string.settings_models_sub),
+                    onClick = { vm.requestOpenTab("models") },
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Extension,
+                    title = stringResource(R.string.settings_add_abilities),
+                    subtitle = stringResource(R.string.settings_abilities_sub),
+                    onClick = { vm.requestOpenTab("skills") },
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Insights,
+                    title = stringResource(R.string.nav_activity),
+                    subtitle = stringResource(R.string.settings_activity_sub),
+                    onClick = { vm.requestOpenTab("usage") },
+                )
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_appearance)) {
+                SettingsBlock {
+                    Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.labelLarge)
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        ThemeMode.entries.forEachIndexed { index, mode ->
+                            SegmentedButton(
+                                selected = prefs.themeMode == mode,
+                                onClick = { vm.updatePrefs { it.copy(themeMode = mode) } },
+                                shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
+                                label = { Text(mode.localizedLabel(), maxLines = 1) },
+                            )
+                        }
+                    }
+                }
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.Palette,
+                    title = stringResource(R.string.settings_dynamic_color),
+                    subtitle = stringResource(R.string.settings_dynamic_color_sub),
+                    checked = prefs.useDynamicColor,
+                    onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(useDynamicColor = on) } },
+                )
+                SettingsDivider()
+                SettingsBlock {
+                    Text(stringResource(R.string.settings_font_scale), style = MaterialTheme.typography.labelLarge)
+                    Slider(
+                        value = prefs.fontScale,
+                        onValueChange = { vm.updatePrefs { p -> p.copy(fontScale = it) } },
+                        valueRange = 0.85f..1.35f,
+                    )
+                    if (!prefs.useDynamicColor) {
+                        Text(stringResource(R.string.settings_accent_hue), style = MaterialTheme.typography.labelLarge)
+                        Slider(
+                            value = prefs.accentHue,
+                            onValueChange = { vm.updatePrefs { p -> p.copy(accentHue = it) } },
+                            valueRange = 0f..360f,
+                        )
+                    }
+                }
+                SettingsDivider()
+                SettingsBlock {
+                    Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.labelLarge)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            "system" to stringResource(R.string.settings_language_system),
+                            "en" to "English",
+                            "hi" to "हिन्दी",
+                            "te" to "తెలుగు",
+                            "ta" to "தமிழ்",
+                        ).forEach { (tag, label) ->
+                            FilterChip(
+                                selected = prefs.appLanguageTag == tag,
+                                onClick = {
+                                    vm.updatePrefs { p ->
+                                        val voice =
+                                            when (tag) {
+                                                "hi" -> "hi-IN"
+                                                "te" -> "te-IN"
+                                                "ta" -> "ta-IN"
+                                                "en" -> "en-US"
+                                                else -> p.voiceLocaleTag
+                                            }
+                                        p.copy(appLanguageTag = tag, voiceLocaleTag = voice)
+                                    }
+                                },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                }
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_voice)) {
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.RecordVoiceOver,
+                    title = stringResource(R.string.settings_speak_replies),
+                    subtitle = stringResource(R.string.settings_speak_replies_sub),
+                    checked = prefs.speakResponses,
+                    onCheckedChange = { vm.updatePrefs { p -> p.copy(speakResponses = it) } },
+                )
+                SettingsDivider()
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.Mic,
+                    title = stringResource(R.string.settings_hands_free),
+                    subtitle = stringResource(R.string.settings_hands_free_sub),
+                    checked = prefs.voiceHandsFree,
+                    onCheckedChange = { vm.updatePrefs { p -> p.copy(voiceHandsFree = it) } },
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Tune,
+                    title = stringResource(R.string.settings_voice_advanced),
+                    subtitle = stringResource(R.string.settings_voice_advanced_sub),
+                    onClick = { showVoiceAdvanced = !showVoiceAdvanced },
+                    showChevron = false,
+                )
+                AnimatedVisibility(showVoiceAdvanced) {
+                    SettingsBlock {
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = prefs.voiceLocaleTag,
+                            onValueChange = { vm.updatePrefs { p -> p.copy(voiceLocaleTag = it) } },
+                            label = { Text(stringResource(R.string.settings_voice_locale)) },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = prefs.elevenLabsApiKey,
+                            onValueChange = { vm.updatePrefs { p -> p.copy(elevenLabsApiKey = it) } },
+                            label = { Text(stringResource(R.string.settings_eleven_key)) },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = prefs.elevenLabsVoiceId,
+                            onValueChange = { vm.updatePrefs { p -> p.copy(elevenLabsVoiceId = it) } },
+                            label = { Text(stringResource(R.string.settings_eleven_voice)) },
+                            singleLine = true,
+                        )
+                    }
+                }
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_morning_brief)) {
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.WbSunny,
+                    title = stringResource(R.string.settings_brief_reminder),
+                    subtitle = stringResource(R.string.settings_brief_reminder_sub),
+                    checked = prefs.dailyBriefReminder,
+                    onCheckedChange = onDailyBriefToggle,
+                )
+                SettingsDivider()
+                SettingsSwitchRow(
+                    icon = null,
+                    title = stringResource(R.string.settings_brief_tasks),
+                    checked = prefs.morningBriefTasks,
+                    onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefTasks = on) } },
+                )
+                SettingsSwitchRow(
+                    icon = null,
+                    title = stringResource(R.string.settings_brief_calendar),
+                    subtitle = stringResource(R.string.settings_brief_calendar_sub),
+                    checked = prefs.morningBriefCalendar,
+                    onCheckedChange = { on ->
+                        if (!on) {
+                            vm.updatePrefs { p -> p.copy(morningBriefCalendar = false) }
+                        } else if (
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) ==
+                                PackageManager.PERMISSION_GRANTED
+                        ) {
+                            vm.updatePrefs { p -> p.copy(morningBriefCalendar = true) }
+                        } else {
+                            calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
+                        }
+                    },
+                )
+                SettingsSwitchRow(
+                    icon = null,
+                    title = stringResource(R.string.settings_brief_weather),
+                    checked = prefs.morningBriefWeather,
+                    onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefWeather = on) } },
+                )
+                if (prefs.morningBriefWeather) {
+                    SettingsBlock {
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = prefs.weatherCity,
+                            onValueChange = { city -> vm.updatePrefs { p -> p.copy(weatherCity = city) } },
+                            label = { Text(stringResource(R.string.settings_brief_city)) },
+                            singleLine = true,
+                        )
+                    }
+                }
+                SettingsSwitchRow(
+                    icon = null,
+                    title = stringResource(R.string.settings_brief_news),
+                    checked = prefs.morningBriefNews,
+                    onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefNews = on) } },
+                )
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_group_privacy)) {
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.Fingerprint,
+                    title = stringResource(R.string.settings_app_lock),
+                    subtitle = if (appLockAuth.canPrompt) null else stringResource(R.string.settings_app_lock_unavailable),
+                    checked = prefs.requireBiometricUnlock,
+                    onCheckedChange = vm::setRequireBiometric,
+                    enabled = appLockAuth.canPrompt,
+                )
+                SettingsDivider()
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.QueryStats,
+                    title = stringResource(R.string.settings_analytics),
+                    subtitle = stringResource(R.string.settings_analytics_sub),
+                    checked = analyticsOptIn,
+                    onCheckedChange = {
+                        analyticsOptIn = it
+                        vm.setAnalyticsOptIn(it)
+                    },
+                )
+                SettingsDivider()
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.BugReport,
+                    title = stringResource(R.string.settings_crash),
+                    subtitle = stringResource(R.string.settings_crash_sub),
+                    checked = prefs.crashReportingOptIn,
+                    onCheckedChange = vm::setCrashReportingOptIn,
+                )
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_group_data)) {
+                SettingsNavRow(
+                    icon = Icons.Rounded.Description,
+                    title = stringResource(R.string.settings_export_markdown),
+                    subtitle = stringResource(R.string.settings_export_sub),
+                    onClick = vm::exportChatsMarkdown,
+                    showChevron = false,
+                )
+                state.lastExportMarkdown?.let { md ->
+                    SettingsBlock {
+                        SelectionContainer {
+                            OutlinedTextField(
+                                value = md.take(4000),
+                                onValueChange = {},
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text(stringResource(R.string.settings_export_preview)) },
+                                minLines = 4,
+                            )
+                        }
+                        TextButton(onClick = vm::clearExportMarkdown) { Text(stringResource(R.string.settings_clear_export)) }
+                    }
+                }
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.CloudSync,
+                    title = stringResource(R.string.settings_sync_backup),
+                    subtitle = stringResource(R.string.settings_backup_sub),
+                    onClick = { showBackup = !showBackup },
+                    showChevron = false,
+                )
+                AnimatedVisibility(showBackup) {
+                    SettingsBlock {
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = prefs.syncWebSocketUrl,
+                            onValueChange = vm::updateSyncWebSocketUrl,
+                            label = { Text(stringResource(R.string.settings_sync_url)) },
+                            supportingText = { Text(stringResource(R.string.settings_sync_url_hint)) },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = prefs.backupUploadUrl,
+                            onValueChange = vm::updateBackupUploadUrl,
+                            label = { Text(stringResource(R.string.settings_backup_url)) },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = prefs.backupBearerToken,
+                            onValueChange = { vm.updatePrefs { p -> p.copy(backupBearerToken = it) } },
+                            label = { Text(stringResource(R.string.settings_backup_token)) },
+                            singleLine = true,
+                        )
+                        SettingsSwitchRow(
+                            icon = null,
+                            title = stringResource(R.string.settings_include_keys),
+                            subtitle = stringResource(R.string.settings_include_keys_sub),
+                            checked = prefs.backupIncludeApiKeys,
+                            onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(backupIncludeApiKeys = on) } },
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = vm::promptBackupPassphrase) { Text(stringResource(R.string.settings_run_backup)) }
+                            OutlinedButton(onClick = vm::promptRestorePassphrase) { Text(stringResource(R.string.action_restore)) }
+                        }
+                    }
+                }
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.DeleteForever,
+                    title = stringResource(R.string.settings_erase_all),
+                    subtitle = stringResource(R.string.settings_erase_sub),
+                    onClick = { confirmErase = true },
+                    tint = MaterialTheme.colorScheme.error,
+                    titleColor = MaterialTheme.colorScheme.error,
+                    showChevron = false,
+                )
+            }
+
+            SettingsGroup(title = stringResource(R.string.settings_about)) {
+                SettingsNavRow(
+                    icon = Icons.Rounded.Shield,
+                    title = stringResource(R.string.settings_privacy_policy),
+                    onClick = { showPrivacy = true },
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Public,
+                    title = stringResource(R.string.settings_privacy_web),
+                    onClick = {
+                        val url = context.getString(com.skillmcp.mentor.R.string.privacy_policy_url)
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    },
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Gavel,
+                    title = stringResource(R.string.settings_terms),
+                    onClick = { showTerms = true },
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Code,
+                    title = stringResource(R.string.settings_licenses),
+                    onClick = { showLicenses = true },
+                )
+                SettingsDivider()
+                val supportEmail = context.getString(com.skillmcp.mentor.R.string.support_email)
+                SettingsNavRow(
+                    icon = Icons.Rounded.Email,
+                    title = stringResource(R.string.settings_contact_support),
+                    subtitle = supportEmail,
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:$supportEmail") },
+                        )
+                    },
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    icon = Icons.Rounded.Info,
+                    title = stringResource(R.string.app_name),
+                    subtitle = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+                    onClick = {},
+                    showChevron = false,
+                )
+            }
+            Text(
+                stringResource(R.string.settings_keys_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
             TabSuggestions(
                 title = stringResource(R.string.settings_ask),
                 suggestions = ScreenSuggestions.forScreen(SuggestionScreen.SETTINGS),
                 onSelect = vm::openChatWithSuggestion,
             )
-
-            Text(stringResource(R.string.settings_privacy_convenience), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            RowSwitch(
-                label = "Require biometric unlock",
-                checked = prefs.requireBiometricUnlock,
-                onCheckedChange = vm::setRequireBiometric,
-                enabled = appLockAuth.canPrompt,
-            )
-            if (!appLockAuth.canPrompt) {
-                Text(
-                    "Set a screen lock (PIN, pattern, or password) in Android Settings to enable app lock.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            RowSwitch(
-                label = "Daily morning brief reminder",
-                checked = prefs.dailyBriefReminder,
-                onCheckedChange = onDailyBriefToggle,
-            )
-            Text(stringResource(R.string.settings_morning_brief), style = MaterialTheme.typography.titleSmall)
-            RowSwitch(
-                label = "Tasks & priorities",
-                checked = prefs.morningBriefTasks,
-                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefTasks = on) } },
-            )
-            RowSwitch(
-                label = "Calendar (events shared with your AI provider in the brief)",
-                checked = prefs.morningBriefCalendar,
-                onCheckedChange = { on ->
-                    if (!on) {
-                        vm.updatePrefs { p -> p.copy(morningBriefCalendar = false) }
-                    } else if (
-                        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) ==
-                            PackageManager.PERMISSION_GRANTED
-                    ) {
-                        vm.updatePrefs { p -> p.copy(morningBriefCalendar = true) }
-                    } else {
-                        calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
-                    }
-                },
-            )
-            RowSwitch(
-                label = "Weather",
-                checked = prefs.morningBriefWeather,
-                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefWeather = on) } },
-            )
-            if (prefs.morningBriefWeather) {
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = prefs.weatherCity,
-                    onValueChange = { city -> vm.updatePrefs { p -> p.copy(weatherCity = city) } },
-                    label = { Text("Weather city (e.g. Hyderabad)") },
-                    singleLine = true,
-                )
-            }
-            RowSwitch(
-                label = "News headlines",
-                checked = prefs.morningBriefNews,
-                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefNews = on) } },
-            )
-            RowSwitch(
-                label = "Help improve Discover (on-device only)",
-                checked = analyticsOptIn,
-                onCheckedChange = {
-                    analyticsOptIn = it
-                    vm.setAnalyticsOptIn(it)
-                },
-            )
-            RowSwitch(
-                label = "Send anonymous crash logs (opt-in)",
-                checked = prefs.crashReportingOptIn,
-                onCheckedChange = vm::setCrashReportingOptIn,
-            )
-            Text(
-                "When enabled, uncaught errors are recorded locally to help diagnose crashes.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            RowSwitch(
-                label = "Hands-free voice (listen after each reply)",
-                checked = prefs.voiceHandsFree,
-                onCheckedChange = { vm.updatePrefs { p -> p.copy(voiceHandsFree = it) } },
-            )
-            OutlinedButton(onClick = vm::exportChatsMarkdown, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_export_markdown))
-            }
-            state.lastExportMarkdown?.let { md ->
-                SelectionContainer {
-                    OutlinedTextField(
-                        value = md.take(4000),
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Export preview (copy)") },
-                        minLines = 4,
-                    )
-                }
-                TextButton(onClick = vm::clearExportMarkdown) { Text(stringResource(R.string.settings_clear_export)) }
-            }
-            Text(stringResource(R.string.settings_advanced), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            OutlinedButton(onClick = { vm.requestOpenTab("models") }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_models_keys))
-            }
-            OutlinedButton(onClick = { vm.requestOpenTab("skills") }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_add_abilities))
-            }
-            OutlinedButton(onClick = { vm.requestOpenTab("usage") }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.nav_activity))
-            }
-            Text(
-                stringResource(R.string.settings_widget_hint_prefix) +
-                    stringResource(R.string.widget_title) +
-                    ".",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OutlinedButton(onClick = { showPrivacy = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Privacy policy (in app)")
-            }
-            OutlinedButton(
-                onClick = {
-                    val url = context.getString(com.skillmcp.mentor.R.string.privacy_policy_url)
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Privacy policy (web)")
-            }
-            OutlinedButton(onClick = { showTerms = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_terms))
-            }
-            OutlinedButton(onClick = { showLicenses = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_licenses))
-            }
-            OutlinedButton(
-                onClick = { confirmErase = true },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.settings_erase_all))
-            }
-            Text(
-                "API keys and backup tokens live in EncryptedSharedPreferences (Android Keystore). " +
-                    "Turn on “Include API keys in encrypted backup” to export them inside the ciphertext.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Text(stringResource(R.string.settings_about), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            Text("${stringResource(R.string.app_name)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-            val supportEmail = context.getString(com.skillmcp.mentor.R.string.support_email)
-            TextButton(
-                onClick = {
-                    context.startActivity(
-                        Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:$supportEmail")
-                        },
-                    )
-                },
-            ) {
-                Text(
-                    context.getString(com.skillmcp.mentor.R.string.support_email_label),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            listOf("system" to "System", "en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்").forEach { (tag, label) ->
-                val selected = prefs.appLanguageTag == tag
-                if (selected) {
-                    Button(onClick = { }, modifier = Modifier.fillMaxWidth()) {
-                        Text("✓ $label")
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = {
-                            vm.updatePrefs { p ->
-                                val voice =
-                                    when (tag) {
-                                        "hi" -> "hi-IN"
-                                        "te" -> "te-IN"
-                                        "ta" -> "ta-IN"
-                                        "en" -> "en-US"
-                                        else -> p.voiceLocaleTag
-                                    }
-                                p.copy(appLanguageTag = tag, voiceLocaleTag = voice)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(label)
-                    }
-                }
-            }
-
-            Text(stringResource(R.string.settings_response_style), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            com.skillmcp.mentor.llm.ModelPreset.entries.forEach { preset ->
-                val selected = state.prefs.modelPreset == preset
-                if (selected) {
-                    Button(onClick = { }, modifier = Modifier.fillMaxWidth()) {
-                        Text("✓ ${preset.label} — ${preset.hint}")
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = { vm.setModelPreset(preset) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("${preset.label} — ${preset.hint}")
-                    }
-                }
-            }
-
-            Text(stringResource(R.string.settings_assistant), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.focusTopic,
-                onValueChange = vm::updateFocusTopic,
-                label = { Text(stringResource(R.string.settings_focus_topic)) },
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.assistantSystemPrompt,
-                onValueChange = { vm.updatePrefs { p -> p.copy(assistantSystemPrompt = it) } },
-                label = { Text(stringResource(R.string.settings_system_instructions)) },
-                minLines = 3,
-            )
-            Text(
-                "Manage API keys and models under Settings → Models & API keys.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleMedium)
-            RowSwitch(
-                label = "Use wallpaper colours (Material You)",
-                checked = prefs.useDynamicColor,
-                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(useDynamicColor = on) } },
-            )
-            ThemeMode.entries.forEach { mode ->
-                val selected = prefs.themeMode == mode
-                if (selected) {
-                    Button(onClick = { }, modifier = Modifier.fillMaxWidth()) {
-                        Text("✓ ${mode.userLabel()}")
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = { vm.updatePrefs { it.copy(themeMode = mode) } },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(mode.userLabel())
-                    }
-                }
-            }
-            Text(stringResource(R.string.settings_accent_hue))
-            Slider(
-                value = prefs.accentHue,
-                onValueChange = { vm.updatePrefs { p -> p.copy(accentHue = it) } },
-                valueRange = 0f..360f,
-            )
-            Text(stringResource(R.string.settings_font_scale))
-            Slider(
-                value = prefs.fontScale,
-                onValueChange = { vm.updatePrefs { p -> p.copy(fontScale = it) } },
-                valueRange = 0.85f..1.35f,
-            )
-
-            Text(stringResource(R.string.settings_voice), style = MaterialTheme.typography.titleMedium)
-            RowSwitch(
-                label = "Speak replies aloud",
-                checked = prefs.speakResponses,
-                onCheckedChange = { vm.updatePrefs { p -> p.copy(speakResponses = it) } },
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.voiceLocaleTag,
-                onValueChange = { vm.updatePrefs { p -> p.copy(voiceLocaleTag = it) } },
-                label = { Text("Voice locale (e.g. en-US, es-ES)") },
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.elevenLabsApiKey,
-                onValueChange = { vm.updatePrefs { p -> p.copy(elevenLabsApiKey = it) } },
-                label = { Text("ElevenLabs API key (optional)") },
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.elevenLabsVoiceId,
-                onValueChange = { vm.updatePrefs { p -> p.copy(elevenLabsVoiceId = it) } },
-                label = { Text("ElevenLabs voice id") },
-            )
-
-            Text(stringResource(R.string.settings_sync_backup), style = MaterialTheme.typography.titleMedium)
-            Text(
-                "Optional: point to your own WebSocket sync relay (for example ws://YOUR_IP:8787/sync).",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.syncWebSocketUrl,
-                onValueChange = vm::updateSyncWebSocketUrl,
-                label = { Text("WebSocket sync URL") },
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.backupUploadUrl,
-                onValueChange = vm::updateBackupUploadUrl,
-                label = { Text("Encrypted backup PUT URL") },
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = prefs.backupBearerToken,
-                onValueChange = { vm.updatePrefs { p -> p.copy(backupBearerToken = it) } },
-                label = { Text("Backup bearer token") },
-            )
-            RowSwitch(
-                label = "Include API keys in encrypted backup",
-                checked = prefs.backupIncludeApiKeys,
-                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(backupIncludeApiKeys = on) } },
-            )
-            Text(
-                "Keys are encrypted with your passphrase or device key — never sent in plain text.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Button(onClick = vm::promptBackupPassphrase, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_run_backup))
-            }
-            OutlinedButton(onClick = vm::promptRestorePassphrase, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_restore_backup))
-            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
-private fun RowSwitch(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    enabled: Boolean = true,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            label,
-            modifier = Modifier.weight(1f).padding(end = 8.dp),
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+private fun ThemeMode.localizedLabel(): String =
+    when (this) {
+        ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+        ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+        ThemeMode.DARK -> stringResource(R.string.theme_dark)
     }
-}
