@@ -4,6 +4,12 @@ import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import com.skillmcp.mentor.ui.theme.BrandColors
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +37,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.ui.util.performLongPressHaptic
 import com.skillmcp.mentor.ui.util.rememberHapticView
@@ -52,27 +57,38 @@ fun ChatMessageContent(
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = {
-                        view.performLongPressHaptic()
-                        menuOpen = true
-                    },
+    val longPress =
+        Modifier.combinedClickable(
+            onClick = {},
+            onLongClick = {
+                view.performLongPressHaptic()
+                menuOpen = true
+            },
+        )
+    if (isUser) {
+        // User turns: tinted bubble on the right, max ~85% width.
+        BoxWithConstraints(
+            modifier = modifier.fillMaxWidth().padding(vertical = 6.dp),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            Surface(
+                modifier = Modifier.widthIn(max = maxWidth * 0.85f).then(longPress),
+                shape = UserBubbleShape,
+                color = userBubbleColor(),
+            ) {
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                 )
-                .padding(vertical = 10.dp),
-    ) {
-        if (isUser) {
-            Text(
-                text = content,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else {
+            }
+        }
+    } else {
+        // Assistant turns: full width on the left, no container.
+        Column(
+            modifier = modifier.fillMaxWidth().then(longPress).padding(vertical = 10.dp),
+        ) {
             AssistantMarkdownText(content = content, showCursor = isStreaming)
             if (!isStreaming && modelLabel != null) {
                 Text(
@@ -177,3 +193,17 @@ private fun AssistantMarkdownText(
         }
     }
 }
+
+private val UserBubbleShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 6.dp, bottomStart = 20.dp)
+
+/** Indigo at 11% on light surfaces; #1E2130 on dark surfaces. */
+@Composable
+internal fun userBubbleColor(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+        UserBubbleDark
+    } else {
+        BrandColors.Indigo.copy(alpha = USER_BUBBLE_LIGHT_ALPHA)
+    }
+
+internal const val USER_BUBBLE_LIGHT_ALPHA = 0.11f
+internal val UserBubbleDark = Color(0xFF1E2130)
