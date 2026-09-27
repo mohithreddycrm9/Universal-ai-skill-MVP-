@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
     id("app.cash.paparazzi") version "1.3.5"
+    id("androidx.baselineprofile")
 }
 
 android {
@@ -109,6 +110,9 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    // Installs the generated Baseline Profile on devices without Play (sideload / internal testing).
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
+    baselineProfile(project(":macrobenchmark"))
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
@@ -153,6 +157,12 @@ dependencies {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+baselineProfile {
+    // Generate on demand with a connected device: ./gradlew :app:generateReleaseBaselineProfile
+    automaticGenerationDuringBuild = false
+    saveInSrc = true
 }
 
 fun requireReleaseSigningEnv() {

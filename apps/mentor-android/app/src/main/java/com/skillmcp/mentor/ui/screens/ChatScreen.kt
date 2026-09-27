@@ -65,6 +65,9 @@ import com.skillmcp.mentor.ui.components.PromptLibrarySheet
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
@@ -95,7 +98,7 @@ import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun ChatScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
@@ -353,7 +356,12 @@ fun ChatScreen(vm: MentorViewModel) {
                 }
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    // testTag is exposed as a resource id for the Macrobenchmark / Baseline Profile journeys.
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .semantics { testTagsAsResourceId = true }
+                            .testTag("chat_list"),
                     state = listState,
                     contentPadding = PaddingValues(horizontal = MentorDimens.ScreenHorizontal, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),

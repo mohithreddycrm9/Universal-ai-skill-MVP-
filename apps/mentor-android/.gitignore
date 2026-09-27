@@ -6,3 +6,4 @@
 *.iml
 captures/
 .DS_Store
+/macrobenchmark/build/

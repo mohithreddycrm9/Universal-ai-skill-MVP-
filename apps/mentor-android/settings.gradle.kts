@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "CodeMentor"
 include(":app")
+include(":macrobenchmark")
