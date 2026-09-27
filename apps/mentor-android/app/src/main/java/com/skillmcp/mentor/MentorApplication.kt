@@ -5,6 +5,7 @@ import com.skillmcp.mentor.analytics.CrashReporter
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.skillmcp.mentor.backup.BackupScheduler
 import com.skillmcp.mentor.data.AppContainer
+import com.skillmcp.mentor.util.AppLanguageMirror
 import com.skillmcp.mentor.util.applyAppLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,8 @@ class MentorApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Apply the saved language before the first frame (no flash from device language).
+        applyAppLanguage(AppLanguageMirror.read(this))
         CrashReporter.install(this)
         PDFBoxResourceLoader.init(applicationContext)
         container = AppContainer(this)
@@ -27,14 +30,17 @@ class MentorApplication : Application() {
             container.userPreferences.ensureSecretsMigratedFromDataStore()
             val prefs = container.userPreferences.get()
             container.internalLaunchToken.ensureToken()
-            applyAppLanguage(prefs.appLanguageTag)
+            AppLanguageMirror.write(this@MentorApplication, prefs.appLanguageTag)
             BackupScheduler.syncSchedule(this@MentorApplication, prefs.backupUploadUrl)
         }
         applicationScope.launch {
             container.userPreferences.prefsFlow
                 .map { it.appLanguageTag }
                 .distinctUntilChanged()
-                .collect { applyAppLanguage(it) }
+                .collect { tag ->
+                    AppLanguageMirror.write(this@MentorApplication, tag)
+                    applyAppLanguage(tag)
+                }
         }
     }
 }
