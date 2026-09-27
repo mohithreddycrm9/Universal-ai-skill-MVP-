@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,7 +52,7 @@ fun ComposerBar(
                 modifier = Modifier.weight(1f),
                 value = draft,
                 onValueChange = onDraftChange,
-                placeholder = { Text("Message") },
+                placeholder = { Text(stringResource(R.string.composer_placeholder)) },
                 minLines = 1,
                 maxLines = 5,
                 shape = ComposerShape,
@@ -75,7 +77,7 @@ fun ComposerBar(
                 if (isListening) {
                     CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
                 } else {
-                    Icon(Icons.Default.Mic, contentDescription = "Voice input")
+                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.composer_voice))
                 }
             }
             FilledIconButton(
@@ -95,7 +97,7 @@ fun ComposerBar(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.composer_send))
                 }
             }
         }

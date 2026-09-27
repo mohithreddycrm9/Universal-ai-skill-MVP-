@@ -89,21 +89,21 @@ fun SettingsScreenContent(
     var restorePassphrase by remember { mutableStateOf("") }
     if (showPrivacy) {
         LegalDocumentSheet(
-            title = "Privacy policy",
+            title = stringResource(R.string.settings_privacy_policy),
             assetPath = "legal/privacy_policy.html",
             onDismiss = { showPrivacy = false },
         )
     }
     if (showTerms) {
         LegalDocumentSheet(
-            title = "Terms of use",
+            title = stringResource(R.string.settings_terms),
             assetPath = "legal/terms_of_service.html",
             onDismiss = { showTerms = false },
         )
     }
     if (showLicenses) {
         LegalDocumentSheet(
-            title = "Open source licenses",
+            title = stringResource(R.string.settings_licenses),
             assetPath = "legal/open_source_licenses.html",
             onDismiss = { showLicenses = false },
         )
@@ -111,7 +111,7 @@ fun SettingsScreenContent(
     if (restorePrompt) {
         AlertDialog(
             onDismissRequest = vm::dismissRestorePassphrase,
-            title = { Text("Restore backup") },
+            title = { Text(stringResource(R.string.settings_restore_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
@@ -121,7 +121,7 @@ fun SettingsScreenContent(
                     OutlinedTextField(
                         value = restorePassphrase,
                         onValueChange = { restorePassphrase = it },
-                        label = { Text("Passphrase (if required)") },
+                        label = { Text(stringResource(R.string.settings_passphrase_optional)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -135,25 +135,25 @@ fun SettingsScreenContent(
                         vm.runRestoreNow(if (phrase.isNotEmpty()) phrase else null)
                     },
                 ) {
-                    Text("Restore")
+                    Text(stringResource(R.string.action_restore))
                 }
             },
             dismissButton = {
-                TextButton(onClick = vm::dismissRestorePassphrase) { Text("Cancel") }
+                TextButton(onClick = vm::dismissRestorePassphrase) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
     if (backupPrompt) {
         AlertDialog(
             onDismissRequest = vm::dismissBackupPassphrase,
-            title = { Text("Backup passphrase") },
+            title = { Text(stringResource(R.string.settings_backup_passphrase_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Optional but recommended: encrypt this backup with a passphrase only you know.")
+                    Text(stringResource(R.string.settings_backup_passphrase_body))
                     OutlinedTextField(
                         value = backupPassphrase,
                         onValueChange = { backupPassphrase = it },
-                        label = { Text("Passphrase") },
+                        label = { Text(stringResource(R.string.settings_passphrase)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -167,18 +167,18 @@ fun SettingsScreenContent(
                         vm.runBackupNow(if (phrase.isNotEmpty()) phrase else null)
                     },
                 ) {
-                    Text("Upload")
+                    Text(stringResource(R.string.action_upload))
                 }
             },
             dismissButton = {
-                TextButton(onClick = vm::dismissBackupPassphrase) { Text("Cancel") }
+                TextButton(onClick = vm::dismissBackupPassphrase) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
     if (confirmErase) {
         AlertDialog(
             onDismissRequest = { confirmErase = false },
-            title = { Text("Erase all local data?") },
+            title = { Text(stringResource(R.string.settings_erase_title)) },
             text = {
                 Text(
                     "Deletes chats, usage history, saved prompts, skills, and all stored API keys on this device. " +
@@ -192,11 +192,11 @@ fun SettingsScreenContent(
                         vm.wipeAllLocalData()
                     },
                 ) {
-                    Text("Erase")
+                    Text(stringResource(R.string.action_erase))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmErase = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmErase = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -231,24 +231,24 @@ fun SettingsScreenContent(
                 profile = state.activeLlmProfile,
             )
             com.skillmcp.mentor.ui.components.ScreenHeader(
-                title = "Settings",
-                subtitle = "Personalize your assistant, voice, and sync.",
+                title = stringResource(R.string.nav_settings),
+                subtitle = stringResource(R.string.settings_subtitle),
             )
             OutlinedTextField(
                 value = prefs.displayName,
                 onValueChange = { name -> vm.updatePrefs { p -> p.copy(displayName = name) } },
-                label = { Text("Your name (greeting)") },
+                label = { Text(stringResource(R.string.settings_your_name)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
 
             TabSuggestions(
-                title = "Ask about settings",
+                title = stringResource(R.string.settings_ask),
                 suggestions = ScreenSuggestions.forScreen(SuggestionScreen.SETTINGS),
                 onSelect = vm::openChatWithSuggestion,
             )
 
-            Text("Privacy & convenience", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(stringResource(R.string.settings_privacy_convenience), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             RowSwitch(
                 label = "Require biometric unlock",
                 checked = prefs.requireBiometricUnlock,
@@ -267,7 +267,7 @@ fun SettingsScreenContent(
                 checked = prefs.dailyBriefReminder,
                 onCheckedChange = onDailyBriefToggle,
             )
-            Text("Morning brief content", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.settings_morning_brief), style = MaterialTheme.typography.titleSmall)
             RowSwitch(
                 label = "Tasks & priorities",
                 checked = prefs.morningBriefTasks,
@@ -332,7 +332,7 @@ fun SettingsScreenContent(
                 onCheckedChange = { vm.updatePrefs { p -> p.copy(voiceHandsFree = it) } },
             )
             OutlinedButton(onClick = vm::exportChatsMarkdown, modifier = Modifier.fillMaxWidth()) {
-                Text("Export chats as Markdown")
+                Text(stringResource(R.string.settings_export_markdown))
             }
             state.lastExportMarkdown?.let { md ->
                 SelectionContainer {
@@ -345,17 +345,17 @@ fun SettingsScreenContent(
                         minLines = 4,
                     )
                 }
-                TextButton(onClick = vm::clearExportMarkdown) { Text("Clear export") }
+                TextButton(onClick = vm::clearExportMarkdown) { Text(stringResource(R.string.settings_clear_export)) }
             }
-            Text("Advanced", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(stringResource(R.string.settings_advanced), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             OutlinedButton(onClick = { vm.requestOpenTab("models") }, modifier = Modifier.fillMaxWidth()) {
-                Text("Models & API keys")
+                Text(stringResource(R.string.settings_models_keys))
             }
             OutlinedButton(onClick = { vm.requestOpenTab("skills") }, modifier = Modifier.fillMaxWidth()) {
-                Text("Add abilities & tools")
+                Text(stringResource(R.string.settings_add_abilities))
             }
             OutlinedButton(onClick = { vm.requestOpenTab("usage") }, modifier = Modifier.fillMaxWidth()) {
-                Text("Activity")
+                Text(stringResource(R.string.nav_activity))
             }
             Text(
                 stringResource(R.string.settings_widget_hint_prefix) +
@@ -377,16 +377,16 @@ fun SettingsScreenContent(
                 Text("Privacy policy (web)")
             }
             OutlinedButton(onClick = { showTerms = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Terms of use")
+                Text(stringResource(R.string.settings_terms))
             }
             OutlinedButton(onClick = { showLicenses = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Open source licenses")
+                Text(stringResource(R.string.settings_licenses))
             }
             OutlinedButton(
                 onClick = { confirmErase = true },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Erase all local data")
+                Text(stringResource(R.string.settings_erase_all))
             }
             Text(
                 "API keys and backup tokens live in EncryptedSharedPreferences (Android Keystore). " +
@@ -395,7 +395,7 @@ fun SettingsScreenContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Text("About", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(stringResource(R.string.settings_about), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             Text("${stringResource(R.string.app_name)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
             val supportEmail = context.getString(com.skillmcp.mentor.R.string.support_email)
             TextButton(
@@ -413,7 +413,7 @@ fun SettingsScreenContent(
                 )
             }
 
-            Text("Language", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             listOf("system" to "System", "en" to "English", "hi" to "हिन्दी", "te" to "తెలుగు", "ta" to "தமிழ்").forEach { (tag, label) ->
                 val selected = prefs.appLanguageTag == tag
                 if (selected) {
@@ -442,7 +442,7 @@ fun SettingsScreenContent(
                 }
             }
 
-            Text("Response style", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(stringResource(R.string.settings_response_style), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             com.skillmcp.mentor.llm.ModelPreset.entries.forEach { preset ->
                 val selected = state.prefs.modelPreset == preset
                 if (selected) {
@@ -459,18 +459,18 @@ fun SettingsScreenContent(
                 }
             }
 
-            Text("Assistant", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(stringResource(R.string.settings_assistant), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = prefs.focusTopic,
                 onValueChange = vm::updateFocusTopic,
-                label = { Text("Focus topic (optional)") },
+                label = { Text(stringResource(R.string.settings_focus_topic)) },
             )
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = prefs.assistantSystemPrompt,
                 onValueChange = { vm.updatePrefs { p -> p.copy(assistantSystemPrompt = it) } },
-                label = { Text("System instructions") },
+                label = { Text(stringResource(R.string.settings_system_instructions)) },
                 minLines = 3,
             )
             Text(
@@ -479,7 +479,7 @@ fun SettingsScreenContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Text("Appearance", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleMedium)
             RowSwitch(
                 label = "Use wallpaper colours (Material You)",
                 checked = prefs.useDynamicColor,
@@ -500,20 +500,20 @@ fun SettingsScreenContent(
                     }
                 }
             }
-            Text("Accent hue")
+            Text(stringResource(R.string.settings_accent_hue))
             Slider(
                 value = prefs.accentHue,
                 onValueChange = { vm.updatePrefs { p -> p.copy(accentHue = it) } },
                 valueRange = 0f..360f,
             )
-            Text("Font scale")
+            Text(stringResource(R.string.settings_font_scale))
             Slider(
                 value = prefs.fontScale,
                 onValueChange = { vm.updatePrefs { p -> p.copy(fontScale = it) } },
                 valueRange = 0.85f..1.35f,
             )
 
-            Text("Voice", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_voice), style = MaterialTheme.typography.titleMedium)
             RowSwitch(
                 label = "Speak replies aloud",
                 checked = prefs.speakResponses,
@@ -538,7 +538,7 @@ fun SettingsScreenContent(
                 label = { Text("ElevenLabs voice id") },
             )
 
-            Text("Sync & backup", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_sync_backup), style = MaterialTheme.typography.titleMedium)
             Text(
                 "Optional: point to your own WebSocket sync relay (for example ws://YOUR_IP:8787/sync).",
                 style = MaterialTheme.typography.bodySmall,
@@ -573,10 +573,10 @@ fun SettingsScreenContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(onClick = vm::promptBackupPassphrase, modifier = Modifier.fillMaxWidth()) {
-                Text("Run backup now")
+                Text(stringResource(R.string.settings_run_backup))
             }
             OutlinedButton(onClick = vm::promptRestorePassphrase, modifier = Modifier.fillMaxWidth()) {
-                Text("Restore from backup URL")
+                Text(stringResource(R.string.settings_restore_backup))
             }
         }
     }

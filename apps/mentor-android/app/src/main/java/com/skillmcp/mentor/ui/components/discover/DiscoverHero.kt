@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components.discover
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -62,7 +64,7 @@ fun DiscoverHeroCard(
                 ),
             shape = MaterialTheme.shapes.medium,
         ) {
-            Text("Try")
+            Text(stringResource(R.string.action_try))
         }
     }
 }
@@ -77,7 +79,7 @@ fun DiscoverSearchField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth(),
-        placeholder = { Text("What do you want to do?") },
+        placeholder = { Text(stringResource(R.string.discover_placeholder)) },
         shape = MaterialTheme.shapes.large,
         singleLine = true,
     )

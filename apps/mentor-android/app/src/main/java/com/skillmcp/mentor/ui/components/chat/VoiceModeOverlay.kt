@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components.chat
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -88,7 +90,7 @@ fun VoiceModeOverlay(
                 )
             }
             TextButton(onClick = onDismiss, modifier = Modifier.padding(top = 8.dp)) {
-                Text("Close")
+                Text(stringResource(R.string.action_close))
             }
         }
     }

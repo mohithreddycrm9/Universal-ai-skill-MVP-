@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,10 +32,10 @@ fun SkillInstallDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Install") }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_install)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }

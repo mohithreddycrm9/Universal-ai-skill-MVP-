@@ -213,7 +213,7 @@ fun ChatScreenContent(
     state.pendingShare?.let { share ->
         AlertDialog(
             onDismissRequest = vm::declineSharedContent,
-            title = { Text("Send to your AI provider?") },
+            title = { Text(stringResource(R.string.chat_share_consent_title)) },
             text = {
                 Text(
                     "Shared content will be sent to ${state.activeLlmProfile?.name ?: "your connected model"} when you tap Send. " +
@@ -222,12 +222,12 @@ fun ChatScreenContent(
             },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = vm::acceptSharedContent) {
-                    Text("Continue")
+                    Text(stringResource(R.string.action_continue))
                 }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = vm::declineSharedContent) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             },
         )
@@ -299,12 +299,12 @@ fun ChatScreenContent(
             tagTarget?.let { chat ->
                 AlertDialog(
                     onDismissRequest = { tagTarget = null },
-                    title = { Text("Folder / tag") },
+                    title = { Text(stringResource(R.string.chat_tag_title)) },
                     text = {
                         OutlinedTextField(
                             value = tagDraft,
                             onValueChange = { tagDraft = it },
-                            label = { Text("Tag (e.g. Work, Travel)") },
+                            label = { Text(stringResource(R.string.chat_tag_hint)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -316,18 +316,18 @@ fun ChatScreenContent(
                                 tagTarget = null
                             },
                         ) {
-                            Text("Save")
+                            Text(stringResource(R.string.action_save))
                         }
                     },
                     dismissButton = {
-                        androidx.compose.material3.TextButton(onClick = { tagTarget = null }) { Text("Cancel") }
+                        androidx.compose.material3.TextButton(onClick = { tagTarget = null }) { Text(stringResource(R.string.action_cancel)) }
                     },
                 )
             }
             renameTarget?.let { chat ->
                 AlertDialog(
                     onDismissRequest = { renameTarget = null },
-                    title = { Text("Rename conversation") },
+                    title = { Text(stringResource(R.string.chat_rename_title)) },
                     text = {
                         OutlinedTextField(
                             value = renameDraft,
@@ -343,12 +343,12 @@ fun ChatScreenContent(
                                 renameTarget = null
                             },
                         ) {
-                            Text("Save")
+                            Text(stringResource(R.string.action_save))
                         }
                     },
                     dismissButton = {
                         androidx.compose.material3.TextButton(onClick = { renameTarget = null }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.action_cancel))
                         }
                     },
                 )
@@ -552,7 +552,7 @@ fun ChatScreenContent(
                             style = MaterialTheme.typography.labelMedium,
                         )
                         IconButton(onClick = vm::clearAttachment) {
-                            Icon(Icons.Default.Close, contentDescription = "Remove attachment")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.chat_remove_attachment))
                         }
                     }
                 }
@@ -614,7 +614,7 @@ private fun ConversationDrawerRow(
                     if (chat.pinned) {
                         Icon(
                             Icons.Default.PushPin,
-                            contentDescription = "Pinned",
+                            contentDescription = stringResource(R.string.chat_pinned),
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
@@ -636,32 +636,32 @@ private fun ConversationDrawerRow(
             shape = MaterialTheme.shapes.medium,
         )
         IconButton(onClick = { menuOpen = true }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "Conversation options")
+            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.chat_options))
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             DropdownMenuItem(
-                text = { Text("Rename") },
+                text = { Text(stringResource(R.string.action_rename)) },
                 onClick = {
                     menuOpen = false
                     onRename()
                 },
             )
             DropdownMenuItem(
-                text = { Text("Folder / tag") },
+                text = { Text(stringResource(R.string.chat_tag_title)) },
                 onClick = {
                     menuOpen = false
                     onSetTag()
                 },
             )
             DropdownMenuItem(
-                text = { Text("Share as Markdown") },
+                text = { Text(stringResource(R.string.chat_share_markdown)) },
                 onClick = {
                     menuOpen = false
                     onShareMarkdown()
                 },
             )
             DropdownMenuItem(
-                text = { Text("Share as PDF") },
+                text = { Text(stringResource(R.string.chat_share_pdf)) },
                 onClick = {
                     menuOpen = false
                     onSharePdf()
@@ -682,7 +682,7 @@ private fun ConversationDrawerRow(
             )
             if (chat.id != "default") {
                 DropdownMenuItem(
-                    text = { Text("Delete") },
+                    text = { Text(stringResource(R.string.action_delete)) },
                     onClick = {
                         menuOpen = false
                         onDelete()

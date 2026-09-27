@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.screens
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -124,19 +126,19 @@ internal fun DiscoverScreenContent(
             }
             item {
                 StatCard(
-                    title = "Messages this week",
+                    title = stringResource(R.string.discover_messages_week),
                     value = state.usageTotals.requestCount.toString(),
                     subtitle = "${state.conversations.size} active chats",
                 )
             }
             item {
                 OutlinedButton(onClick = onOpenUsage, modifier = Modifier.fillMaxWidth()) {
-                    Text("Open activity")
+                    Text(stringResource(R.string.discover_open_activity))
                 }
             }
             item {
                 OutlinedButton(onClick = onOpenModels, modifier = Modifier.fillMaxWidth()) {
-                    Text("Models & API keys")
+                    Text(stringResource(R.string.settings_models_keys))
                 }
             }
         }

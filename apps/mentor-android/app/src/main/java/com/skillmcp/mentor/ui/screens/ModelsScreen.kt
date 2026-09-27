@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.screens
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
@@ -54,8 +56,8 @@ fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
             topBar = {
                 if (onBack != null) {
                     SecondaryScreenTopBar(
-                        title = "Models",
-                        subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
+                        title = stringResource(R.string.models_title),
+                        subtitle = stringResource(R.string.models_subtitle),
                         onBack = onBack,
                     )
                 }
@@ -72,14 +74,14 @@ fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
             if (onBack == null) {
                 item {
                     com.skillmcp.mentor.ui.components.ScreenHeader(
-                        title = "Models",
-                        subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
+                        title = stringResource(R.string.models_title),
+                        subtitle = stringResource(R.string.models_subtitle),
                     )
                 }
             }
             item {
                 TabSuggestions(
-                    title = "Ask about models",
+                    title = stringResource(R.string.models_ask),
                     suggestions = ScreenSuggestions.forScreen(SuggestionScreen.MODELS),
                     onSelect = vm::openChatWithSuggestion,
                 )
@@ -96,12 +98,12 @@ fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
             item {
                 if (!showAddKind) {
                     OutlinedButton(onClick = { showAddKind = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Add OpenAI-compatible API")
+                        Text(stringResource(R.string.models_add_openai_compatible))
                     }
                 } else {
                     GlassCard {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Custom endpoint", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.models_custom_endpoint), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             LlmProviderKind.entries.filter { it == LlmProviderKind.OPENAI_COMPAT || it == LlmProviderKind.OLLAMA }
                                 .forEach { kind ->
                                     Button(

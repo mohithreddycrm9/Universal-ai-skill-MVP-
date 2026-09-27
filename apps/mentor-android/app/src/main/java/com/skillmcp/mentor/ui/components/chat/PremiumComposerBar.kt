@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components.chat
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -58,14 +60,14 @@ fun PremiumComposerBar(
         ) {
             if (onAttach != null) {
                 IconButton(onClick = onAttach, modifier = Modifier.size(48.dp).pressableScale()) {
-                    Icon(Icons.Default.Add, contentDescription = "Attach file")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.composer_attach))
                 }
             }
             OutlinedTextField(
                 modifier = Modifier.weight(1f),
                 value = draft,
                 onValueChange = onDraftChange,
-                placeholder = { Text("Message") },
+                placeholder = { Text(stringResource(R.string.composer_placeholder)) },
                 minLines = 1,
                 maxLines = 5,
                 shape = ComposerShape,
@@ -107,7 +109,7 @@ fun PremiumComposerBar(
                                 color = MaterialTheme.colorScheme.onPrimary,
                             )
                         } else {
-                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.composer_send))
                         }
                     }
                 } else {
@@ -124,7 +126,7 @@ fun PremiumComposerBar(
                         if (isListening) {
                             CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
                         } else {
-                            Icon(Icons.Default.Mic, contentDescription = "Voice input")
+                            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.composer_voice))
                         }
                     }
                 }

@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components.chat
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -103,7 +105,7 @@ fun ChatMessageContent(
 
     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
         DropdownMenuItem(
-            text = { Text("Copy") },
+            text = { Text(stringResource(R.string.action_copy)) },
             leadingIcon = { Icon(Icons.Outlined.ContentCopy, null) },
             onClick = {
                 clipboard.setText(AnnotatedString(content))
@@ -112,7 +114,7 @@ fun ChatMessageContent(
         )
         if (onReply != null) {
             DropdownMenuItem(
-                text = { Text("Reply") },
+                text = { Text(stringResource(R.string.action_reply)) },
                 leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Reply, null) },
                 onClick = {
                     onReply(content)
@@ -121,7 +123,7 @@ fun ChatMessageContent(
             )
         }
         DropdownMenuItem(
-            text = { Text("Share") },
+            text = { Text(stringResource(R.string.action_share)) },
             leadingIcon = { Icon(Icons.Outlined.Share, null) },
             onClick = {
                 val send =
@@ -178,7 +180,7 @@ private fun AssistantMarkdownText(
                             onClick = { clipboard.setText(AnnotatedString(code)) },
                             modifier = Modifier.padding(4.dp),
                         ) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy code")
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = stringResource(R.string.chat_copy_code))
                         }
                     }
                 }
