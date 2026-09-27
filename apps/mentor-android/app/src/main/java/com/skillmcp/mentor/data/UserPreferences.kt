@@ -73,6 +73,10 @@ data class MentorPrefs(
     val crashReportingOptIn: Boolean = false,
     val encryptedStorageMigrated: Boolean = false,
     val hasSeenMessageLimitMigration: Boolean = false,
+    /** Personalization ("custom instructions"): what the user wants Lumina to know / how to reply. */
+    val aboutMe: String = "",
+    val responseInstructions: String = "",
+    val personalizationEnabled: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_ASSISTANT_PROMPT =
@@ -149,6 +153,9 @@ class UserPreferences(
                 crashReportingOptIn = prefs[KEY_CRASH_REPORTING] ?: false,
                 encryptedStorageMigrated = prefs[KEY_ENC_MIGRATED] ?: false,
                 hasSeenMessageLimitMigration = prefs[KEY_MSG_LIMIT_MIGRATION] ?: false,
+                aboutMe = prefs[KEY_ABOUT_ME] ?: "",
+                responseInstructions = prefs[KEY_RESPONSE_INSTRUCTIONS] ?: "",
+                personalizationEnabled = prefs[KEY_PERSONALIZATION_ON] ?: true,
             )
         }
 
@@ -221,6 +228,9 @@ class UserPreferences(
             prefs[KEY_CRASH_REPORTING] = next.crashReportingOptIn
             prefs[KEY_ENC_MIGRATED] = next.encryptedStorageMigrated
             prefs[KEY_MSG_LIMIT_MIGRATION] = next.hasSeenMessageLimitMigration
+            prefs[KEY_ABOUT_ME] = next.aboutMe
+            prefs[KEY_RESPONSE_INSTRUCTIONS] = next.responseInstructions
+            prefs[KEY_PERSONALIZATION_ON] = next.personalizationEnabled
         }
     }
 
@@ -290,5 +300,8 @@ class UserPreferences(
         val KEY_CRASH_REPORTING = booleanPreferencesKey("crash_reporting_opt_in")
         val KEY_ENC_MIGRATED = booleanPreferencesKey("encrypted_storage_migrated")
         val KEY_MSG_LIMIT_MIGRATION = booleanPreferencesKey("seen_message_limit_migration")
+        val KEY_ABOUT_ME = stringPreferencesKey("about_me")
+        val KEY_RESPONSE_INSTRUCTIONS = stringPreferencesKey("response_instructions")
+        val KEY_PERSONALIZATION_ON = booleanPreferencesKey("personalization_enabled")
     }
 }

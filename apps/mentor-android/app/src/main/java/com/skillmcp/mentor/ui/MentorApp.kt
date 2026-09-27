@@ -32,6 +32,7 @@ import com.skillmcp.mentor.ui.components.onboarding.OnboardingFlow
 import com.skillmcp.mentor.ui.screens.ChatScreen
 import com.skillmcp.mentor.ui.screens.DiscoverScreen
 import com.skillmcp.mentor.ui.screens.ModelsScreen
+import com.skillmcp.mentor.ui.screens.PersonalizationScreen
 import com.skillmcp.mentor.ui.screens.SettingsScreen
 import com.skillmcp.mentor.ui.screens.SkillsScreen
 import com.skillmcp.mentor.ui.screens.ActivityScreen
@@ -42,12 +43,14 @@ enum class MentorTab(val route: String, val label: String, val showInBar: Boolea
     Models("models", "Models", showInBar = false),
     Usage("usage", "Activity", showInBar = false),
     Skills("skills", "Abilities", showInBar = false),
+    Personalization("personalization", "Personalization", showInBar = false),
     Settings("settings", "Settings"),
 }
 
 fun MentorTab.barParentRoute(): String =
     when (this) {
         MentorTab.Models, MentorTab.Usage, MentorTab.Skills -> MentorTab.Discover.route
+        MentorTab.Personalization -> MentorTab.Settings.route
         else -> route
     }
 
@@ -109,7 +112,7 @@ fun MentorApp(container: AppContainer) {
 
     val onAdvancedBack: () -> Unit = { nav.popBackStack() }
 
-    if (current in listOf("models", "usage", "skills")) {
+    if (current in listOf("models", "usage", "skills", "personalization")) {
         BackHandler(onBack = onAdvancedBack)
     }
 
@@ -182,6 +185,7 @@ fun MentorApp(container: AppContainer) {
                 composable(MentorTab.Usage.route) { ActivityScreen(vm, onBack = onAdvancedBack) }
                 composable(MentorTab.Skills.route) { SkillsScreen(vm, onBack = onAdvancedBack) }
                 composable(MentorTab.Settings.route) { SettingsScreen(vm) }
+                composable(MentorTab.Personalization.route) { PersonalizationScreen(vm, onBack = onAdvancedBack) }
             }
         }
     }

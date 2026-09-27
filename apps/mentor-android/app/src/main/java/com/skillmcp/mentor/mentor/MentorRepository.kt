@@ -287,7 +287,7 @@ class MentorRepository(
             val result =
                 llmStreaming.streamChat(
                     profile = profile,
-                    systemPrompt = prefs.assistantSystemPrompt,
+                    systemPrompt = PersonalizationPrompt.compose(prefs),
                     history = history,
                     userMessage = userPayload,
                     extraContext = extraContext,
