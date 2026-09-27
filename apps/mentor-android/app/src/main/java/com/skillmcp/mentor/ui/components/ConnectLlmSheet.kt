@@ -135,7 +135,7 @@ fun ConnectLlmSheet(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(autoCorrect = false),
+                            keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
                         )
                     }
                 }

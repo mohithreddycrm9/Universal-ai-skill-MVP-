@@ -24,6 +24,7 @@ class VoiceChatTileService : TileService() {
         }
     }
 
+    @Suppress("DEPRECATION")
     override fun onClick() {
         val container = (applicationContext as MentorApplication).container
         val token = runBlocking { container.internalLaunchToken.ensureToken() }

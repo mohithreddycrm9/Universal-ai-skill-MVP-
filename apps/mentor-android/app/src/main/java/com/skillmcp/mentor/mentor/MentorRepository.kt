@@ -16,6 +16,7 @@ import com.skillmcp.mentor.policy.MessageAllowanceGuard
 import com.skillmcp.mentor.policy.SpendLimitException
 import com.skillmcp.mentor.policy.SpendPolicy
 import com.skillmcp.mentor.llm.TokenCostEstimator
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import java.util.concurrent.TimeUnit
@@ -54,6 +55,7 @@ data class UiConversation(
     val folderTag: String = "",
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MentorRepository(
     private val dao: MentorDao,
     private val multiLlmClient: MultiLlmClient,

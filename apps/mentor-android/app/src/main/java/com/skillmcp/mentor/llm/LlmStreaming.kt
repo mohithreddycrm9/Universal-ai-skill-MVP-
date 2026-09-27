@@ -146,7 +146,7 @@ class LlmStreaming(
                 val err = response.body?.string() ?: ""
                 error("Stream HTTP ${response.code}")
             }
-            val source = response.body?.source()?.buffer() ?: error("Empty stream body")
+            val source = response.body?.source()?.buffer ?: error("Empty stream body")
             while (!source.exhausted()) {
                 if (isCancelled()) {
                     call.cancel()

@@ -110,6 +110,7 @@ data class MentorUiState(
     val lastExportMarkdown: String? = null,
 )
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class MentorViewModel(
     private val container: AppContainer,
     private val appContext: Context,

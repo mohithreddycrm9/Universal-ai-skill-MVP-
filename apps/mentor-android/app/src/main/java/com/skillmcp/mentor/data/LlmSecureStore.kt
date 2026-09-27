@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.skillmcp.mentor.data
 
 import android.content.Context
