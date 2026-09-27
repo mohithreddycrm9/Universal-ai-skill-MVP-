@@ -1,18 +1,33 @@
 package com.skillmcp.mentor.ui.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import com.skillmcp.mentor.R
 
-private val InterFamily =
+/**
+ * Lumina's brand face: Plus Jakarta Sans (SIL OFL 1.1), bundled as one variable TTF.
+ * Each weight pins the `wght` axis so Medium/SemiBold/Bold really render heavier.
+ */
+@OptIn(ExperimentalTextApi::class)
+private fun jakarta(weight: FontWeight) =
+    Font(
+        resId = R.font.plus_jakarta_sans_variable,
+        weight = weight,
+        variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
+    )
+
+private val PlusJakartaSans =
     FontFamily(
-        Font(R.font.inter_variable, FontWeight.Normal),
-        Font(R.font.inter_variable, FontWeight.Medium),
-        Font(R.font.inter_variable, FontWeight.SemiBold),
-        Font(R.font.inter_variable, FontWeight.Bold),
+        jakarta(FontWeight.Normal),
+        jakarta(FontWeight.Medium),
+        jakarta(FontWeight.SemiBold),
+        jakarta(FontWeight.Bold),
+        jakarta(FontWeight.ExtraBold),
     )
 
 @Composable
-fun mentorFontFamily(): FontFamily = InterFamily
+fun mentorFontFamily(): FontFamily = PlusJakartaSans

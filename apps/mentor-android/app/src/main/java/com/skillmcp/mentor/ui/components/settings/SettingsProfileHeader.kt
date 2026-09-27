@@ -61,7 +61,7 @@ fun SettingsProfileHeader(
                     Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(BrandColors.Indigo, BrandColors.Coral))),
+                        .background(Brush.linearGradient(listOf(BrandColors.Indigo, BrandColors.CoralDeep))),
                 contentAlignment = Alignment.Center,
             ) {
                 if (name.isNotEmpty()) {

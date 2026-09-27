@@ -15,13 +15,6 @@ import androidx.compose.ui.text.TextStyle
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-fun ThemeMode.userLabel(): String =
-    when (this) {
-        ThemeMode.SYSTEM -> "Match phone"
-        ThemeMode.LIGHT -> "Light"
-        ThemeMode.DARK -> "Dark"
-    }
-
 fun ThemeMode.resolvesDark(systemDark: Boolean): Boolean =
     when (this) {
         ThemeMode.SYSTEM -> systemDark
@@ -54,11 +47,13 @@ private val LightScheme =
         primaryContainer = Color(0xFFEEF2FF),
         onPrimaryContainer = Color(0xFF312E81),
         secondary = BrandColors.Coral,
-        onSecondary = Color.White,
+        onSecondary = BrandColors.CoralInk,
         secondaryContainer = Color(0xFFFFE4E8),
         onSecondaryContainer = Color(0xFF881337),
-        tertiary = Color(0xFF64748B),
-        onTertiary = Color.White,
+        tertiary = BrandColors.Coral,
+        onTertiary = BrandColors.CoralInk,
+        tertiaryContainer = Color(0xFFFFE4E8),
+        onTertiaryContainer = Color(0xFF881337),
         background = BrandColors.LightSurface,
         onBackground = Color(0xFF0F172A),
         surface = BrandColors.LightSurface,
@@ -78,15 +73,17 @@ private val LightScheme =
 private val DarkScheme =
     darkColorScheme(
         primary = BrandColors.IndigoDark,
-        onPrimary = Color.White,
+        onPrimary = BrandColors.IndigoInk,
         primaryContainer = Color(0xFF312E81),
         onPrimaryContainer = Color(0xFFE0E7FF),
         secondary = BrandColors.Coral,
-        onSecondary = Color(0xFF1F0A12),
+        onSecondary = BrandColors.CoralInk,
         secondaryContainer = Color(0xFF4C1D2E),
         onSecondaryContainer = Color(0xFFFFD5DD),
-        tertiary = Color(0xFF94A3B8),
-        onTertiary = Color(0xFF0F172A),
+        tertiary = BrandColors.Coral,
+        onTertiary = BrandColors.CoralInk,
+        tertiaryContainer = Color(0xFF4C1D2E),
+        onTertiaryContainer = Color(0xFFFFD5DD),
         background = BrandColors.Charcoal,
         onBackground = Color(0xFFF1F5F9),
         surface = BrandColors.Charcoal,
@@ -127,7 +124,7 @@ fun CodeMentorTheme(
         } else {
             base.copy(
                 primary = if (darkTheme) BrandColors.IndigoDark else BrandColors.Indigo,
-                onPrimary = Color.White,
+                onPrimary = if (darkTheme) BrandColors.IndigoInk else Color.White,
             )
         }
 
