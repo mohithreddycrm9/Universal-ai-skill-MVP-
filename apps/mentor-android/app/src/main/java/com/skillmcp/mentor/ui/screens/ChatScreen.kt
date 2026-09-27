@@ -54,7 +54,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -121,15 +120,7 @@ fun ChatScreen(vm: MentorViewModel) {
             ?: stringResource(R.string.nav_chat)
     val hapticView = rememberHapticView()
     val reduceMotion = rememberReduceMotion()
-    val atBottom by remember {
-        derivedStateOf {
-            val info = listState.layoutInfo
-            val lastIndex = info.totalItemsCount - 1
-            if (lastIndex < 0) return@derivedStateOf true
-            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
-            lastVisible >= lastIndex - 1
-        }
-    }
+    val scrollController = com.skillmcp.mentor.ui.chat.rememberChatScrollController(listState)
     var prevSending by remember { mutableStateOf(false) }
     LaunchedEffect(state.isSending) {
         if (prevSending && !state.isSending) {
@@ -137,13 +128,8 @@ fun ChatScreen(vm: MentorViewModel) {
         }
         prevSending = state.isSending
     }
-    LaunchedEffect(state.messages.size, state.streamPreview, state.pendingUserMessage, state.isSending) {
-        if (atBottom || state.isSending) {
-            val target = listState.layoutInfo.totalItemsCount.coerceAtLeast(0) - 1
-            if (target >= 0) {
-                listState.animateScrollToItem(target.coerceAtLeast(0))
-            }
-        }
+    com.skillmcp.mentor.ui.chat.ChatAutoScrollEffect(scrollController, reduceMotion) {
+        Triple(listState.layoutInfo.totalItemsCount, state.streamPreview.length, state.showReplySlot)
     }
     val attachLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -385,13 +371,11 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     }
                 }
-                if (!atBottom) {
+                if (scrollController.showJumpToLatest) {
                     FloatingActionButton(
                         onClick = {
-                            scope.launch {
-                                val last = listState.layoutInfo.totalItemsCount - 1
-                                if (last >= 0) listState.animateScrollToItem(last)
-                            }
+                            scrollController.followBottom = true
+                            scope.launch { scrollController.scrollToBottom(animate = !reduceMotion) }
                         },
                         modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
