@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.data
 
+import com.skillmcp.mentor.skills.finder.OfficialSkillFinder
 import android.content.Context
 import androidx.room.Room
 import com.skillmcp.mentor.BuildConfig
@@ -47,6 +48,7 @@ class AppContainer(context: Context) {
         LlmProfileRepository(database.mentorDao(), llmSecureStore, userPreferences)
     val buildSuggestionEngine = BuildSuggestionEngine()
     val skillImporter = GitHubSkillImporter()
+    val officialSkillFinder by lazy { OfficialSkillFinder(appContext) }
     val bundledSkillInstaller = BundledSkillInstaller(appContext)
     val pluginRunner = PluginRunner()
     val extensionOrchestrator = ExtensionOrchestrator(pluginRunner)

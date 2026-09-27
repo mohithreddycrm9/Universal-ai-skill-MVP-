@@ -29,14 +29,15 @@ class GitHubSkillImporter(
             for (path in paths) {
                 val rawUrl = "https://raw.githubusercontent.com/${parsed.owner}/${parsed.repo}/${parsed.ref}/$path"
                 val text = fetchText(rawUrl)
-                if (text != null && text.contains("#")) {
+                if (text != null && (text.contains("#") || text.trimStart().startsWith("---"))) {
                     markdown = text
                     usedPath = path
                     break
                 }
             }
             val body = markdown ?: error("No SKILL.md found in ${parsed.owner}/${parsed.repo}@${parsed.ref}")
-            val title = body.lineSequence().firstOrNull { it.startsWith("#") }?.removePrefix("#")?.trim()
+            val title = body.lineSequence().firstOrNull { it.startsWith("#") }?.trimStart('#')?.trim()?.ifBlank { null }
+                ?: com.skillmcp.mentor.skills.finder.SkillFrontMatter.parse(body)["name"]?.ifBlank { null }
                 ?: "${parsed.owner}/${parsed.repo}"
             ImportedSkill(
                 id = "${parsed.owner}/${parsed.repo}@${parsed.ref}" + if (parsed.path.isBlank()) "" else ":${parsed.path}",
