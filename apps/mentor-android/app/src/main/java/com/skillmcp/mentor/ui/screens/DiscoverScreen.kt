@@ -123,20 +123,15 @@ internal fun DiscoverScreenContent(
                 )
             }
             item {
-                Text("Estimated spend (7 days)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            }
-            item {
                 StatCard(
-                    title = "Last 7 days",
-                    value = "$${"%.2f".format(state.usageTotals.estimatedUsd)}",
-                    subtitle =
-                        "${state.usageTotals.requestCount} requests · " +
-                            "${state.usageTotals.promptTokens + state.usageTotals.completionTokens} tokens",
+                    title = "Messages this week",
+                    value = state.usageTotals.requestCount.toString(),
+                    subtitle = "${state.conversations.size} active chats",
                 )
             }
             item {
                 OutlinedButton(onClick = onOpenUsage, modifier = Modifier.fillMaxWidth()) {
-                    Text("Open full usage dashboard")
+                    Text("Open activity")
                 }
             }
             item {

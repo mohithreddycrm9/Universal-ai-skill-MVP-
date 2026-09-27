@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -50,6 +51,9 @@ data class MentorPrefs(
     val modelPreset: ModelPreset = ModelPreset.BALANCED,
     val dailyBudgetUsd: Double = 0.0,
     val weeklyBudgetUsd: Double = 0.0,
+    /** User-facing send caps (0 = unlimited). */
+    val dailyMessageLimit: Int = 0,
+    val weeklyMessageLimit: Int = 0,
     val enabledPluginIds: Set<String> = emptySet(),
     val hasSeenWelcome: Boolean = false,
     val requireBiometricUnlock: Boolean = false,
@@ -123,6 +127,8 @@ class UserPreferences(
                 modelPreset = ModelPreset.entries.find { it.name == prefs[KEY_MODEL_PRESET] } ?: ModelPreset.BALANCED,
                 dailyBudgetUsd = prefs[KEY_DAILY_BUDGET]?.toDoubleOrNull() ?: 0.0,
                 weeklyBudgetUsd = prefs[KEY_WEEKLY_BUDGET]?.toDoubleOrNull() ?: 0.0,
+                dailyMessageLimit = prefs[KEY_DAILY_MSG_LIMIT] ?: 0,
+                weeklyMessageLimit = prefs[KEY_WEEKLY_MSG_LIMIT] ?: 0,
                 enabledPluginIds = prefs[KEY_ENABLED_PLUGINS] ?: emptySet(),
                 hasSeenWelcome = prefs[KEY_SEEN_WELCOME] ?: false,
                 requireBiometricUnlock = prefs[KEY_BIOMETRIC] ?: false,
@@ -188,6 +194,8 @@ class UserPreferences(
             prefs[KEY_MODEL_PRESET] = next.modelPreset.name
             prefs[KEY_DAILY_BUDGET] = next.dailyBudgetUsd.toString()
             prefs[KEY_WEEKLY_BUDGET] = next.weeklyBudgetUsd.toString()
+            prefs[KEY_DAILY_MSG_LIMIT] = next.dailyMessageLimit
+            prefs[KEY_WEEKLY_MSG_LIMIT] = next.weeklyMessageLimit
             prefs[KEY_ENABLED_PLUGINS] = next.enabledPluginIds
             prefs[KEY_SEEN_WELCOME] = next.hasSeenWelcome
             prefs[KEY_BIOMETRIC] = next.requireBiometricUnlock
@@ -254,6 +262,8 @@ class UserPreferences(
         val KEY_MODEL_PRESET = stringPreferencesKey("model_preset")
         val KEY_DAILY_BUDGET = stringPreferencesKey("daily_budget_usd")
         val KEY_WEEKLY_BUDGET = stringPreferencesKey("weekly_budget_usd")
+        val KEY_DAILY_MSG_LIMIT = intPreferencesKey("daily_message_limit")
+        val KEY_WEEKLY_MSG_LIMIT = intPreferencesKey("weekly_message_limit")
         val KEY_ENABLED_PLUGINS = stringSetPreferencesKey("enabled_plugins")
         val KEY_SEEN_WELCOME = booleanPreferencesKey("seen_welcome")
         val KEY_BIOMETRIC = booleanPreferencesKey("require_biometric")

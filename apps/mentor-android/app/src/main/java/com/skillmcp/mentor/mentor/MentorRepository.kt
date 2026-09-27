@@ -11,8 +11,8 @@ import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProfileRepository
 import com.skillmcp.mentor.llm.LlmStreaming
 import com.skillmcp.mentor.llm.MultiLlmClient
-import com.skillmcp.mentor.policy.SpendCheck
-import com.skillmcp.mentor.policy.SpendGuard
+import com.skillmcp.mentor.policy.AllowanceCheck
+import com.skillmcp.mentor.policy.MessageAllowanceGuard
 import com.skillmcp.mentor.policy.SpendLimitException
 import com.skillmcp.mentor.policy.SpendPolicy
 import com.skillmcp.mentor.llm.TokenCostEstimator
@@ -146,22 +146,18 @@ class MentorRepository(
 
     fun observeUsageByDay(sinceMs: Long) = llmProfileRepository.observeUsageByDay(sinceMs)
 
-    fun observeSpendGuard(): Flow<SpendCheck> =
-        combine(
-            userPreferences.prefsFlow,
-            dao.observeUsageTotals(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)),
-        ) { prefs, _ -> prefs }
-            .flatMapLatest { prefs ->
-                flow {
-                    emit(
-                        SpendGuard.check(
-                            dao,
-                            prefs.dailyBudgetUsd,
-                            prefs.weeklyBudgetUsd,
-                        ),
-                    )
-                }
+    fun observeMessageAllowance(): Flow<AllowanceCheck> =
+        userPreferences.prefsFlow.flatMapLatest { prefs ->
+            flow {
+                emit(
+                    MessageAllowanceGuard.check(
+                        dao,
+                        prefs.dailyMessageLimit,
+                        prefs.weeklyMessageLimit,
+                    ),
+                )
             }
+        }
 
     fun observeBuildEvents(): Flow<List<BuildEventEntity>> =
         observeActiveConversationId().flatMapLatest { dao.observeBuildEvents(it) }
@@ -247,10 +243,14 @@ class MentorRepository(
         withContext(Dispatchers.IO) {
             bootstrap()
             val prefs = userPreferences.current()
-            val spend =
-                SpendGuard.check(dao, prefs.dailyBudgetUsd, prefs.weeklyBudgetUsd)
-            if (!spend.allowed) {
-                return@withContext Result.failure(SpendLimitException(spend))
+            val allowance =
+                MessageAllowanceGuard.check(
+                    dao,
+                    prefs.dailyMessageLimit,
+                    prefs.weeklyMessageLimit,
+                )
+            if (!allowance.allowed) {
+                return@withContext Result.failure(SpendLimitException(allowance))
             }
             val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }
             val profile = llmProfileRepository.activeProfile()

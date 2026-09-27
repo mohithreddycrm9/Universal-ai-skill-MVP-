@@ -216,8 +216,6 @@ fun SettingsScreen(vm: MentorViewModel) {
             SettingsProfileHeader(
                 displayName = prefs.displayName,
                 profile = state.activeLlmProfile,
-                monthSpendUsd = state.usageTotals.estimatedUsd,
-                monthlyBudgetUsd = prefs.dailyBudgetUsd * 30,
             )
             com.skillmcp.mentor.ui.components.ScreenHeader(
                 title = "Settings",
@@ -344,7 +342,7 @@ fun SettingsScreen(vm: MentorViewModel) {
                 Text("Add abilities & tools")
             }
             OutlinedButton(onClick = { vm.requestOpenTab("usage") }, modifier = Modifier.fillMaxWidth()) {
-                Text("Usage")
+                Text("Activity")
             }
             Text(
                 "Add the home screen widget: long-press launcher → Widgets → Universal AI quick actions.",

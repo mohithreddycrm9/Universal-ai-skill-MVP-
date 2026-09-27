@@ -71,7 +71,6 @@ import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
-import com.skillmcp.mentor.llm.TokenCostEstimator
 import com.skillmcp.mentor.ui.components.chat.ChatEmptyState
 import com.skillmcp.mentor.ui.components.chat.ChatMessageContent
 import com.skillmcp.mentor.ui.components.chat.PremiumComposerBar
@@ -85,7 +84,7 @@ import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.SuggestionChipRow
 import com.skillmcp.mentor.ui.components.PopularUseCaseCard
 import com.skillmcp.mentor.ui.components.TabSuggestions
-import com.skillmcp.mentor.policy.SpendBlockReason
+import com.skillmcp.mentor.policy.AllowanceBlockReason
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,27 +132,6 @@ fun ChatScreen(vm: MentorViewModel) {
     LaunchedEffect(state.messages.size, extraItems, state.streamPreview) {
         val last = state.messages.size + extraItems - 1
         if (last >= 0) listState.animateScrollToItem(last)
-    }
-
-    val raisePreview by vm.spendRaisePreview.collectAsState()
-    raisePreview?.let { (daily, weekly) ->
-        AlertDialog(
-            onDismissRequest = vm::dismissSpendRaisePreview,
-            title = { Text("Raise spend limits?") },
-            text = {
-                Text(
-                    "Estimated daily cap → $${"%.2f".format(daily)}\n" +
-                        "Estimated weekly cap → $${"%.2f".format(weekly)}\n\n" +
-                        "Amounts are estimates from Usage, not your provider bill.",
-                )
-            },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = vm::confirmRaiseSpendLimits) { Text("Confirm") }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = vm::dismissSpendRaisePreview) { Text("Cancel") }
-            },
-        )
     }
 
     state.pendingShare?.let { share ->
@@ -370,7 +348,7 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     }
                 }
-                state.spendGuard.warningMessage?.let { warning ->
+                state.messageAllowance.warningMessage?.let { warning ->
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -385,37 +363,28 @@ fun ChatScreen(vm: MentorViewModel) {
                 }
                 val hideDailyBlock =
                     com.skillmcp.mentor.policy.SpendPolicy.shouldHideDailyBlockUi(
-                        state.spendGuard,
+                        state.messageAllowance,
                         state.prefs.spendDailyBlockDismissedUntilMs,
                     )
-                if (!state.spendGuard.allowed && !hideDailyBlock) {
+                if (!state.messageAllowance.allowed && !hideDailyBlock) {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     ) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                state.spendGuard.message ?: "Estimated spend limit reached.",
+                                state.messageAllowance.message ?: "Message limit reached.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = vm::previewRaiseSpendLimits) { Text("Raise limit") }
-                                if (state.spendGuard.blockReason == SpendBlockReason.DAILY) {
+                                if (state.messageAllowance.blockReason == AllowanceBlockReason.DAILY) {
                                     androidx.compose.material3.TextButton(onClick = vm::dismissSpendBlockMessage) {
                                         Text("Wait until tomorrow")
                                     }
-                                    val resetMs = state.prefs.spendDailyBlockDismissedUntilMs
-                                    if (resetMs > System.currentTimeMillis()) {
-                                        Text(
-                                            "Resets at midnight (hidden until then)",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                        )
-                                    }
                                 } else {
                                     androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("usage") }) {
-                                        Text("Adjust on Usage")
+                                        Text("Adjust limits")
                                     }
                                 }
                             }
@@ -427,18 +396,6 @@ fun ChatScreen(vm: MentorViewModel) {
                     onSelect = vm::setModelPreset,
                     modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 4.dp),
                 )
-                if (state.prefs.modelPreset == ModelPreset.DEEP && state.draft.isNotBlank()) {
-                    val est = vm.estimatedSendCostUsd()
-                    if (est > 0) {
-                        Text(
-                            "Estimated cost for this message: $${"%.4f".format(est)} (approx.)",
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     state = listState,
@@ -463,13 +420,6 @@ fun ChatScreen(vm: MentorViewModel) {
                                 isUser = isUser,
                                 isStreaming = false,
                                 modelLabel = if (!isUser) profile?.name else null,
-                                estimatedCostUsd =
-                                    if (!isUser) {
-                                        state.messageCostsUsd[message.id]
-                                            ?: profile?.let { TokenCostEstimator.estimateReplyCost(it, message.content) }
-                                    } else {
-                                        null
-                                    },
                             )
                         }
                     }
@@ -480,7 +430,6 @@ fun ChatScreen(vm: MentorViewModel) {
                                 isUser = false,
                                 isStreaming = true,
                                 modelLabel = profile?.name,
-                                estimatedCostUsd = null,
                             )
                         }
                     } else if (state.isSending) {

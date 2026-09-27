@@ -4,6 +4,7 @@
     <string name="nav_chat">चैट</string>
     <string name="nav_discover">खोजें</string>
     <string name="nav_settings">सेटिंग्स</string>
+    <string name="nav_activity">गतिविधि</string>
     <string name="widget_title">यूनिवर्सल AI शॉर्टकट</string>
     <string name="widget_subtitle">होम स्क्रीन से त्वरित कार्य</string>
     <string name="widget_morning_brief">ब्रीफ</string>

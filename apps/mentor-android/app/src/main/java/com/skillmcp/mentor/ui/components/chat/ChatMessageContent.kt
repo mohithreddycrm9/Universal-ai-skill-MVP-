@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import com.skillmcp.mentor.ui.theme.BubbleShapeUser
 import com.skillmcp.mentor.ui.theme.contentColorOn
-import com.skillmcp.mentor.util.SpendFormat
 
 @Composable
 fun ChatMessageContent(
@@ -33,7 +32,6 @@ fun ChatMessageContent(
     isUser: Boolean,
     isStreaming: Boolean,
     modelLabel: String?,
-    estimatedCostUsd: Double?,
     modifier: Modifier = Modifier,
 ) {
     if (isUser) {
@@ -56,26 +54,12 @@ fun ChatMessageContent(
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         AssistantMarkdownText(content = content, showCursor = isStreaming)
-        if (!isStreaming && (modelLabel != null || estimatedCostUsd != null)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                modelLabel?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                estimatedCostUsd?.takeIf { it > 0 }?.let { cost ->
-                    Text(
-                        SpendFormat.formatUsdEstimate(cost),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+        if (!isStreaming && modelLabel != null) {
+            Text(
+                modelLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

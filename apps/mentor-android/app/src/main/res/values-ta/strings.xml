@@ -4,6 +4,7 @@
     <string name="nav_chat">அரட்டை</string>
     <string name="nav_discover">கண்டறி</string>
     <string name="nav_settings">அமைப்புகள்</string>
+    <string name="nav_activity">செயல்பாடு</string>
     <string name="widget_title">யுனிவர்சல் AI விரைவு செயல்கள்</string>
     <string name="widget_subtitle">முகப்புத் திரையிலிருந்து விரைவு பணிகள்</string>
     <string name="widget_morning_brief">சுருக்கம்</string>

@@ -37,15 +37,15 @@ fun mentorTypography(fontFamily: FontFamily): Typography =
             TextStyle(
                 fontFamily = fontFamily,
                 fontWeight = FontWeight.Normal,
-                fontSize = 15.sp,
-                lineHeight = 22.sp,
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
             ),
         bodyMedium =
             TextStyle(
                 fontFamily = fontFamily,
                 fontWeight = FontWeight.Normal,
-                fontSize = 15.sp,
-                lineHeight = 22.sp,
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
             ),
         labelSmall =
             TextStyle(

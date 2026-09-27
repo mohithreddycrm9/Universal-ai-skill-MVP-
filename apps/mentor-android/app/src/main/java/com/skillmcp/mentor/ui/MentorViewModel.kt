@@ -25,7 +25,7 @@ import com.skillmcp.mentor.mentor.PopularUseCase
 import com.skillmcp.mentor.mentor.UseCaseCatalog
 import com.skillmcp.mentor.analytics.UsageAnalytics
 import com.skillmcp.mentor.data.SharePayload
-import com.skillmcp.mentor.policy.SpendCheck
+import com.skillmcp.mentor.policy.AllowanceCheck
 import com.skillmcp.mentor.skills.CatalogSkill
 import com.skillmcp.mentor.skills.SkillCatalog
 import com.skillmcp.mentor.llm.GoogleLlmSignIn
@@ -41,7 +41,6 @@ import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.mentor.UiMessage
 import com.skillmcp.mentor.util.UserFacingError
 import com.skillmcp.mentor.util.UserFacingErrors
-import com.skillmcp.mentor.llm.TokenCostEstimator
 import com.skillmcp.mentor.llm.ChatVisionAttachment
 import com.skillmcp.mentor.llm.VisionCapabilities
 import com.skillmcp.mentor.util.ImageAttachmentProcessor
@@ -105,11 +104,10 @@ data class MentorUiState(
     val builtinPlugins: List<com.skillmcp.mentor.plugins.BuiltinPlugin> = BuiltinPlugins.all,
     val popularUseCases: List<PopularUseCase> = UseCaseCatalog.featured,
     val rankedUseCases: List<PopularUseCase> = UseCaseCatalog.featured,
-    val spendGuard: SpendCheck = SpendCheck(allowed = true),
+    val messageAllowance: AllowanceCheck = AllowanceCheck(allowed = true),
     val pendingShare: SharePayload? = null,
     val pendingSkillInstall: SkillInstallRequest? = null,
     val lastExportMarkdown: String? = null,
-    val messageCostsUsd: Map<String, Double> = emptyMap(),
 )
 
 class MentorViewModel(
@@ -248,8 +246,7 @@ class MentorViewModel(
         val prefs: MentorPrefs,
     )
 
-    private val spendGuardFlow = repository.observeSpendGuard()
-    private val messageCostsUsd = MutableStateFlow<Map<String, Double>>(emptyMap())
+    private val allowanceFlow = repository.observeMessageAllowance()
     private val streamCancelled = java.util.concurrent.atomic.AtomicBoolean(false)
     private val rankedUseCasesFlow = MutableStateFlow(UseCaseCatalog.featured)
 
@@ -264,9 +261,9 @@ class MentorViewModel(
             ) { chat, meta, prompts, preview, toggles ->
                 Quintuple(chat, meta, prompts, preview, toggles)
             },
-            spendGuardFlow,
+            allowanceFlow,
             rankedUseCasesFlow,
-        ) { q, spend, ranked ->
+        ) { q, allowance, ranked ->
             val chat = q.first
             val meta = q.second
             CoreSlice(
@@ -285,7 +282,7 @@ class MentorViewModel(
                 streamPreview = q.fourth,
                 savedPrompts = q.third,
                 skillToggles = q.fifth,
-                spendGuard = spend,
+                messageAllowance = allowance,
                 catalogSkills = SkillCatalog.featuredForUi(meta.skills),
                 rankedUseCases = ranked,
             )
@@ -315,7 +312,7 @@ class MentorViewModel(
         val streamPreview: String,
         val savedPrompts: List<SavedPromptEntity>,
         val skillToggles: Map<String, Boolean>,
-        val spendGuard: SpendCheck,
+        val messageAllowance: AllowanceCheck,
         val catalogSkills: List<CatalogSkill>,
         val rankedUseCases: List<PopularUseCase>,
     )
@@ -358,8 +355,8 @@ class MentorViewModel(
     val uiState: StateFlow<MentorUiState> =
         combine(
             combine(coreData, interactionState) { core, interaction -> core to interaction },
-            combine(pendingShareConsent, pendingSkillInstall, lastExportMarkdown, messageCostsUsd) { share, skillInstall, exportMd, costs ->
-                Quad(share, skillInstall, exportMd, costs)
+            combine(pendingShareConsent, pendingSkillInstall, lastExportMarkdown) { share, skillInstall, exportMd ->
+                Triple(share, skillInstall, exportMd)
             },
         ) { a, b ->
             val core = a.first
@@ -367,7 +364,6 @@ class MentorViewModel(
             val share = b.first
             val skillInstall = b.second
             val exportMd = b.third
-            val costs = b.fourth
             MentorUiState(
                 messages = core.messages,
                 suggestions = core.suggestions,
@@ -393,11 +389,10 @@ class MentorViewModel(
                 skillToggles = core.skillToggles,
                 catalogSkills = core.catalogSkills,
                 rankedUseCases = core.rankedUseCases,
-                spendGuard = core.spendGuard,
+                messageAllowance = core.messageAllowance,
                 pendingShare = share,
                 pendingSkillInstall = skillInstall,
                 lastExportMarkdown = exportMd,
-                messageCostsUsd = costs,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
@@ -497,37 +492,12 @@ class MentorViewModel(
         pendingShareConsent.value = null
     }
 
-    val spendRaisePreview = MutableStateFlow<Pair<Double, Double>?>(null)
-
-    fun previewRaiseSpendLimits() {
-        viewModelScope.launch {
-            val p = prefs.current()
-            val daily = if (p.dailyBudgetUsd > 0) p.dailyBudgetUsd * 1.25 else 5.0
-            val weekly = if (p.weeklyBudgetUsd > 0) p.weeklyBudgetUsd * 1.25 else 25.0
-            spendRaisePreview.value = daily to weekly
-        }
-    }
-
-    fun confirmRaiseSpendLimits() {
-        val preview = spendRaisePreview.value ?: return
-        spendRaisePreview.value = null
-        viewModelScope.launch {
-            prefs.update { p -> p.copy(dailyBudgetUsd = preview.first, weeklyBudgetUsd = preview.second) }
-            status.value =
-                "Daily cap set to $${"%.2f".format(preview.first)} · weekly $${"%.2f".format(preview.second)} (estimates)"
-        }
-    }
-
-    fun dismissSpendRaisePreview() {
-        spendRaisePreview.value = null
-    }
-
     fun dismissSpendBlockMessage() {
         viewModelScope.launch {
             val until = com.skillmcp.mentor.policy.SpendPolicy.nextLocalMidnightMs()
             prefs.update { it.copy(spendDailyBlockDismissedUntilMs = until) }
             status.value =
-                "Spend limit reminder hidden until " +
+                "Limit reminder hidden until " +
                     com.skillmcp.mentor.policy.SpendPolicy.formatResetTime(until) +
                     " (local midnight)."
         }
@@ -620,17 +590,6 @@ class MentorViewModel(
 
     fun setUsageWindow(window: UsageWindow) {
         usageWindow.value = window
-    }
-
-    fun estimatedSendCostUsd(): Double {
-        val profile = uiState.value.activeLlmProfile ?: return 0.0
-        val historyChars = uiState.value.messages.sumOf { it.content.length }
-        return TokenCostEstimator.estimateUsd(
-            profile,
-            draft.value,
-            uiState.value.prefs.modelPreset,
-            historyChars,
-        )
     }
 
     fun attachFromUri(uri: Uri, mimeType: String?) {
@@ -746,9 +705,6 @@ class MentorViewModel(
                 draft.value = ""
                 val send = result.getOrNull() ?: return@launch
                 val reply = send.content
-                if (send.assistantMessageId.isNotBlank() && send.costUsd > 0) {
-                    messageCostsUsd.value = messageCostsUsd.value + (send.assistantMessageId to send.costUsd)
-                }
                 val p = prefs.current()
                 if (p.speakResponses) {
                     speakAndThen(reply) {

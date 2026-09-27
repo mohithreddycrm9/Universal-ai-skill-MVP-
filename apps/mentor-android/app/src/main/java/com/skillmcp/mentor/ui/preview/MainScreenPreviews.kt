@@ -58,7 +58,7 @@ object MainScreenPreviewSamples {
                     requestCount = 12,
                     promptTokens = 4000,
                     completionTokens = 900,
-                    estimatedUsd = 0.42,
+                    estimatedUsd = 0.0,
                 ),
         )
 
@@ -119,7 +119,6 @@ internal fun ChatScreenPreviewContent(state: MentorUiState) {
                         isUser = msg.role == "user",
                         isStreaming = false,
                         modelLabel = if (msg.role != "user") "OpenAI" else null,
-                        estimatedCostUsd = null,
                     )
                 }
             }

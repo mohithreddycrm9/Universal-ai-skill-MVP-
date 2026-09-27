@@ -179,6 +179,14 @@ interface MentorDao {
     )
     suspend fun sumSpendSince(sinceMs: Long): Double
 
+    @Query(
+        """
+        SELECT COUNT(*) FROM llm_usage
+        WHERE createdAt >= :sinceMs AND success = 1
+        """,
+    )
+    suspend fun countRequestsSince(sinceMs: Long): Int
+
     @Query("SELECT * FROM skills ORDER BY addedAt DESC")
     fun observeSkills(): Flow<List<SkillEntity>>
 

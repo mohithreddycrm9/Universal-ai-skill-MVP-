@@ -19,9 +19,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import com.skillmcp.mentor.ui.theme.BrandColors
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,24 +56,33 @@ fun ChatEmptyState(
     modifier: Modifier = Modifier,
 ) {
     val greeting = timeOfDayGreeting(displayName)
+    val pulse = rememberInfiniteTransition(label = "orb")
+    val scale by pulse.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(animation = tween(2400), repeatMode = RepeatMode.Reverse),
+        label = "orbScale",
+    )
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Surface(
-            modifier = Modifier.size(72.dp),
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            tonalElevation = 2.dp,
+            modifier = Modifier.size(120.dp).scale(scale),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = Color.Transparent,
+            tonalElevation = 0.dp,
         ) {
-            Icon(
-                Icons.Outlined.AutoAwesome,
-                contentDescription = "Assistant",
-                modifier = Modifier.padding(18.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
+            androidx.compose.foundation.Canvas(Modifier.fillMaxWidth()) {
+                drawCircle(
+                    brush =
+                        Brush.radialGradient(
+                            colors = listOf(BrandColors.Indigo, BrandColors.IndigoDark, BrandColors.Coral.copy(0.35f)),
+                        ),
+                )
+            }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
         Text(
             greeting,
             style = MaterialTheme.typography.headlineLarge,
@@ -124,15 +144,8 @@ private fun StarterGridCard(
 }
 
 fun timeOfDayGreeting(name: String): String {
-    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-    val period =
-        when (hour) {
-            in 5..11 -> "Good morning"
-            in 12..16 -> "Good afternoon"
-            in 17..20 -> "Good evening"
-            else -> "Hello"
-        }
-    return if (name.isBlank()) "$period 👋" else "$period, $name 👋"
+    val who = if (name.isBlank()) "there" else name.trim()
+    return "Hi $who, what can I help with?"
 }
 
 fun popularUseCasesToStarters(

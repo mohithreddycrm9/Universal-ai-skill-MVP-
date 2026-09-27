@@ -8,11 +8,11 @@ class SpendPolicyTest {
     @Test
     fun hideDailyBlockUi_doesNotAllowSending() {
         val blocked =
-            SpendGuard.checkSpend(
-                daySpend = 10.0,
-                weekSpend = 10.0,
-                dailyBudgetUsd = 5.0,
-                weeklyBudgetUsd = 0.0,
+            MessageAllowanceGuard.evaluate(
+                dayCount = 50,
+                weekCount = 50,
+                dailyLimit = 50,
+                weeklyLimit = 0,
             )
         assertFalse(blocked.allowed)
         val dismissedUntil = System.currentTimeMillis() + 60_000
@@ -22,8 +22,7 @@ class SpendPolicyTest {
 
     @Test
     fun hideDailyBlockUi_expiresAfterMidnightMarker() {
-        val blocked =
-            SpendGuard.checkSpend(10.0, 10.0, 5.0, 0.0)
+        val blocked = MessageAllowanceGuard.evaluate(50, 50, 50, 0)
         assertFalse(
             SpendPolicy.shouldHideDailyBlockUi(
                 blocked,

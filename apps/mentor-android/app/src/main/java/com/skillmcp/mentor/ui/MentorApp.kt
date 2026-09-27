@@ -34,13 +34,13 @@ import com.skillmcp.mentor.ui.screens.DiscoverScreen
 import com.skillmcp.mentor.ui.screens.ModelsScreen
 import com.skillmcp.mentor.ui.screens.SettingsScreen
 import com.skillmcp.mentor.ui.screens.SkillsScreen
-import com.skillmcp.mentor.ui.screens.UsageScreen
+import com.skillmcp.mentor.ui.screens.ActivityScreen
 
 enum class MentorTab(val route: String, val label: String, val showInBar: Boolean = true) {
     Chat("chat", "Chat"),
     Discover("discover", "Discover"),
     Models("models", "Models", showInBar = false),
-    Usage("usage", "Usage", showInBar = false),
+    Usage("usage", "Activity", showInBar = false),
     Skills("skills", "Abilities", showInBar = false),
     Settings("settings", "Settings"),
 }
@@ -169,7 +169,7 @@ fun MentorApp(container: AppContainer) {
                 composable(MentorTab.Chat.route) { ChatScreen(vm) }
                 composable(MentorTab.Discover.route) { DiscoverScreen(vm) }
                 composable(MentorTab.Models.route) { ModelsScreen(vm, onBack = onAdvancedBack) }
-                composable(MentorTab.Usage.route) { UsageScreen(vm, onBack = onAdvancedBack) }
+                composable(MentorTab.Usage.route) { ActivityScreen(vm, onBack = onAdvancedBack) }
                 composable(MentorTab.Skills.route) { SkillsScreen(vm, onBack = onAdvancedBack) }
                 composable(MentorTab.Settings.route) { SettingsScreen(vm) }
             }

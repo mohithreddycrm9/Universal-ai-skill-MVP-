@@ -6,9 +6,8 @@ import org.junit.Test
 
 class ChatEmptyStateTest {
     @Test
-    fun greetingWithoutNameOmitsThere() {
-        val greeting = timeOfDayGreeting("")
-        assertFalse(greeting.contains("there"))
-        assertEquals(true, greeting.endsWith("👋"))
+    fun greetingUsesHelpPrompt() {
+        val greeting = timeOfDayGreeting("Mohith")
+        assertEquals("Hi Mohith, what can I help with?", greeting)
     }
 }

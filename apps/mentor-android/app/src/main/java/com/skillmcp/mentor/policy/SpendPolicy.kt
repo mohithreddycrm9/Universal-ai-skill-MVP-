@@ -21,11 +21,11 @@ object SpendPolicy {
 
     /** Hides the daily block card until midnight; does not clear the spend limit. */
     fun shouldHideDailyBlockUi(
-        check: SpendCheck,
+        check: AllowanceCheck,
         dismissedUntilMs: Long,
         nowMs: Long = System.currentTimeMillis(),
     ): Boolean =
         !check.allowed &&
-            check.blockReason == SpendBlockReason.DAILY &&
+            check.blockReason == AllowanceBlockReason.DAILY &&
             dismissedUntilMs > nowMs
 }

@@ -1,3 +1,3 @@
 package com.skillmcp.mentor.policy
 
-class SpendLimitException(val check: SpendCheck) : IllegalStateException(check.message)
+class SpendLimitException(val check: AllowanceCheck) : IllegalStateException(check.message)

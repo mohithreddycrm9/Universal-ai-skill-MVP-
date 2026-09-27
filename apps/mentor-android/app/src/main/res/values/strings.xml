@@ -4,6 +4,7 @@
     <string name="nav_chat">Chat</string>
     <string name="nav_discover">Discover</string>
     <string name="nav_settings">Settings</string>
+    <string name="nav_activity">Activity</string>
     <string name="widget_title">Universal AI quick actions</string>
     <string name="widget_description" translatable="false">Morning brief, meal plan, and open chat</string>
     <string name="widget_subtitle">Quick workflows from your home screen</string>
