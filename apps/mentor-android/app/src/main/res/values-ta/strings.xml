@@ -34,4 +34,6 @@
     <string name="chat_scroll_to_latest">சமீபத்தியதற்குச் செல்</string>
     <string name="chat_open_chats">அரட்டைகள்</string>
     <string name="chat_stop">நிறுத்து</string>
+    <string name="drawer_search">அரட்டைகளைத் தேடு</string>
+    <string name="drawer_new_chat">புதிய அரட்டை</string>
 </resources>

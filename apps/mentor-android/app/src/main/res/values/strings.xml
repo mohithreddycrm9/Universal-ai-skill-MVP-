@@ -38,4 +38,6 @@
     <string name="chat_scroll_to_latest">Scroll to latest</string>
     <string name="chat_open_chats">Chats</string>
     <string name="chat_stop">Stop</string>
+    <string name="drawer_search">Search chats</string>
+    <string name="drawer_new_chat">New chat</string>
 </resources>

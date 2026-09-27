@@ -33,6 +33,7 @@ interface ChatScreenActions {
     fun deletePrompt(id: String)
     fun chatScrollFor(conversationId: String): ChatScrollPosition?
     fun saveChatScroll(conversationId: String, position: ChatScrollPosition)
+    fun requestOpenTab(route: String)
 }
 
 /** No-op actions for @Preview / Paparazzi renders of the real chat screen. */
@@ -61,4 +62,5 @@ object PreviewChatActions : ChatScreenActions {
     override fun deletePrompt(id: String) = Unit
     override fun chatScrollFor(conversationId: String): ChatScrollPosition? = null
     override fun saveChatScroll(conversationId: String, position: ChatScrollPosition) = Unit
+    override fun requestOpenTab(route: String) = Unit
 }

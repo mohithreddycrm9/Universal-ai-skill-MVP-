@@ -148,17 +148,27 @@ fun MentorApp(container: AppContainer) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                FloatingMentorNavBar(
-                    selectedRoute = highlightedTab,
-                    onSelect = { tab ->
-                        nav.navigate(tab.route) {
-                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    tabLabel = { it.localizedLabel() },
-                )
+                // Inside a conversation the chat gets the full height (thin top bar + composer only);
+                // the drawer links to Discover/Settings, and "New chat" brings the tab bar back.
+                val inConversation =
+                    isInConversation(current, state.messages.isNotEmpty(), state.isSending)
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = !inConversation,
+                    enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut(),
+                ) {
+                    FloatingMentorNavBar(
+                        selectedRoute = highlightedTab,
+                        onSelect = { tab ->
+                            nav.navigate(tab.route) {
+                                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        tabLabel = { it.localizedLabel() },
+                    )
+                }
             },
         ) { padding ->
             NavHost(
@@ -177,3 +187,6 @@ fun MentorApp(container: AppContainer) {
     }
 }
 
+/** The bottom tab bar is hidden while a conversation (messages or an in-flight send) is on the chat tab. */
+fun isInConversation(currentRoute: String?, hasMessages: Boolean, isSending: Boolean): Boolean =
+    currentRoute == MentorTab.Chat.route && (hasMessages || isSending)

@@ -34,4 +34,6 @@
     <string name="chat_scroll_to_latest">తాజాదానికి వెళ్ళండి</string>
     <string name="chat_open_chats">చాట్‌లు</string>
     <string name="chat_stop">ఆపు</string>
+    <string name="drawer_search">చాట్‌లను వెతకండి</string>
+    <string name="drawer_new_chat">కొత్త చాట్</string>
 </resources>

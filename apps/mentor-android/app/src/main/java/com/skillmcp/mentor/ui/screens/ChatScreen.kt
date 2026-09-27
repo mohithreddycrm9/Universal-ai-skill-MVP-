@@ -65,6 +65,8 @@ import com.skillmcp.mentor.ui.components.PromptLibrarySheet
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.semantics.semantics
@@ -264,6 +266,30 @@ fun ChatScreenContent(
                         },
                         onShareMarkdown = { vm.shareChatMarkdown(chat.id) },
                         onSharePdf = { vm.shareChatPdf(chat.id) },
+                    )
+                },
+                // The tab bar is hidden inside a conversation; the drawer keeps the other tabs one tap away.
+                footer = {
+                    androidx.compose.material3.HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                    androidx.compose.material3.NavigationDrawerItem(
+                        label = { Text(stringResource(R.string.nav_discover)) },
+                        selected = false,
+                        icon = { Icon(Icons.Outlined.Explore, contentDescription = null) },
+                        onClick = {
+                            scope.launch { drawer.close() }
+                            vm.requestOpenTab("discover")
+                        },
+                        modifier = Modifier.padding(androidx.compose.material3.NavigationDrawerItemDefaults.ItemPadding),
+                    )
+                    androidx.compose.material3.NavigationDrawerItem(
+                        label = { Text(stringResource(R.string.nav_settings)) },
+                        selected = false,
+                        icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                        onClick = {
+                            scope.launch { drawer.close() }
+                            vm.requestOpenTab("settings")
+                        },
+                        modifier = Modifier.padding(androidx.compose.material3.NavigationDrawerItemDefaults.ItemPadding),
                     )
                 },
             )

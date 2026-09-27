@@ -34,4 +34,6 @@
     <string name="chat_scroll_to_latest">नवीनतम पर जाएँ</string>
     <string name="chat_open_chats">चैट</string>
     <string name="chat_stop">रोकें</string>
+    <string name="drawer_search">चैट खोजें</string>
+    <string name="drawer_new_chat">नई चैट</string>
 </resources>

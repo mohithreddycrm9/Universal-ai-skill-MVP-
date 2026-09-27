@@ -18,6 +18,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.skillmcp.mentor.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.mentor.UiConversation
@@ -63,6 +65,7 @@ fun ChatHistoryDrawer(
     onNewChat: () -> Unit,
     onOpenChat: (UiConversation) -> Unit,
     conversationRow: @Composable (UiConversation, Boolean, () -> Unit) -> Unit,
+    footer: @Composable () -> Unit = {},
 ) {
     ModalDrawerSheet(
         modifier = Modifier.fillMaxWidth(0.88f),
@@ -73,11 +76,11 @@ fun ChatHistoryDrawer(
                 value = query,
                 onValueChange = onQueryChange,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Search") },
+                placeholder = { Text(stringResource(R.string.drawer_search)) },
                 singleLine = true,
             )
             NavigationDrawerItem(
-                label = { Text("New chat", fontWeight = FontWeight.Medium) },
+                label = { Text(stringResource(R.string.drawer_new_chat), fontWeight = FontWeight.Medium) },
                 selected = false,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 onClick = onNewChat,
@@ -101,6 +104,7 @@ fun ChatHistoryDrawer(
                     }
                 }
             }
+            footer()
         }
     }
 }
