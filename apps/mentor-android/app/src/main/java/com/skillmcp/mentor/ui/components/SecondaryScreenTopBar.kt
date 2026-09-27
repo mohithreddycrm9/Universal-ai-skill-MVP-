@@ -25,25 +25,30 @@ fun SecondaryScreenTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Title stays one line inside the fixed-height bar; the subtitle wraps below it so large fonts never clip.
+    Column(modifier) {
     TopAppBar(
-        modifier = modifier,
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         },
         title = {
-            Column {
-                Text(title, fontWeight = FontWeight.SemiBold)
-                if (!subtitle.isNullOrBlank()) {
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
-            }
+            Text(
+                title,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
         },
     )
+    if (!subtitle.isNullOrBlank()) {
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 4.dp),
+        )
+    }
+    }
 }

@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
@@ -131,7 +132,10 @@ fun CodeMentorTheme(
         }
 
     val baseType = mentorTypography(fontFamily)
-    val s = fontScale.coerceIn(0.85f, 2f)
+    // The in-app size is a *target total* scale, not a multiplier on top of the system font size:
+    // total = max(system, in-app), capped at 2x (or the system value if that is larger).
+    val systemScale = LocalDensity.current.fontScale
+    val s = inAppTypeMultiplier(fontScale, systemScale)
     fun TextStyle.scaled() = copy(fontSize = fontSize * s, lineHeight = lineHeight * s)
     val scaledTypography =
         baseType.copy(
@@ -150,4 +154,15 @@ fun CodeMentorTheme(
         shapes = AppShapes,
         content = content,
     )
+}
+
+/**
+ * Multiplier applied to text sizes so the in-app setting never stacks with the system font scale.
+ * Example: system 2.0 + in-app 1.35 -> 1.0 (already larger); system 1.0 + in-app 1.35 -> 1.35.
+ */
+fun inAppTypeMultiplier(inAppScale: Float, systemScale: Float): Float {
+    val system = systemScale.coerceAtLeast(0.5f)
+    val target = inAppScale.coerceIn(0.85f, 2f)
+    val total = maxOf(system, target).coerceAtMost(maxOf(2f, system))
+    return total / system
 }

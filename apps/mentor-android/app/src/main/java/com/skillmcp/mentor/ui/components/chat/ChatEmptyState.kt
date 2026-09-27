@@ -103,11 +103,13 @@ fun ChatEmptyState(
             modifier = Modifier.padding(top = 8.dp),
         )
         Spacer(Modifier.height(24.dp))
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val columns = starterColumns(maxWidth.value, effectiveTextScale())
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            starters.take(4).chunked(2).forEach { rowCards ->
+            starters.take(4).chunked(columns).forEach { rowCards ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -115,11 +117,12 @@ fun ChatEmptyState(
                     rowCards.forEach { card ->
                         StarterGridCard(card, modifier = Modifier.weight(1f))
                     }
-                    if (rowCards.size == 1) {
-                        Spacer(Modifier.weight(1f))
+                    if (rowCards.size < columns) {
+                        Spacer(Modifier.weight((columns - rowCards.size).toFloat()))
                     }
                 }
             }
+        }
         }
     }
 }
@@ -187,3 +190,13 @@ fun popularUseCasesToStarters(
         )
     }
 }
+
+/** System font scale times the in-app type multiplier (bodyLarge is 16sp at 1x). */
+@Composable
+private fun effectiveTextScale(): Float =
+    androidx.compose.ui.platform.LocalDensity.current.fontScale *
+        (MaterialTheme.typography.bodyLarge.fontSize.value / 16f)
+
+/** Two starter cards per row normally; one per row at large text or on narrow widths. */
+fun starterColumns(widthDp: Float, textScale: Float): Int =
+    if (textScale >= 1.3f || widthDp / textScale < 320f) 1 else 2
