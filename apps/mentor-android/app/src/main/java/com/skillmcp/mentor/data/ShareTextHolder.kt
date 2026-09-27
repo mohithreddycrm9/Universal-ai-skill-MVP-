@@ -8,6 +8,9 @@ data class SharePayload(
     val text: String,
     /** True when content will be sent to the user's configured LLM provider. */
     val sendsToAiProvider: Boolean,
+    /** content:// URI of a shared image (attached to the next message after consent). */
+    val imageUri: String? = null,
+    val imageMimeType: String? = null,
 )
 
 class ShareTextHolder {

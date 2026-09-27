@@ -105,24 +105,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleShareIntent(intent: Intent?, container: com.skillmcp.mentor.data.AppContainer) {
-        if (intent?.action != Intent.ACTION_SEND) return
-        val text = intent.getStringExtra(Intent.EXTRA_TEXT)?.trim()
-        if (!text.isNullOrEmpty()) {
-            val enriched =
-                if (text.startsWith("http://") || text.startsWith("https://")) {
-                    "Shared link: $text\n\nSummarize this page and list key takeaways. " +
-                        "(Enable the fetch plugin and use /fetch if you want raw text.)"
-                } else {
-                    text
-                }
-            container.shareTextHolder.push(
-                com.skillmcp.mentor.data.SharePayload(
-                    text = enriched,
-                    sendsToAiProvider = true,
-                ),
-            )
-        }
+        if (intent == null) return
+        val streams: List<String?> =
+            when (intent.action) {
+                Intent.ACTION_SEND -> listOf(intent.streamUri()?.toString())
+                Intent.ACTION_SEND_MULTIPLE -> intent.streamUris().map { it.toString() }
+                else -> return
+            }
+        val shared =
+            com.skillmcp.mentor.data.ShareIntentParser.parse(
+                action = intent.action,
+                mimeType = intent.type,
+                text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
+                subject = intent.getStringExtra(Intent.EXTRA_SUBJECT),
+                streamUris = streams,
+                linkPrompt = { link -> getString(R.string.share_link_prompt, link) },
+            ) ?: return
+        container.shareTextHolder.push(
+            com.skillmcp.mentor.data.SharePayload(
+                text = shared.text,
+                sendsToAiProvider = true,
+                imageUri = shared.imageUri,
+                imageMimeType = if (shared.imageUri != null) intent.type else null,
+            ),
+        )
     }
+
+    @Suppress("DEPRECATION")
+    private fun Intent.streamUri(): Uri? =
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+        }
+
+    @Suppress("DEPRECATION")
+    private fun Intent.streamUris(): List<Uri> =
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
+        } else {
+            getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()
+        }
 
     private suspend fun isTrustedInternalLaunch(
         intent: Intent,
