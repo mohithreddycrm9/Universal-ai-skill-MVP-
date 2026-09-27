@@ -164,12 +164,6 @@ fun ChatScreen(vm: MentorViewModel) {
         }
     }
 
-    val extraItems =
-        (if (state.isSending && state.streamPreview.isNotBlank()) 1 else if (state.isSending) 1 else 0)
-    LaunchedEffect(state.messages.size, extraItems, state.streamPreview) {
-        val last = state.messages.size + extraItems - 1
-        if (last >= 0) listState.animateScrollToItem(last)
-    }
 
     state.pendingShare?.let { share ->
         AlertDialog(
@@ -353,23 +347,6 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     }
                     val profile = state.activeLlmProfile
-                    state.pendingUserMessage?.let { pending ->
-                        item("pending-user") {
-                            androidx.compose.animation.AnimatedVisibility(
-                                visible = true,
-                                enter =
-                                    slideInVertically { it / 4 } +
-                                        fadeIn(CalmMotion.fastTween(reduceMotion)),
-                            ) {
-                                ChatMessageContent(
-                                    content = pending,
-                                    isUser = true,
-                                    isStreaming = false,
-                                    modelLabel = null,
-                                )
-                            }
-                        }
-                    }
                     items(state.messages, key = { it.id }) { message ->
                         if (message.content.isNotBlank()) {
                             val isUser = message.role == "user"
@@ -382,18 +359,29 @@ fun ChatScreen(vm: MentorViewModel) {
                             )
                         }
                     }
-                    if (state.isSending && state.streamPreview.isNotBlank()) {
-                        item("stream-preview") {
+                    // Optimistic copy sits at the bottom and shares its key with the persisted row.
+                    state.pendingUserMessage?.let { pending ->
+                        item(key = state.pendingUserMessageId ?: "pending-user") {
                             ChatMessageContent(
-                                content = state.streamPreview,
-                                isUser = false,
-                                isStreaming = true,
-                                modelLabel = profile?.name,
+                                content = pending,
+                                isUser = true,
+                                isStreaming = false,
+                                modelLabel = null,
                             )
                         }
-                    } else if (state.isSending) {
-                        item("stream-typing") {
-                            ThinkingShimmerLine()
+                    }
+                    if (state.showReplySlot) {
+                        item(key = state.replyKey ?: "reply-slot") {
+                            if (state.streamPreview.isNotBlank()) {
+                                ChatMessageContent(
+                                    content = state.streamPreview,
+                                    isUser = false,
+                                    isStreaming = true,
+                                    modelLabel = profile?.name,
+                                )
+                            } else {
+                                ThinkingShimmerLine()
+                            }
                         }
                     }
                 }

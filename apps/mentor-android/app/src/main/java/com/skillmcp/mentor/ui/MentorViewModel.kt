@@ -57,10 +57,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -109,8 +111,14 @@ data class MentorUiState(
     val pendingShare: SharePayload? = null,
     val pendingSkillInstall: SkillInstallRequest? = null,
     val lastExportMarkdown: String? = null,
-    /** Shown immediately after send until the message is persisted. */
+    /** Shown immediately after send (at the bottom) until the persisted row with the same id arrives. */
     val pendingUserMessage: String? = null,
+    /** Stable key of the optimistic user bubble; equals the persisted message id. */
+    val pendingUserMessageId: String? = null,
+    /** Stable key shared by Thinking…, the streaming reply and the persisted assistant message. */
+    val replyKey: String? = null,
+    /** True while the thinking/streaming row should be rendered (reply not yet persisted). */
+    val showReplySlot: Boolean = false,
 )
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -141,7 +149,7 @@ class MentorViewModel(
     val backupPassphrasePrompt = MutableStateFlow(false)
     val backupRestorePassphrasePrompt = MutableStateFlow(false)
     val drawerSearchResults = MutableStateFlow<List<UiConversation>?>(null)
-    private val pendingUserMessage = MutableStateFlow<String?>(null)
+    private val pendingUserMessage = MutableStateFlow<com.skillmcp.mentor.ui.chat.PendingSend?>(null)
 
     private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val openChatRequests: SharedFlow<Unit> = openChatRequestsInner.asSharedFlow()
@@ -353,7 +361,7 @@ class MentorViewModel(
         val draft: String,
         val isSending: Boolean,
         val isListening: Boolean,
-        val pendingUserMessage: String?,
+        val pendingUserMessage: com.skillmcp.mentor.ui.chat.PendingSend?,
         val status: String?,
         val statusDetails: String?,
         val activeStep: String,
@@ -372,6 +380,7 @@ class MentorViewModel(
             val share = b.first
             val skillInstall = b.second
             val exportMd = b.third
+            val persistedIds = core.messages.mapTo(HashSet()) { it.id }
             MentorUiState(
                 messages = core.messages,
                 suggestions = core.suggestions,
@@ -392,7 +401,19 @@ class MentorViewModel(
                 statusDetails = interaction.statusDetails,
                 activeStep = interaction.activeStep,
                 lastCommand = interaction.lastCommand,
-                pendingUserMessage = interaction.pendingUserMessage,
+                pendingUserMessage =
+                    com.skillmcp.mentor.ui.chat.PendingSendLogic.visiblePendingText(
+                        interaction.pendingUserMessage,
+                        persistedIds,
+                    ),
+                pendingUserMessageId = interaction.pendingUserMessage?.userMessageId,
+                replyKey = interaction.pendingUserMessage?.replyId,
+                showReplySlot =
+                    com.skillmcp.mentor.ui.chat.PendingSendLogic.showReplySlot(
+                        interaction.isSending,
+                        interaction.pendingUserMessage,
+                        persistedIds,
+                    ),
                 streamPreview = core.streamPreview,
                 savedPrompts = core.savedPrompts,
                 skillToggles = core.skillToggles,
@@ -691,11 +712,17 @@ class MentorViewModel(
     fun sendMessage() {
         val text = draft.value.trim()
         if (text.isEmpty() || isSending.value) return
+        val pending =
+            com.skillmcp.mentor.ui.chat.PendingSend(
+                userMessageId = java.util.UUID.randomUUID().toString(),
+                replyId = java.util.UUID.randomUUID().toString(),
+                text = text,
+            )
         draft.value = ""
-        pendingUserMessage.value = text
+        pendingUserMessage.value = pending
+        isSending.value = true
         viewModelScope.launch {
             streamCancelled.set(false)
-            isSending.value = true
             status.value = null
             statusDetails.value = null
             streamPreview.value = ""
@@ -709,9 +736,21 @@ class MentorViewModel(
                     pdfExtract = pdf,
                     onStreamUpdate = { partial -> streamPreview.value = partial },
                     isCancelled = { streamCancelled.get() },
+                    userMessageId = pending.userMessageId,
+                    assistantMessageId = pending.replyId,
+                    onUserMessageSaved = {
+                        pendingUserMessage.value = pendingUserMessage.value?.copy(saved = true)
+                    },
                 )
-            streamPreview.value = ""
+            // Keep the reply row until the persisted row (same key) is in the list, so the swap is invisible.
+            // A blocked send never writes rows, so only wait when the user message was persisted.
+            if (pendingUserMessage.value?.saved == true) {
+                withTimeoutOrNull(1_500) {
+                    uiState.first { s -> s.messages.any { it.id == pending.replyId } }
+                }
+            }
             isSending.value = false
+            streamPreview.value = ""
             pendingUserMessage.value = null
             if (result.isSuccess) {
                 pendingVision.value = null
@@ -731,6 +770,7 @@ class MentorViewModel(
                 pendingVision.value = vision
                 pendingPdfExtract.value = pdf
                 pendingImagePreviewUri.value = previewUri
+                draft.value = com.skillmcp.mentor.ui.chat.PendingSendLogic.draftAfterFailure(draft.value, text)
                 val parsed =
                     result.exceptionOrNull()?.let(UserFacingErrors::parse)
                         ?: UserFacingError("Send failed", null)

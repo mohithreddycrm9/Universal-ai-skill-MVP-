@@ -255,6 +255,9 @@ class MentorRepository(
         pdfExtract: String? = null,
         onStreamUpdate: (String) -> Unit = {},
         isCancelled: () -> Boolean = { false },
+        userMessageId: String = UUID.randomUUID().toString(),
+        assistantMessageId: String = UUID.randomUUID().toString(),
+        onUserMessageSaved: () -> Unit = {},
     ): Result<SendMessageResult> =
         withContext(Dispatchers.IO) {
             bootstrap()
@@ -275,13 +278,14 @@ class MentorRepository(
 
             dao.insertMessage(
                 ChatMessageEntity(
-                    UUID.randomUUID().toString(),
+                    userMessageId,
                     projectId,
                     "user",
                     text,
                     System.currentTimeMillis(),
                 ),
             )
+            onUserMessageSaved()
 
             val skillContext = buildSkillContext(projectId)
             val extraContext =
@@ -314,11 +318,16 @@ class MentorRepository(
                 )
 
             if (result.isFailure) {
-                onFailureChat(projectId, profile, result.exceptionOrNull() ?: Exception("Send failed"))
+                onFailureChat(
+                    projectId,
+                    profile,
+                    result.exceptionOrNull() ?: Exception("Send failed"),
+                    assistantMessageId,
+                )
                 return@withContext Result.failure(result.exceptionOrNull()!!)
             }
             val chat = result.getOrThrow()
-            val assistantId = UUID.randomUUID().toString()
+            val assistantId = assistantMessageId
             dao.insertMessage(
                 ChatMessageEntity(
                     assistantId,
@@ -359,12 +368,17 @@ class MentorRepository(
         syncCoordinator.publishStateSnapshot()
     }
 
-    private suspend fun onFailureChat(projectId: String, profile: LlmProfile, err: Throwable) {
+    private suspend fun onFailureChat(
+        projectId: String,
+        profile: LlmProfile,
+        err: Throwable,
+        messageId: String = UUID.randomUUID().toString(),
+    ) {
         val userMessage = com.skillmcp.mentor.util.UserFacingErrors.message(err)
         val stored = com.skillmcp.mentor.util.UserFacingErrors.redactForStorage(err)
         dao.insertMessage(
             ChatMessageEntity(
-                UUID.randomUUID().toString(),
+                messageId,
                 projectId,
                 "assistant",
                 "⚠️ $userMessage",
