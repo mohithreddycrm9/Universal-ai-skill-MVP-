@@ -65,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import com.skillmcp.mentor.R
 import androidx.core.content.ContextCompat
@@ -337,6 +338,7 @@ fun ChatScreen(vm: MentorViewModel) {
                         if (message.content.isNotBlank()) {
                             val isUser = message.role == "user"
                             ChatMessageContent(
+                                modifier = calmItemModifier(reduceMotion),
                                 content = message.content,
                                 isUser = isUser,
                                 isStreaming = false,
@@ -348,18 +350,32 @@ fun ChatScreen(vm: MentorViewModel) {
                     // Optimistic copy sits at the bottom and shares its key with the persisted row.
                     state.pendingUserMessage?.let { pending ->
                         item(key = state.pendingUserMessageId ?: "pending-user") {
-                            ChatMessageContent(
-                                content = pending,
-                                isUser = true,
-                                isStreaming = false,
-                                modelLabel = null,
-                            )
+                            // Starts invisible so the entrance actually plays on the first frame after Send.
+                            val skipEntrance = reduceMotion || LocalInspectionMode.current
+                            val appear =
+                                remember { androidx.compose.animation.core.MutableTransitionState(skipEntrance) }
+                            appear.targetState = true
+                            androidx.compose.animation.AnimatedVisibility(
+                                visibleState = appear,
+                                modifier = calmItemModifier(reduceMotion),
+                                enter =
+                                    slideInVertically(CalmMotion.gentle()) { it / 3 } +
+                                        fadeIn(CalmMotion.fastTween(reduceMotion)),
+                            ) {
+                                ChatMessageContent(
+                                    content = pending,
+                                    isUser = true,
+                                    isStreaming = false,
+                                    modelLabel = null,
+                                )
+                            }
                         }
                     }
                     if (state.showReplySlot) {
                         // Same key from Thinking… through streaming to the persisted reply; content swaps in place.
                         item(key = state.replyKey ?: "reply-slot") {
                             androidx.compose.animation.Crossfade(
+                                modifier = calmItemModifier(reduceMotion),
                                 targetState = state.streamPreview.isBlank(),
                                 animationSpec = CalmMotion.fastTween(reduceMotion),
                                 label = "replySlot",
@@ -569,3 +585,15 @@ private fun ConversationDrawerRow(
         }
     }
 }
+
+/** animateItem() with the calm spring for placement; disabled entirely under reduced motion. */
+private fun androidx.compose.foundation.lazy.LazyItemScope.calmItemModifier(reduceMotion: Boolean): Modifier =
+    if (reduceMotion) {
+        Modifier
+    } else {
+        Modifier.animateItem(
+            fadeInSpec = androidx.compose.animation.core.tween(CalmMotion.FAST_MS),
+            placementSpec = CalmMotion.gentle(),
+            fadeOutSpec = androidx.compose.animation.core.tween(CalmMotion.FAST_MS),
+        )
+    }

@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.skillmcp.mentor.ui.components.motion.pressableScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -56,7 +57,7 @@ fun PremiumComposerBar(
             verticalAlignment = Alignment.Bottom,
         ) {
             if (onAttach != null) {
-                IconButton(onClick = onAttach, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onAttach, modifier = Modifier.size(48.dp).pressableScale()) {
                     Icon(Icons.Default.Add, contentDescription = "Attach file")
                 }
             }
@@ -88,6 +89,7 @@ fun PremiumComposerBar(
                         modifier =
                             Modifier
                                 .size(48.dp)
+                                .pressableScale()
                                 .semantics {
                                     contentDescription = if (isSending) "Sending message" else "Send message"
                                 },
@@ -112,7 +114,7 @@ fun PremiumComposerBar(
                     FilledIconButton(
                         onClick = onMic,
                         enabled = !isListening && !isSending,
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(48.dp).pressableScale(),
                         shape = SendButtonShape,
                         colors =
                             IconButtonDefaults.filledIconButtonColors(

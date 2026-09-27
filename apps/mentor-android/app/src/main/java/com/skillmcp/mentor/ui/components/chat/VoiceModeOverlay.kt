@@ -31,17 +31,24 @@ fun VoiceModeOverlay(
     listening: Boolean,
     onDismiss: () -> Unit,
 ) {
-    val transition = rememberInfiniteTransition(label = "voiceOrb")
-    val pulse by transition.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 1.08f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(900),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "pulse",
-    )
+    val reduceMotion = com.skillmcp.mentor.ui.motion.rememberReduceMotion()
+    val pulse =
+        if (reduceMotion) {
+            1f
+        } else {
+            val transition = rememberInfiniteTransition(label = "voiceOrb")
+            val animated by transition.animateFloat(
+                initialValue = 0.92f,
+                targetValue = 1.08f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(900),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "pulse",
+            )
+            animated
+        }
     Box(
         Modifier
             .fillMaxSize()

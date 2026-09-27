@@ -56,13 +56,20 @@ fun ChatEmptyState(
     modifier: Modifier = Modifier,
 ) {
     val greeting = timeOfDayGreeting(displayName)
-    val pulse = rememberInfiniteTransition(label = "orb")
-    val scale by pulse.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(animation = tween(2400), repeatMode = RepeatMode.Reverse),
-        label = "orbScale",
-    )
+    val reduceMotion = com.skillmcp.mentor.ui.motion.rememberReduceMotion()
+    val scale =
+        if (reduceMotion) {
+            1f
+        } else {
+            val pulse = rememberInfiniteTransition(label = "orb")
+            val animated by pulse.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.04f,
+                animationSpec = infiniteRepeatable(animation = tween(2400), repeatMode = RepeatMode.Reverse),
+                label = "orbScale",
+            )
+            animated
+        }
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
