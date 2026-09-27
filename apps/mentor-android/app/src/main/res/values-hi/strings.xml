@@ -8,7 +8,6 @@
     <string name="widget_title">Lumina शॉर्टकट</string>
     <string name="welcome_title">Lumina में आपका स्वागत है</string>
     <string name="unlock_app_title">Lumina अनलॉक करें</string>
-    <string name="settings_widget_hint_prefix">होम स्क्रीन विजेट जोड़ें: लॉन्चर दबाकर रखें → विजेट → </string>
     <string name="widget_picker_hint_prefix">विजेट जोड़ें: होम स्क्रीन दबाकर रखें → विजेट → </string>
     <string name="voice_tile_label">Lumina वॉइस</string>
     <string name="chat_export_all_header">Lumina — चैट निर्यात</string>
@@ -18,7 +17,6 @@
     <string name="widget_open_chat">चैट</string>
     <string name="widget_ask_anything">कुछ भी पूछें…</string>
     <string name="tile_voice_chat">वॉइस चैट</string>
-    <string name="support_email_label">सहायता: mohithreddycrm9@gmail.com</string>
     <string name="shortcut_morning_brief">सुबह का ब्रीफ</string>
     <string name="shortcut_morning_brief_long">आज के शीर्ष 3 कार्य</string>
     <string name="shortcut_polish">संदेश सुधारें</string>
@@ -29,11 +27,9 @@
     <string name="shortcut_chat_long">नई बातचीत शुरू करें</string>
     <string name="action_back">वापस</string>
     <string name="settings_models_keys">मॉडल और API कुंजी</string>
-    <string name="settings_restore_backup">बैकअप URL से पुनर्स्थापित करें</string>
     <string name="chat_thinking">सोच रहा है…</string>
     <string name="chat_scroll_to_latest">नवीनतम पर जाएँ</string>
     <string name="chat_open_chats">चैट</string>
-    <string name="chat_stop">रोकें</string>
     <string name="drawer_search">चैट खोजें</string>
     <string name="drawer_new_chat">नई चैट</string>
     <string name="chat_limit_hide_24h">24 घंटे के लिए छिपाएँ</string>
@@ -47,7 +43,6 @@
     <string name="action_share">शेयर करें</string>
     <string name="action_close">बंद करें</string>
     <string name="action_install">इंस्टॉल करें</string>
-    <string name="action_try">आज़माएँ</string>
     <string name="action_restore">पुनर्स्थापित करें</string>
     <string name="action_upload">अपलोड करें</string>
     <string name="action_erase">मिटाएँ</string>
@@ -62,7 +57,6 @@
     <string name="chat_share_pdf">PDF के रूप में शेयर करें</string>
     <string name="chat_copy_code">कोड कॉपी करें</string>
     <string name="composer_placeholder">संदेश</string>
-    <string name="composer_attach">फ़ाइल जोड़ें</string>
     <string name="composer_send">भेजें</string>
     <string name="composer_voice">आवाज़ से लिखें</string>
     <string name="models_title">मॉडल</string>
@@ -70,7 +64,6 @@
     <string name="models_ask">मॉडल के बारे में पूछें</string>
     <string name="models_add_openai_compatible">OpenAI-संगत API जोड़ें</string>
     <string name="models_custom_endpoint">कस्टम एंडपॉइंट</string>
-    <string name="discover_messages_week">इस हफ़्ते के संदेश</string>
     <string name="discover_open_activity">गतिविधि खोलें</string>
     <string name="discover_placeholder">आप क्या करना चाहते हैं?</string>
     <string name="settings_privacy_policy">गोपनीयता नीति</string>
@@ -82,16 +75,12 @@
     <string name="settings_backup_passphrase_body">वैकल्पिक पर सुझाया गया: इस बैकअप को ऐसे पासफ़्रेज़ से एन्क्रिप्ट करें जो सिर्फ़ आप जानते हों।</string>
     <string name="settings_passphrase">पासफ़्रेज़</string>
     <string name="settings_erase_title">सारा लोकल डेटा मिटाएँ?</string>
-    <string name="settings_subtitle">अपने असिस्टेंट, आवाज़ और सिंक को अपने हिसाब से बनाएँ।</string>
     <string name="settings_your_name">आपका नाम (अभिवादन के लिए)</string>
     <string name="settings_ask">सेटिंग्स के बारे में पूछें</string>
-    <string name="settings_privacy_convenience">गोपनीयता और सुविधा</string>
     <string name="settings_morning_brief">मॉर्निंग ब्रीफ़ की सामग्री</string>
-    <string name="settings_advanced">उन्नत</string>
     <string name="settings_about">परिचय</string>
     <string name="settings_language">भाषा</string>
     <string name="settings_response_style">जवाब की शैली</string>
-    <string name="settings_assistant">असिस्टेंट</string>
     <string name="settings_appearance">दिखावट</string>
     <string name="settings_font_scale">फ़ॉन्ट आकार</string>
     <string name="settings_voice">आवाज़</string>

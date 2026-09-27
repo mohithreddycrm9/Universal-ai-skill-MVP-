@@ -8,7 +8,6 @@
     <string name="widget_title">Lumina శార్ట్‌కట్‌లు</string>
     <string name="welcome_title">Luminaకు స్వాగతం</string>
     <string name="unlock_app_title">Lumina అన్‌లాక్ చేయండి</string>
-    <string name="settings_widget_hint_prefix">హోమ్ స్క్రీన్ విడ్జెట్ జోడించండి: లాంచర్‌ను నొక్కి పట్టుకోండి → విడ్జెట్‌లు → </string>
     <string name="widget_picker_hint_prefix">విడ్జెట్ జోడించండి: హోమ్ స్క్రీన్‌ను నొక్కి పట్టుకోండి → విడ్జెట్‌లు → </string>
     <string name="voice_tile_label">Lumina వాయిస్</string>
     <string name="chat_export_all_header">Lumina — చాట్ ఎగుమతి</string>
@@ -26,14 +25,11 @@
     <string name="shortcut_meal_long">వారపు భోజనం మరియు కిరాణా జాబితా</string>
     <string name="shortcut_chat">చాట్ తెరవండి</string>
     <string name="shortcut_chat_long">కొత్త సంభాషణ ప్రారంభించండి</string>
-    <string name="support_email_label">సహాయం: mohithreddycrm9@gmail.com</string>
     <string name="action_back">వెనక్కి</string>
     <string name="settings_models_keys">మోడల్స్ &amp; API కీలు</string>
-    <string name="settings_restore_backup">బ్యాకప్ URL నుండి పునరుద్ధరించు</string>
     <string name="chat_thinking">ఆలోచిస్తోంది…</string>
     <string name="chat_scroll_to_latest">తాజాదానికి వెళ్ళండి</string>
     <string name="chat_open_chats">చాట్‌లు</string>
-    <string name="chat_stop">ఆపు</string>
     <string name="drawer_search">చాట్‌లను వెతకండి</string>
     <string name="drawer_new_chat">కొత్త చాట్</string>
     <string name="chat_limit_hide_24h">24 గంటలు దాచు</string>
@@ -47,7 +43,6 @@
     <string name="action_share">షేర్ చేయి</string>
     <string name="action_close">మూసివేయి</string>
     <string name="action_install">ఇన్‌స్టాల్ చేయి</string>
-    <string name="action_try">ప్రయత్నించు</string>
     <string name="action_restore">పునరుద్ధరించు</string>
     <string name="action_upload">అప్‌లోడ్ చేయి</string>
     <string name="action_erase">తుడిచివేయి</string>
@@ -62,7 +57,6 @@
     <string name="chat_share_pdf">PDF గా షేర్ చేయి</string>
     <string name="chat_copy_code">కోడ్ కాపీ చేయి</string>
     <string name="composer_placeholder">సందేశం</string>
-    <string name="composer_attach">ఫైల్ జోడించు</string>
     <string name="composer_send">పంపు</string>
     <string name="composer_voice">వాయిస్ ఇన్‌పుట్</string>
     <string name="models_title">మోడల్స్</string>
@@ -70,7 +64,6 @@
     <string name="models_ask">మోడల్స్ గురించి అడగండి</string>
     <string name="models_add_openai_compatible">OpenAI-అనుకూల API జోడించు</string>
     <string name="models_custom_endpoint">కస్టమ్ ఎండ్‌పాయింట్</string>
-    <string name="discover_messages_week">ఈ వారం సందేశాలు</string>
     <string name="discover_open_activity">కార్యాచరణ తెరువు</string>
     <string name="discover_placeholder">మీరు ఏమి చేయాలనుకుంటున్నారు?</string>
     <string name="settings_privacy_policy">గోప్యతా విధానం</string>
@@ -82,16 +75,12 @@
     <string name="settings_backup_passphrase_body">ఐచ్ఛికం కానీ సిఫార్సు చేయబడింది: మీకు మాత్రమే తెలిసిన పాస్‌ఫ్రేజ్‌తో ఈ బ్యాకప్‌ను ఎన్‌క్రిప్ట్ చేయండి.</string>
     <string name="settings_passphrase">పాస్‌ఫ్రేజ్</string>
     <string name="settings_erase_title">మొత్తం లోకల్ డేటాను తుడిచివేయాలా?</string>
-    <string name="settings_subtitle">మీ అసిస్టెంట్, వాయిస్, సింక్‌ను వ్యక్తిగతీకరించండి.</string>
     <string name="settings_your_name">మీ పేరు (పలకరింపు కోసం)</string>
     <string name="settings_ask">సెట్టింగ్‌ల గురించి అడగండి</string>
-    <string name="settings_privacy_convenience">గోప్యత &amp; సౌలభ్యం</string>
     <string name="settings_morning_brief">మార్నింగ్ బ్రీఫ్ కంటెంట్</string>
-    <string name="settings_advanced">అధునాతనం</string>
     <string name="settings_about">గురించి</string>
     <string name="settings_language">భాష</string>
     <string name="settings_response_style">సమాధాన శైలి</string>
-    <string name="settings_assistant">అసిస్టెంట్</string>
     <string name="settings_appearance">రూపం</string>
     <string name="settings_font_scale">ఫాంట్ పరిమాణం</string>
     <string name="settings_voice">వాయిస్</string>

@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
     <!-- Project-wide suppressions belong here only with a documented reason; keep empty by default. -->
+    <!-- GradleDependency only reports "a newer version exists" from whatever the network returns at lint time,
+         so results change without code changes. Dependency upgrades are done deliberately in their own PRs. -->
+    <issue id="GradleDependency" severity="ignore" />
+    <!-- Third-party only: bcpkix (pulled in by pdfbox-android) ships an empty trust manager in a class the app never
+         loads. App code is still checked for this issue. -->
+    <issue id="TrustAllX509TrustManager">
+        <ignore path="**/bcpkix-jdk15to18-*.jar" />
+    </issue>
+    <!-- Adaptive launcher icons stay in mipmap-anydpi-v26: moving them to mipmap-anydpi fails the AAPT build here. -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
 </lint>

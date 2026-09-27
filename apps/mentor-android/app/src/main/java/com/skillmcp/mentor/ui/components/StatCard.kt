@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.dp
 fun StatCard(
     title: String,
     value: String,
-    subtitle: String? = null,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),

@@ -8,7 +8,6 @@
     <string name="widget_title">Lumina விரைவு செயல்கள்</string>
     <string name="welcome_title">Lumina-க்கு வரவேற்கிறோம்</string>
     <string name="unlock_app_title">Lumina-ஐ திறக்கவும்</string>
-    <string name="settings_widget_hint_prefix">முகப்புத் திரை விட்ஜெட்டைச் சேர்க்கவும்: லாஞ்சரை நீண்டு அழுத்தவும் → விட்ஜெட்கள் → </string>
     <string name="widget_picker_hint_prefix">விட்ஜெட்டைச் சேர்க்கவும்: முகப்புத் திரையை நீண்டு அழுத்தவும் → விட்ஜெட்கள் → </string>
     <string name="voice_tile_label">Lumina குரல்</string>
     <string name="chat_export_all_header">Lumina — அரட்டை ஏற்றுமதி</string>
@@ -26,14 +25,11 @@
     <string name="shortcut_meal_long">வார உணவு மற்றும் கடை பட்டியல்</string>
     <string name="shortcut_chat">அரட்டை திற</string>
     <string name="shortcut_chat_long">புதிய உரையாடல் தொடங்கு</string>
-    <string name="support_email_label">ஆதரவு: mohithreddycrm9@gmail.com</string>
     <string name="action_back">பின்செல்</string>
     <string name="settings_models_keys">மாடல்கள் மற்றும் API விசைகள்</string>
-    <string name="settings_restore_backup">காப்பு URL இலிருந்து மீட்டமை</string>
     <string name="chat_thinking">யோசிக்கிறது…</string>
     <string name="chat_scroll_to_latest">சமீபத்தியதற்குச் செல்</string>
     <string name="chat_open_chats">அரட்டைகள்</string>
-    <string name="chat_stop">நிறுத்து</string>
     <string name="drawer_search">அரட்டைகளைத் தேடு</string>
     <string name="drawer_new_chat">புதிய அரட்டை</string>
     <string name="chat_limit_hide_24h">24 மணிநேரம் மறை</string>
@@ -47,7 +43,6 @@
     <string name="action_share">பகிர்</string>
     <string name="action_close">மூடு</string>
     <string name="action_install">நிறுவு</string>
-    <string name="action_try">முயற்சி</string>
     <string name="action_restore">மீட்டமை</string>
     <string name="action_upload">பதிவேற்று</string>
     <string name="action_erase">அழி</string>
@@ -62,7 +57,6 @@
     <string name="chat_share_pdf">PDF ஆகப் பகிர்</string>
     <string name="chat_copy_code">குறியீட்டை நகலெடு</string>
     <string name="composer_placeholder">செய்தி</string>
-    <string name="composer_attach">கோப்பை இணை</string>
     <string name="composer_send">அனுப்பு</string>
     <string name="composer_voice">குரல் உள்ளீடு</string>
     <string name="models_title">மாடல்கள்</string>
@@ -70,7 +64,6 @@
     <string name="models_ask">மாடல்கள் பற்றிக் கேளுங்கள்</string>
     <string name="models_add_openai_compatible">OpenAI-இணக்க API சேர்</string>
     <string name="models_custom_endpoint">தனிப்பயன் எண்ட்பாயிண்ட்</string>
-    <string name="discover_messages_week">இந்த வார செய்திகள்</string>
     <string name="discover_open_activity">செயல்பாட்டைத் திற</string>
     <string name="discover_placeholder">நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?</string>
     <string name="settings_privacy_policy">தனியுரிமைக் கொள்கை</string>
@@ -82,16 +75,12 @@
     <string name="settings_backup_passphrase_body">விருப்பத்தேர்வு, ஆனால் பரிந்துரைக்கப்படுகிறது: உங்களுக்கு மட்டும் தெரிந்த கடவுச்சொற்றொடரால் இந்தக் காப்புப்பிரதியை மறையாக்கவும்.</string>
     <string name="settings_passphrase">கடவுச்சொற்றொடர்</string>
     <string name="settings_erase_title">எல்லா உள்ளூர் தரவையும் அழிக்கவா?</string>
-    <string name="settings_subtitle">உங்கள் உதவியாளர், குரல், ஒத்திசைவைத் தனிப்பயனாக்குங்கள்.</string>
     <string name="settings_your_name">உங்கள் பெயர் (வாழ்த்துக்கு)</string>
     <string name="settings_ask">அமைப்புகள் பற்றிக் கேளுங்கள்</string>
-    <string name="settings_privacy_convenience">தனியுரிமை &amp; வசதி</string>
     <string name="settings_morning_brief">காலைச் சுருக்க உள்ளடக்கம்</string>
-    <string name="settings_advanced">மேம்பட்டவை</string>
     <string name="settings_about">பற்றி</string>
     <string name="settings_language">மொழி</string>
     <string name="settings_response_style">பதில் பாணி</string>
-    <string name="settings_assistant">உதவியாளர்</string>
     <string name="settings_appearance">தோற்றம்</string>
     <string name="settings_font_scale">எழுத்து அளவு</string>
     <string name="settings_voice">குரல்</string>

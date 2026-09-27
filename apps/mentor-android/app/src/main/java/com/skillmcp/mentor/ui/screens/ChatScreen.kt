@@ -575,7 +575,7 @@ fun ChatScreenContent(
                         if (message.role == com.skillmcp.mentor.llm.ROLE_MODEL_SWITCH) {
                             com.skillmcp.mentor.ui.components.chat.ModelSwitchDivider(
                                 modelLabel = message.content,
-                                modifier = calmItemModifier(reduceMotion),
+                                modifier = Modifier.calmItem(this, reduceMotion),
                             )
                             return@items
                         }
@@ -583,7 +583,7 @@ fun ChatScreenContent(
                         if (regenerating) {
                             // Regenerate streams into the same row (same key), replacing the reply in place.
                             androidx.compose.animation.Crossfade(
-                                modifier = calmItemModifier(reduceMotion),
+                                modifier = Modifier.calmItem(this, reduceMotion),
                                 targetState = state.streamPreview.isBlank(),
                                 animationSpec = CalmMotion.fastTween(reduceMotion),
                                 label = "regenerate",
@@ -599,7 +599,7 @@ fun ChatScreenContent(
                             }
                         } else if (message.content.isNotBlank()) {
                             ChatMessageContent(
-                                modifier = calmItemModifier(reduceMotion),
+                                modifier = Modifier.calmItem(this, reduceMotion),
                                 content = message.content,
                                 isUser = isUser,
                                 isStreaming = false,
@@ -639,7 +639,7 @@ fun ChatScreenContent(
                                         hapticView.performSendHaptic()
                                         vm.sendFollowUp(prompt)
                                     },
-                                    modifier = calmItemModifier(reduceMotion).padding(top = 4.dp, bottom = 8.dp),
+                                    modifier = Modifier.calmItem(this, reduceMotion).padding(top = 4.dp, bottom = 8.dp),
                                 )
                             }
                         }
@@ -654,7 +654,7 @@ fun ChatScreenContent(
                             appear.targetState = true
                             androidx.compose.animation.AnimatedVisibility(
                                 visibleState = appear,
-                                modifier = calmItemModifier(reduceMotion),
+                                modifier = Modifier.calmItem(this, reduceMotion),
                                 enter =
                                     slideInVertically(CalmMotion.gentle()) { it / 3 } +
                                         fadeIn(CalmMotion.fastTween(reduceMotion)),
@@ -672,7 +672,7 @@ fun ChatScreenContent(
                         // Same key from Thinking… through streaming to the persisted reply; content swaps in place.
                         item(key = state.replyKey ?: "reply-slot") {
                             androidx.compose.animation.Crossfade(
-                                modifier = calmItemModifier(reduceMotion),
+                                modifier = Modifier.calmItem(this, reduceMotion),
                                 targetState = state.streamPreview.isBlank(),
                                 animationSpec = CalmMotion.fastTween(reduceMotion),
                                 label = "replySlot",
@@ -903,13 +903,18 @@ internal fun ConversationMenuItems(
 }
 
 /** animateItem() with the calm spring for placement; disabled entirely under reduced motion. */
-private fun androidx.compose.foundation.lazy.LazyItemScope.calmItemModifier(reduceMotion: Boolean): Modifier =
+private fun Modifier.calmItem(
+    scope: androidx.compose.foundation.lazy.LazyItemScope,
+    reduceMotion: Boolean,
+): Modifier =
     if (reduceMotion) {
-        Modifier
+        this
     } else {
-        Modifier.animateItem(
-            fadeInSpec = androidx.compose.animation.core.tween(CalmMotion.FAST_MS),
-            placementSpec = CalmMotion.gentle(),
-            fadeOutSpec = androidx.compose.animation.core.tween(CalmMotion.FAST_MS),
-        )
+        with(scope) {
+            this@calmItem.animateItem(
+                fadeInSpec = androidx.compose.animation.core.tween(CalmMotion.FAST_MS),
+                placementSpec = CalmMotion.gentle(),
+                fadeOutSpec = androidx.compose.animation.core.tween(CalmMotion.FAST_MS),
+            )
+        }
     }

@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.llm
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -11,6 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object GoogleLlmSignIn {
+    // False positive: the result IS read via GoogleIdTokenCredential.createFrom (TYPE_GOOGLE_ID_TOKEN_CREDENTIAL check below).
+    @SuppressLint("CredentialManagerSignInWithGoogle")
     suspend fun signIn(context: Context, webClientId: String): Result<String> =
         withContext(Dispatchers.Main) {
             if (webClientId.isBlank()) {
