@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -81,6 +82,7 @@ fun DiscoverScreen(vm: MentorViewModel) {
         onPopularUseCase = vm::startPopularUseCase,
         onOpenUsage = { vm.requestOpenTab("usage") },
         onOpenModels = { vm.requestOpenTab("models") },
+        onOpenSkillFinder = { vm.requestOpenTab("skill-finder") },
     )
 }
 
@@ -94,6 +96,7 @@ internal fun DiscoverScreenContent(
     onPopularUseCase: (PopularUseCase) -> Unit,
     onOpenUsage: () -> Unit,
     onOpenModels: () -> Unit,
+    onOpenSkillFinder: () -> Unit = {},
 ) {
     val profile = state.activeLlmProfile
     var category by rememberSaveable { mutableStateOf<String?>(null) }
@@ -154,6 +157,13 @@ internal fun DiscoverScreenContent(
             if (!filtering) {
                 item("shortcuts") {
                     SettingsGroup(title = stringResource(R.string.discover_shortcuts)) {
+                        SettingsNavRow(
+                            icon = Icons.Rounded.Verified,
+                            title = stringResource(R.string.finder_title),
+                            subtitle = stringResource(R.string.finder_entry_subtitle),
+                            onClick = onOpenSkillFinder,
+                        )
+                        SettingsDivider()
                         SettingsNavRow(
                             icon = Icons.Rounded.BarChart,
                             title = stringResource(R.string.discover_open_activity),

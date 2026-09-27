@@ -102,12 +102,13 @@ fun DiscoverSearchField(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    placeholder: String? = null,
 ) {
     TextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth(),
-        placeholder = { Text(stringResource(R.string.discover_placeholder)) },
+        placeholder = { Text(placeholder ?: stringResource(R.string.discover_placeholder)) },
         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {

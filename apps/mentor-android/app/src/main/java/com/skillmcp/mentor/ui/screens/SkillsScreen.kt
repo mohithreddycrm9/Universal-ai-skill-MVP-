@@ -163,6 +163,19 @@ fun SkillsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
             }
 
             item {
+                GlassCard {
+                    Text(stringResource(R.string.finder_title), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.finder_entry_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(
+                        onClick = { vm.requestOpenTab("skill-finder") },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) {
+                        Text(stringResource(R.string.finder_open))
+                    }
+                }
+            }
+
+            item {
                 Text("Add from catalog", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(
                     "Curated instruction packs from public repositories.",

@@ -35,6 +35,7 @@ import com.skillmcp.mentor.ui.screens.ModelsScreen
 import com.skillmcp.mentor.ui.screens.PersonalizationScreen
 import com.skillmcp.mentor.ui.screens.SettingsScreen
 import com.skillmcp.mentor.ui.screens.SkillsScreen
+import com.skillmcp.mentor.ui.screens.SkillFinderScreen
 import com.skillmcp.mentor.ui.screens.ActivityScreen
 
 enum class MentorTab(val route: String, val label: String, val showInBar: Boolean = true) {
@@ -43,13 +44,14 @@ enum class MentorTab(val route: String, val label: String, val showInBar: Boolea
     Models("models", "Models", showInBar = false),
     Usage("usage", "Activity", showInBar = false),
     Skills("skills", "Abilities", showInBar = false),
+    SkillFinder("skill-finder", "Skill Finder", showInBar = false),
     Personalization("personalization", "Personalization", showInBar = false),
     Settings("settings", "Settings"),
 }
 
 fun MentorTab.barParentRoute(): String =
     when (this) {
-        MentorTab.Models, MentorTab.Usage, MentorTab.Skills -> MentorTab.Discover.route
+        MentorTab.Models, MentorTab.Usage, MentorTab.Skills, MentorTab.SkillFinder -> MentorTab.Discover.route
         MentorTab.Personalization -> MentorTab.Settings.route
         else -> route
     }
@@ -78,7 +80,7 @@ fun MentorApp(container: AppContainer) {
 
     val highlightedTab =
         when (current) {
-            MentorTab.Models.route, MentorTab.Usage.route, MentorTab.Skills.route -> advancedParentTab
+            MentorTab.Models.route, MentorTab.Usage.route, MentorTab.Skills.route, MentorTab.SkillFinder.route -> advancedParentTab
             else -> MentorTab.entries.find { it.route == current }?.barParentRoute() ?: current
         }
 
@@ -95,7 +97,7 @@ fun MentorApp(container: AppContainer) {
     LaunchedEffect(vm) {
         vm.openTabRequests.collect { route ->
             val from = nav.currentBackStackEntry?.destination?.route ?: MentorTab.Chat.route
-            if (route in listOf("models", "usage", "skills")) {
+            if (route in listOf("models", "usage", "skills", "skill-finder")) {
                 advancedParentTab =
                     if (from == MentorTab.Settings.route) {
                         MentorTab.Settings.route
@@ -112,7 +114,7 @@ fun MentorApp(container: AppContainer) {
 
     val onAdvancedBack: () -> Unit = { nav.popBackStack() }
 
-    if (current in listOf("models", "usage", "skills", "personalization")) {
+    if (current in listOf("models", "usage", "skills", "skill-finder", "personalization")) {
         BackHandler(onBack = onAdvancedBack)
     }
 
@@ -184,6 +186,9 @@ fun MentorApp(container: AppContainer) {
                 composable(MentorTab.Models.route) { ModelsScreen(vm, onBack = onAdvancedBack) }
                 composable(MentorTab.Usage.route) { ActivityScreen(vm, onBack = onAdvancedBack) }
                 composable(MentorTab.Skills.route) { SkillsScreen(vm, onBack = onAdvancedBack) }
+                composable(MentorTab.SkillFinder.route) {
+                    SkillFinderScreen(vm, finder = container.officialSkillFinder, onBack = onAdvancedBack)
+                }
                 composable(MentorTab.Settings.route) { SettingsScreen(vm) }
                 composable(MentorTab.Personalization.route) { PersonalizationScreen(vm, onBack = onAdvancedBack) }
             }
