@@ -383,12 +383,32 @@ fun ChatScreenContent(
                         ),
                 )
                 if (!state.messageAllowance.allowed) {
-                    Text(
-                        state.messageAllowance.message ?: "Message limit reached.",
-                        modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 4.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                    val hidden =
+                        com.skillmcp.mentor.policy.SpendPolicy.shouldHideDailyBlockUi(
+                            state.messageAllowance,
+                            state.prefs.spendDailyBlockDismissedUntilMs,
+                        )
+                    if (!hidden) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = MentorDimens.ScreenHorizontal),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                state.messageAllowance.message ?: "Message limit reached.",
+                                modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            // Hides the reminder for the same rolling 24h window the limit uses; sending stays blocked.
+                            if (state.messageAllowance.blockReason ==
+                                com.skillmcp.mentor.policy.AllowanceBlockReason.DAILY
+                            ) {
+                                androidx.compose.material3.TextButton(onClick = vm::dismissSpendBlockMessage) {
+                                    Text(stringResource(R.string.chat_limit_hide_24h))
+                                }
+                            }
+                        }
+                    }
                 } else {
                     state.messageAllowance.warningMessage?.let { warning ->
                         Text(

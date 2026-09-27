@@ -36,4 +36,5 @@
     <string name="chat_stop">நிறுத்து</string>
     <string name="drawer_search">அரட்டைகளைத் தேடு</string>
     <string name="drawer_new_chat">புதிய அரட்டை</string>
+    <string name="chat_limit_hide_24h">24 மணிநேரம் மறை</string>
 </resources>

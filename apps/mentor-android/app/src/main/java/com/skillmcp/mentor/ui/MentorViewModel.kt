@@ -558,7 +558,7 @@ class MentorViewModel(
         pendingShareConsent.value = null
     }
 
-    fun dismissSpendBlockMessage() {
+    override fun dismissSpendBlockMessage() {
         viewModelScope.launch {
             val until = com.skillmcp.mentor.policy.SpendPolicy.nextRollingDayDismissMs()
             prefs.update { it.copy(spendDailyBlockDismissedUntilMs = until) }

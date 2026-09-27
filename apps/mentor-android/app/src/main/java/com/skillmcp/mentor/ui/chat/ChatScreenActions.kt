@@ -34,6 +34,7 @@ interface ChatScreenActions {
     fun chatScrollFor(conversationId: String): ChatScrollPosition?
     fun saveChatScroll(conversationId: String, position: ChatScrollPosition)
     fun requestOpenTab(route: String)
+    fun dismissSpendBlockMessage()
 }
 
 /** No-op actions for @Preview / Paparazzi renders of the real chat screen. */
@@ -63,4 +64,5 @@ object PreviewChatActions : ChatScreenActions {
     override fun chatScrollFor(conversationId: String): ChatScrollPosition? = null
     override fun saveChatScroll(conversationId: String, position: ChatScrollPosition) = Unit
     override fun requestOpenTab(route: String) = Unit
+    override fun dismissSpendBlockMessage() = Unit
 }

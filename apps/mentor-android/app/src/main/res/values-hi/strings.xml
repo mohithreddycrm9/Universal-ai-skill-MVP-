@@ -36,4 +36,5 @@
     <string name="chat_stop">रोकें</string>
     <string name="drawer_search">चैट खोजें</string>
     <string name="drawer_new_chat">नई चैट</string>
+    <string name="chat_limit_hide_24h">24 घंटे के लिए छिपाएँ</string>
 </resources>

@@ -36,4 +36,5 @@
     <string name="chat_stop">ఆపు</string>
     <string name="drawer_search">చాట్‌లను వెతకండి</string>
     <string name="drawer_new_chat">కొత్త చాట్</string>
+    <string name="chat_limit_hide_24h">24 గంటలు దాచు</string>
 </resources>
