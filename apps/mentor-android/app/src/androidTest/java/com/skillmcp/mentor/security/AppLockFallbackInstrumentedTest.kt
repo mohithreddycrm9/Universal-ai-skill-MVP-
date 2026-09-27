@@ -11,11 +11,12 @@ class AppLockFallbackInstrumentedTest {
     @Test
     fun authenticatorsReportDeviceLockState() {
         val auth = appLockAuthenticators(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext)
-        assertFalse(auth.label.isBlank())
-        assertTrue(
-            auth.label.contains("biometric", ignoreCase = true) ||
-                auth.label.contains("screen lock", ignoreCase = true) ||
-                auth.label.contains("PIN", ignoreCase = true),
-        )
+        assertTrue(auth.hasBiometric || auth.hasDeviceCredential || !auth.canPrompt)
+        if (auth.canPrompt) {
+            assertTrue(auth.hasBiometric || auth.hasDeviceCredential)
+        } else {
+            assertFalse(auth.hasBiometric)
+            assertFalse(auth.hasDeviceCredential)
+        }
     }
 }

@@ -33,7 +33,9 @@ object MessageAllowanceGuard {
         if (dailyLimit > 0 && dayCount >= dailyLimit) {
             return AllowanceCheck(
                 allowed = false,
-                message = "You reached today's message limit ($dailyLimit). Try again after midnight.",
+                message =
+                    "You reached today's message limit ($dailyLimit). " +
+                        "It resets on a rolling 24-hour window.",
                 dayCount = dayCount,
                 weekCount = weekCount,
                 dailyLimit = dailyLimit,
@@ -44,7 +46,9 @@ object MessageAllowanceGuard {
         if (weeklyLimit > 0 && weekCount >= weeklyLimit) {
             return AllowanceCheck(
                 allowed = false,
-                message = "You reached this week's message limit ($weeklyLimit).",
+                message =
+                    "You reached this week's message limit ($weeklyLimit). " +
+                        "It resets on a rolling 7-day window.",
                 dayCount = dayCount,
                 weekCount = weekCount,
                 dailyLimit = dailyLimit,

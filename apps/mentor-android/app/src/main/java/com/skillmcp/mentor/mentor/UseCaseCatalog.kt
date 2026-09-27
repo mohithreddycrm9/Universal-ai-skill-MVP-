@@ -119,8 +119,8 @@ object UseCaseCatalog {
                 subtitle = "Why Lumina is different",
                 category = "Privacy",
                 prompt =
-                    "Explain how this app lets me use my own API keys and Hugging Face models, track usage spend, " +
-                        "and keep skill context on-device. What should I configure first?",
+                    "Explain how this app lets me use my own API keys and Hugging Face models, " +
+                        "see activity counts, and keep skill context on-device. What should I configure first?",
             ),
             PopularUseCase(
                 id = "local-ollama",

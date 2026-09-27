@@ -3,10 +3,10 @@ package com.skillmcp.mentor.llm
 import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
 import java.net.InetAddress
-import javax.net.ssl.HttpsURLConnection
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.HttpsURLConnection
 
-/** HTTPS for cloud APIs; cleartext only when the request host is a private/LAN address (Ollama). */
+/** HTTPS for cloud APIs; cleartext only for literal private/LAN hosts the user configures (Ollama). */
 object OllamaHttpClient {
     fun create(
         connectSec: Long = 30,
@@ -17,7 +17,7 @@ object OllamaHttpClient {
             .readTimeout(readSec, TimeUnit.SECONDS)
             .connectionSpecs(listOf(ConnectionSpec.MODERN_TLS, ConnectionSpec.CLEARTEXT))
             .hostnameVerifier { hostname, session ->
-                if (isPrivateOrLocalHost(hostname)) {
+                if (isLiteralPrivateOrLocalHost(hostname)) {
                     true
                 } else {
                     HttpsURLConnection.getDefaultHostnameVerifier().verify(hostname, session)
@@ -25,11 +25,21 @@ object OllamaHttpClient {
             }
             .build()
 
-    fun isPrivateOrLocalHost(host: String): Boolean {
-        if (host.equals("localhost", ignoreCase = true)) return true
+    /**
+     * Only trust cleartext for hosts that are already IP literals or localhost —
+     * do not resolve DNS (avoids rebinding public hostnames to private IPs).
+     */
+    fun isLiteralPrivateOrLocalHost(host: String): Boolean {
+        val h = host.trim()
+        if (h.equals("localhost", ignoreCase = true)) return true
+        if (h == "127.0.0.1" || h == "10.0.2.2" || h == "::1") return true
         return runCatching {
-            val addr = InetAddress.getByName(host)
-            addr.isLoopbackAddress || addr.isLinkLocalAddress || addr.isSiteLocalAddress
+            val addr = InetAddress.getByName(h)
+            if (h.none { it.isLetter() }) {
+                addr.isLoopbackAddress || addr.isLinkLocalAddress || addr.isSiteLocalAddress
+            } else {
+                false
+            }
         }.getOrDefault(false)
     }
 }

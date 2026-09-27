@@ -1,21 +1,22 @@
 package com.skillmcp.mentor
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.appcompat.app.AppCompatActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.skillmcp.mentor.data.LaunchAction
 import com.skillmcp.mentor.data.resolvedDarkTheme
 import com.skillmcp.mentor.navigation.AppLaunch
+import com.skillmcp.mentor.navigation.LaunchAllowlist
 import com.skillmcp.mentor.ui.MentorApp
 import com.skillmcp.mentor.ui.theme.CodeMentorTheme
+
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -52,35 +53,46 @@ class MainActivity : AppCompatActivity() {
 
     private fun routeLaunchIntent(intent: Intent?, container: com.skillmcp.mentor.data.AppContainer) {
         if (intent == null) return
+        val trusted = isTrustedInternalLaunch(intent, container)
         when (intent.action) {
             AppLaunch.ACTION_USE_CASE -> {
-                if (!isTrustedInternalLaunch(intent, container)) return
                 val id = intent.getStringExtra(AppLaunch.EXTRA_USE_CASE_ID)
-                if (!id.isNullOrBlank()) {
+                if (id.isNullOrBlank()) return
+                if (trusted || LaunchAllowlist.isAllowedUseCase(id)) {
                     container.launchIntentHolder.push(LaunchAction.UseCase(id))
                 }
             }
             AppLaunch.ACTION_OPEN_TAB -> {
-                if (!isTrustedInternalLaunch(intent, container)) return
                 val tab = intent.getStringExtra(AppLaunch.EXTRA_TAB_ROUTE) ?: "chat"
-                container.launchIntentHolder.push(LaunchAction.OpenTab(tab))
-                if (intent.getBooleanExtra(AppLaunch.EXTRA_VOICE_ON_OPEN, false)) {
-                    container.launchIntentHolder.push(LaunchAction.VoiceChat)
+                val voiceOnOpen = intent.getBooleanExtra(AppLaunch.EXTRA_VOICE_ON_OPEN, false)
+                val hasDraft = !intent.getStringExtra(AppLaunch.EXTRA_DRAFT).isNullOrBlank()
+                when {
+                    trusted -> {
+                        container.launchIntentHolder.push(LaunchAction.OpenTab(tab))
+                        if (voiceOnOpen) {
+                            container.launchIntentHolder.push(LaunchAction.VoiceChat)
+                        }
+                    }
+                    LaunchAllowlist.isAllowedTabRoute(tab) && !voiceOnOpen && !hasDraft -> {
+                        container.launchIntentHolder.push(LaunchAction.OpenTab(tab))
+                    }
                 }
             }
             Intent.ACTION_VIEW -> {
                 val uri: Uri? = intent.data
                 if (uri?.scheme == "universalai" && uri.host == "usecase") {
                     val id = uri.lastPathSegment
-                    if (!id.isNullOrBlank()) {
+                    if (!id.isNullOrBlank() && LaunchAllowlist.isAllowedUseCase(id)) {
                         container.launchIntentHolder.push(LaunchAction.UseCase(id))
                     }
                 }
             }
         }
-        val draft = intent.getStringExtra(AppLaunch.EXTRA_DRAFT)
-        if (!draft.isNullOrBlank() && isTrustedInternalLaunch(intent, container)) {
-            container.launchIntentHolder.push(LaunchAction.Draft(draft))
+        if (trusted) {
+            val draft = intent.getStringExtra(AppLaunch.EXTRA_DRAFT)
+            if (!draft.isNullOrBlank()) {
+                container.launchIntentHolder.push(LaunchAction.Draft(draft))
+            }
         }
     }
 
@@ -104,7 +116,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Widget, tile, and notification PendingIntents include a secret token stored on device. */
     private fun isTrustedInternalLaunch(
         intent: Intent,
         container: com.skillmcp.mentor.data.AppContainer,

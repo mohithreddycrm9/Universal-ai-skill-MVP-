@@ -13,8 +13,6 @@ object ScreenSuggestions {
         listOf(
             QuickSuggestion("Pick a model", "Help me choose an LLM for writing vs coding vs long documents on mobile."),
             QuickSuggestion("HF search tips", "How do I pick a Hugging Face model id and what does :fastest mean?"),
-            QuickSuggestion("Compare providers", "Compare cloud APIs vs local Ollama for privacy, cost, and speed."),
-            QuickSuggestion("Cheaper stack", "Suggest a low-cost multi-model setup for a student."),
             QuickSuggestion("Switch models", "When should I switch models mid-conversation in this app?"),
             QuickSuggestion("Test failed", "My model test connection failed—what should I check in order?"),
             QuickSuggestion("Multilingual", "Best provider setup for multilingual chat?"),
@@ -25,16 +23,12 @@ object ScreenSuggestions {
 
     val usage: List<QuickSuggestion> =
         listOf(
-            QuickSuggestion("Explain spend", "Explain my usage dashboard and what drives estimated USD."),
-            QuickSuggestion("Cut costs", "5 ways to lower LLM spend without losing quality for everyday chat."),
-            QuickSuggestion("Budget caps", "How should I set daily and weekly spend limits?"),
-            QuickSuggestion("Heavy vs light", "What usage pattern looks like 'light' vs 'power' user?"),
+            QuickSuggestion("Activity tab", "Explain what the Activity screen counts and how message limits work."),
+            QuickSuggestion("Heavy vs light", "What usage pattern looks like light vs power use?"),
             QuickSuggestion("Token tips", "Write prompts that use fewer tokens."),
-            QuickSuggestion("Model cost", "Which model in my breakdown costs the most per request?"),
             QuickSuggestion("Weekly report", "Summarize my usage pattern and one habit to improve."),
             QuickSuggestion("Anomaly check", "Could my usage indicate a misconfigured provider?"),
-            QuickSuggestion("Student budget", "Recommend spend caps for homework-only use."),
-            QuickSuggestion("Local savings", "When does Ollama save money vs cloud?"),
+            QuickSuggestion("Local savings", "When does Ollama help vs cloud for everyday chat?"),
         )
 
     val extensions: List<QuickSuggestion> =
@@ -59,7 +53,7 @@ object ScreenSuggestions {
             QuickSuggestion("Privacy keys", "Checklist for storing API keys safely on Android."),
             QuickSuggestion("Sync relay", "Explain WebSocket sync phone ↔ desktop safely."),
             QuickSuggestion("Backup", "How encrypted backup works and what URL to use."),
-            QuickSuggestion("Spend limits", "Recommended USD caps for light daily chat."),
+            QuickSuggestion("Message limits", "How should I set daily and weekly message limits in Activity?"),
             QuickSuggestion("Theme", "Best theme settings for reading long answers."),
             QuickSuggestion("BYOK why", "Why bring-your-own-key matters vs single-vendor apps."),
             QuickSuggestion("Share to app", "How Share into Lumina works from other apps."),

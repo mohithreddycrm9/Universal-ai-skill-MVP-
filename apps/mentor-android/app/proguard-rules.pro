@@ -19,3 +19,5 @@
 
 -if class androidx.credentials.CredentialManager
 -keep class androidx.credentials.** { *; }
+
+-dontwarn com.gemalto.jp2.JP2Decoder

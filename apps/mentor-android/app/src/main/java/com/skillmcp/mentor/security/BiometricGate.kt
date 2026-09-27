@@ -141,7 +141,7 @@ fun BiometricGate(
         showPrompt()
     }
 
-    if (unlocked || !auth.canPrompt) {
+    if (!enabled || unlocked) {
         content()
     } else {
         Column(

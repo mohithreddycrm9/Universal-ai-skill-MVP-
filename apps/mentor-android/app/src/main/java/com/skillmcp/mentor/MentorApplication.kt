@@ -12,20 +12,23 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-
 class MentorApplication : Application() {
     lateinit var container: AppContainer
         private set
+
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate() {
         super.onCreate()
         CrashReporter.install(this)
         PDFBoxResourceLoader.init(applicationContext)
         container = AppContainer(this)
-        runBlocking { container.internalLaunchToken.ensureToken() }
+        applicationScope.launch(Dispatchers.IO) {
+            container.userPreferences.warmCache()
+            container.internalLaunchToken.ensureToken()
+        }
         applyAppLanguage(container.userPreferences.current().appLanguageTag)
-        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch {
+        applicationScope.launch {
             container.userPreferences.prefsFlow
                 .map { it.appLanguageTag }
                 .distinctUntilChanged()

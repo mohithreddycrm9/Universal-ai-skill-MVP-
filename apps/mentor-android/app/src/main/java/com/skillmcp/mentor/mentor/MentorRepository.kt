@@ -14,6 +14,7 @@ import com.skillmcp.mentor.llm.MultiLlmClient
 import com.skillmcp.mentor.policy.AllowanceCheck
 import com.skillmcp.mentor.policy.MessageAllowanceGuard
 import com.skillmcp.mentor.policy.SpendLimitException
+import com.skillmcp.mentor.policy.MessageLimitMigrator
 import com.skillmcp.mentor.policy.SpendPolicy
 import com.skillmcp.mentor.llm.TokenCostEstimator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -69,11 +70,24 @@ class MentorRepository(
 ) {
     val defaultProjectId = "default"
 
-    suspend fun bootstrap() {
+    suspend fun bootstrap(): String? {
+        userPreferences.warmCache()
         userPreferences.ensureSecretsMigratedFromDataStore()
+        val migrated = MessageLimitMigrator.applyIfNeeded(userPreferences.current())
+        var notice: String? = null
+        if (migrated != null) {
+            userPreferences.update { migrated }
+            if (migrated.dailyMessageLimit > 0 || migrated.weeklyMessageLimit > 0) {
+                notice =
+                    "Spend budgets are now daily message limits " +
+                        "(${migrated.dailyMessageLimit}/day, ${migrated.weeklyMessageLimit}/week). " +
+                        "Change them in Activity."
+            }
+        }
         llmProfileRepository.ensureDefaults()
         ensureDefaultProject()
         seedDefaultPrompts()
+        return notice
     }
 
     private suspend fun seedDefaultPrompts() {

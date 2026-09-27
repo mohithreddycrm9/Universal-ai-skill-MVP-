@@ -12,9 +12,9 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.skillmcp.mentor.MentorApplication
-import com.skillmcp.mentor.TrustedLaunchActivity
 import com.skillmcp.mentor.R
 import com.skillmcp.mentor.navigation.AppLaunch
+import com.skillmcp.mentor.navigation.InternalLaunchIntents
 import java.util.concurrent.TimeUnit
 
 class DailyBriefWorker(
@@ -29,19 +29,21 @@ class DailyBriefWorker(
         val body = brief.lines.joinToString("\n")
         val launchToken = container.internalLaunchToken.ensureToken()
         val openBriefIntent =
-            Intent(applicationContext, TrustedLaunchActivity::class.java).apply {
-                action = AppLaunch.ACTION_USE_CASE
+            InternalLaunchIntents.mainActivity(
+                applicationContext,
+                AppLaunch.ACTION_USE_CASE,
+                launchToken,
+            ) {
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, "daily-brief")
-                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, launchToken)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         val continueIntent =
-            Intent(applicationContext, TrustedLaunchActivity::class.java).apply {
-                action = AppLaunch.ACTION_OPEN_TAB
+            InternalLaunchIntents.mainActivity(
+                applicationContext,
+                AppLaunch.ACTION_OPEN_TAB,
+                launchToken,
+            ) {
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
                 putExtra(AppLaunch.EXTRA_DRAFT, brief.chatPrompt)
-                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, launchToken)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         val openPending =
             PendingIntent.getActivity(

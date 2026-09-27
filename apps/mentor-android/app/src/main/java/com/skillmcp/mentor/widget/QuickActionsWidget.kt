@@ -10,34 +10,36 @@ import com.skillmcp.mentor.MainActivity
 import com.skillmcp.mentor.MentorApplication
 import com.skillmcp.mentor.R
 import com.skillmcp.mentor.navigation.AppLaunch
-import kotlinx.coroutines.runBlocking
+import com.skillmcp.mentor.navigation.InternalLaunchIntents
+import kotlinx.coroutines.launch
 
 class QuickActionsWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        appWidgetIds.forEach { id ->
-            val views = RemoteViews(context.packageName, R.layout.widget_quick_actions)
-            views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_title))
-            views.setOnClickPendingIntent(R.id.widget_btn_brief, pendingUseCase(context, "daily-brief"))
-            views.setOnClickPendingIntent(R.id.widget_btn_meal, pendingUseCase(context, "meal-grocery"))
-            views.setOnClickPendingIntent(R.id.widget_btn_chat, pendingTab(context, "chat"))
-            views.setOnClickPendingIntent(R.id.widget_btn_ask, pendingAsk(context))
-            appWidgetManager.updateAppWidget(id, views)
+        val pendingResult = goAsync()
+        val app = context.applicationContext as MentorApplication
+        app.applicationScope.launch {
+            try {
+                val container = app.container
+                val token = container.internalLaunchToken.ensureToken()
+                appWidgetIds.forEach { id ->
+                    val views = RemoteViews(context.packageName, R.layout.widget_quick_actions)
+                    views.setTextViewText(R.id.widget_title, context.getString(R.string.widget_title))
+                    views.setOnClickPendingIntent(R.id.widget_btn_brief, pendingUseCase(context, "daily-brief", token))
+                    views.setOnClickPendingIntent(R.id.widget_btn_meal, pendingUseCase(context, "meal-grocery", token))
+                    views.setOnClickPendingIntent(R.id.widget_btn_chat, pendingTab(context, "chat", token))
+                    views.setOnClickPendingIntent(R.id.widget_btn_ask, pendingAsk(context, token))
+                    appWidgetManager.updateAppWidget(id, views)
+                }
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
-    private fun internalToken(context: Context): String {
-        val container = (context.applicationContext as MentorApplication).container
-        return runBlocking { container.internalLaunchToken.ensureToken() }
-    }
-
-    private fun pendingUseCase(context: Context, useCaseId: String): PendingIntent {
-        val token = internalToken(context)
+    private fun pendingUseCase(context: Context, useCaseId: String, token: String): PendingIntent {
         val intent =
-            Intent(context, MainActivity::class.java).apply {
-                action = AppLaunch.ACTION_USE_CASE
+            InternalLaunchIntents.mainActivity(context, AppLaunch.ACTION_USE_CASE, token) {
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, useCaseId)
-                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, token)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(
             context,
@@ -47,15 +49,11 @@ class QuickActionsWidget : AppWidgetProvider() {
         )
     }
 
-    private fun pendingAsk(context: Context): PendingIntent {
-        val token = internalToken(context)
+    private fun pendingAsk(context: Context, token: String): PendingIntent {
         val intent =
-            Intent(context, MainActivity::class.java).apply {
-                action = AppLaunch.ACTION_OPEN_TAB
+            InternalLaunchIntents.mainActivity(context, AppLaunch.ACTION_OPEN_TAB, token) {
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
                 putExtra(AppLaunch.EXTRA_VOICE_ON_OPEN, true)
-                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, token)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(
             context,
@@ -65,14 +63,10 @@ class QuickActionsWidget : AppWidgetProvider() {
         )
     }
 
-    private fun pendingTab(context: Context, route: String): PendingIntent {
-        val token = internalToken(context)
+    private fun pendingTab(context: Context, route: String, token: String): PendingIntent {
         val intent =
-            Intent(context, MainActivity::class.java).apply {
-                action = AppLaunch.ACTION_OPEN_TAB
+            InternalLaunchIntents.mainActivity(context, AppLaunch.ACTION_OPEN_TAB, token) {
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, route)
-                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, token)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(
             context,

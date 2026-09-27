@@ -132,20 +132,32 @@ private fun StarterGridCard(
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(card.icon, contentDescription = card.title, tint = MaterialTheme.colorScheme.secondary)
-            Text(card.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(
+                card.title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                softWrap = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
             Text(
                 card.hint,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                maxLines = 3,
+                softWrap = true,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
 }
 
 fun timeOfDayGreeting(name: String): String {
-    val who = if (name.isBlank()) "there" else name.trim()
-    return "Hi $who, what can I help with?"
+    val trimmed = name.trim()
+    return if (trimmed.isBlank()) {
+        "What can I help with?"
+    } else {
+        "Hi $trimmed, what can I help with?"
+    }
 }
 
 fun popularUseCasesToStarters(

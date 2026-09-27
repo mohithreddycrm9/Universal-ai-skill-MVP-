@@ -403,7 +403,10 @@ class MentorViewModel(
     init {
         refreshRankedUseCases()
         viewModelScope.launch {
-            repository.bootstrap()
+            val migrationNotice = repository.bootstrap()
+            if (!migrationNotice.isNullOrBlank()) {
+                status.value = migrationNotice
+            }
             repository.startSyncIfConfigured()
         }
         viewModelScope.launch {

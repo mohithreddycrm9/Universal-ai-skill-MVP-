@@ -10,4 +10,11 @@ class ChatEmptyStateTest {
         val greeting = timeOfDayGreeting("Mohith")
         assertEquals("Hi Mohith, what can I help with?", greeting)
     }
+
+    @Test
+    fun greetingWithoutNameOmitsThere() {
+        assertEquals("What can I help with?", timeOfDayGreeting(""))
+        assertEquals("What can I help with?", timeOfDayGreeting("   "))
+        assertFalse(timeOfDayGreeting("").contains("there", ignoreCase = true))
+    }
 }

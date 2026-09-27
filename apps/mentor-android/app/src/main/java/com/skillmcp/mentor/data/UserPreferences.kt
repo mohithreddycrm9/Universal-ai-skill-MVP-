@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicReference
 
@@ -73,6 +72,7 @@ data class MentorPrefs(
     val weatherUseDeviceLocation: Boolean = false,
     val crashReportingOptIn: Boolean = false,
     val encryptedStorageMigrated: Boolean = false,
+    val hasSeenMessageLimitMigration: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_ASSISTANT_PROMPT =
@@ -148,17 +148,19 @@ class UserPreferences(
                 weatherUseDeviceLocation = prefs[KEY_WEATHER_USE_LOCATION] ?: false,
                 crashReportingOptIn = prefs[KEY_CRASH_REPORTING] ?: false,
                 encryptedStorageMigrated = prefs[KEY_ENC_MIGRATED] ?: false,
+                hasSeenMessageLimitMigration = prefs[KEY_MSG_LIMIT_MIGRATION] ?: false,
             )
         }
 
     fun current(): MentorPrefs = cache.get()
 
+    suspend fun warmCache() {
+        cache.set(prefsFlow.first())
+    }
+
     init {
         scope.launch {
             prefsFlow.collect { cache.set(it) }
-        }
-        runBlocking {
-            cache.set(prefsFlow.first())
         }
     }
 
@@ -215,6 +217,7 @@ class UserPreferences(
             prefs[KEY_WEATHER_USE_LOCATION] = next.weatherUseDeviceLocation
             prefs[KEY_CRASH_REPORTING] = next.crashReportingOptIn
             prefs[KEY_ENC_MIGRATED] = next.encryptedStorageMigrated
+            prefs[KEY_MSG_LIMIT_MIGRATION] = next.hasSeenMessageLimitMigration
         }
     }
 
@@ -283,5 +286,6 @@ class UserPreferences(
         val KEY_WEATHER_USE_LOCATION = booleanPreferencesKey("weather_use_location")
         val KEY_CRASH_REPORTING = booleanPreferencesKey("crash_reporting_opt_in")
         val KEY_ENC_MIGRATED = booleanPreferencesKey("encrypted_storage_migrated")
+        val KEY_MSG_LIMIT_MIGRATION = booleanPreferencesKey("seen_message_limit_migration")
     }
 }
