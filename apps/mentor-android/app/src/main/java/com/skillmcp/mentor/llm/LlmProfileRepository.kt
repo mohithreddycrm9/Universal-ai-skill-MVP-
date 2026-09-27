@@ -149,8 +149,6 @@ class LlmProfileRepository(
         errorMessage: String? = null,
     ) {
         val usage = result.usage
-        val cost =
-            estimateCostUsd(usage, profile.inputCostPer1M, profile.outputCostPer1M)
         dao.insertLlmUsage(
             LlmUsageEntity(
                 id = UUID.randomUUID().toString(),
@@ -160,7 +158,8 @@ class LlmProfileRepository(
                 promptTokens = usage?.promptTokens ?: 0,
                 completionTokens = usage?.completionTokens ?: 0,
                 totalTokens = usage?.totalTokens ?: 0,
-                estimatedUsd = cost,
+                // Lumina never estimates or shows LLM cost; the legacy column is kept for schema compatibility.
+                estimatedUsd = 0.0,
                 latencyMs = result.latencyMs,
                 success = success,
                 errorMessage = errorMessage,

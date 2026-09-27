@@ -285,7 +285,7 @@ interface MentorDao {
         FROM llm_usage
         WHERE createdAt >= :sinceMs AND success = 1
         GROUP BY providerName, model
-        ORDER BY estimatedUsd DESC
+        ORDER BY requestCount DESC
         """,
     )
     fun observeUsageByModel(sinceMs: Long): Flow<List<UsageByModelAggregate>>

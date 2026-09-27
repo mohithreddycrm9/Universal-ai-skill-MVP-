@@ -16,7 +16,6 @@ import com.skillmcp.mentor.policy.MessageAllowanceGuard
 import com.skillmcp.mentor.policy.SpendLimitException
 import com.skillmcp.mentor.policy.MessageLimitMigrator
 import com.skillmcp.mentor.policy.SpendPolicy
-import com.skillmcp.mentor.llm.TokenCostEstimator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -45,7 +44,6 @@ data class UiMessage(
 data class SendMessageResult(
     val content: String,
     val assistantMessageId: String,
-    val costUsd: Double,
 )
 
 data class UiConversation(
@@ -70,6 +68,8 @@ class MentorRepository(
 ) {
     val defaultProjectId = "default"
 
+    @Volatile private var legacyPromptsChecked = false
+
     suspend fun bootstrap(): String? {
         userPreferences.warmCache()
         userPreferences.ensureSecretsMigratedFromDataStore()
@@ -86,40 +86,20 @@ class MentorRepository(
         }
         llmProfileRepository.ensureDefaults()
         ensureDefaultProject()
-        seedDefaultPrompts()
+        removeLegacySeededPrompts()
         return notice
     }
 
-    private suspend fun seedDefaultPrompts() {
-        val existing = dao.observeSavedPrompts().first()
-        val knownTitles = existing.map { it.title }.toSet()
-        val defaults =
-            listOf(
-                "Explain this like I'm new to the topic, with a simple example." to "Explain simply",
-                "Create a step-by-step plan I can follow today." to "Action plan",
-                "Review my message for clarity, tone, and grammar. Suggest improvements." to "Writing coach",
-                "What are the top 3 things I should focus on this week?" to "Weekly focus",
-                "Help me prepare talking points for a meeting tomorrow." to "Meeting prep",
-                "Turn my rough notes into a clear outline with headings." to "Outline notes",
-                "Suggest 5 interview questions for a role I describe." to "Interview prep",
-                "Give me a gentle habit I can start today and track for 7 days." to "Small habit",
-                "Help me plan my week with priorities, time blocks, and one stretch goal." to "Plan my week",
-                "Brainstorm 10 creative ideas for a goal I describe." to "Brainstorm",
-                "Compare pros and cons of two options I give you." to "Compare options",
-                "Summarize the key points from our conversation in 5 bullets." to "Summarize chat",
-                "Draft a professional email. Ask me for recipient, tone, and key points." to "Draft email",
-                "Build a 7-day study plan for a subject I name." to "Study plan",
-                "Plan meals for the week and give me a grouped grocery list." to "Meal plan",
-                "Help me compare products before I buy. Ask category and budget." to "Shop compare",
-                "Run a morning brief: my top 3 tasks for today." to "Morning brief",
-                "I'll paste a draft—rewrite it in casual and professional versions." to "Polish message",
-            )
-        defaults.forEach { (body, title) ->
-            if (title in knownTitles) return@forEach
-            dao.upsertSavedPrompt(
-                SavedPromptEntity(UUID.randomUUID().toString(), title, body, System.currentTimeMillis()),
-            )
-        }
+    /**
+     * Older builds pre-filled the saved-prompt library with 18 template prompts the user never wrote.
+     * New installs start empty; this removes those untouched copies (exact title + body match) once.
+     */
+    private suspend fun removeLegacySeededPrompts() {
+        if (legacyPromptsChecked) return
+        legacyPromptsChecked = true
+        dao.observeSavedPrompts().first()
+            .filter { LegacySeededPrompts.isUntouchedSeed(it.title, it.body) }
+            .forEach { dao.deleteSavedPrompt(it.id) }
     }
 
     suspend fun ensureDefaultProject() {
@@ -127,7 +107,7 @@ class MentorRepository(
             dao.upsertProject(
                 ProjectEntity(
                     id = defaultProjectId,
-                    name = "General",
+                    name = "New chat",
                     goal = "",
                     updatedAt = System.currentTimeMillis(),
                 ),
@@ -338,13 +318,7 @@ class MentorRepository(
                 ),
             )
             onSuccessChat(projectId, profile, chat, prefs)
-            val cost =
-                chat.usage?.let { u ->
-                    val input = u.promptTokens * profile.inputCostPer1M / 1_000_000.0
-                    val output = u.completionTokens * profile.outputCostPer1M / 1_000_000.0
-                    input + output
-                } ?: TokenCostEstimator.estimateReplyCost(profile, chat.content)
-            Result.success(SendMessageResult(chat.content, assistantId, cost))
+            Result.success(SendMessageResult(chat.content, assistantId))
         }
 
     private suspend fun onSuccessChat(

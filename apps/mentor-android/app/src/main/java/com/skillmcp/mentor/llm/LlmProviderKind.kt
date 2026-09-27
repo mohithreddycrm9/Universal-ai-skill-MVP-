@@ -29,8 +29,6 @@ fun defaultLlmProfiles(): List<LlmProfile> =
             kind = LlmProviderKind.OPENAI_COMPAT,
             baseUrl = "https://api.openai.com/v1/",
             model = "gpt-4o-mini",
-            inputCostPer1M = 0.15,
-            outputCostPer1M = 0.60,
             isBuiltIn = true,
         ),
         LlmProfile(
@@ -39,8 +37,6 @@ fun defaultLlmProfiles(): List<LlmProfile> =
             kind = LlmProviderKind.GEMINI,
             baseUrl = "https://generativelanguage.googleapis.com/v1beta/",
             model = "gemini-2.0-flash",
-            inputCostPer1M = 0.10,
-            outputCostPer1M = 0.40,
             isBuiltIn = true,
         ),
         LlmProfile(
@@ -49,8 +45,6 @@ fun defaultLlmProfiles(): List<LlmProfile> =
             kind = LlmProviderKind.HUGGING_FACE,
             baseUrl = HuggingFaceDefaults.ROUTER_BASE_URL,
             model = "meta-llama/Meta-Llama-3-8B-Instruct:fastest",
-            inputCostPer1M = 0.0,
-            outputCostPer1M = 0.0,
             isBuiltIn = true,
         ),
         LlmProfile(
@@ -59,8 +53,6 @@ fun defaultLlmProfiles(): List<LlmProfile> =
             kind = LlmProviderKind.ANTHROPIC,
             baseUrl = "https://api.anthropic.com/v1/",
             model = "claude-3-5-haiku-latest",
-            inputCostPer1M = 0.80,
-            outputCostPer1M = 4.00,
             isBuiltIn = true,
         ),
         LlmProfile(
@@ -69,8 +61,6 @@ fun defaultLlmProfiles(): List<LlmProfile> =
             kind = LlmProviderKind.OLLAMA,
             baseUrl = "http://10.0.2.2:11434/",
             model = "llama3.2",
-            inputCostPer1M = 0.0,
-            outputCostPer1M = 0.0,
             isBuiltIn = true,
         ),
     )
