@@ -1,6 +1,7 @@
 package com.skillmcp.mentor.skills
 
 import com.skillmcp.mentor.data.db.SkillEntity
+import com.skillmcp.mentor.skills.finder.OfficialSkillPolicy
 
 data class CatalogSkill(
     val id: String,
@@ -25,7 +26,7 @@ object SkillCatalog {
                 description = "Discover, verify, and use agent skills with a security-first workflow.",
                 category = "Agent tooling",
                 sourceUrl = "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/tree/main/skills/universal-skill-trust",
-                trustTier = "Official",
+                trustTier = "First-party",
             ),
             CatalogSkill(
                 id = "anthropic-pdf",
@@ -33,7 +34,7 @@ object SkillCatalog {
                 description = "Read, fill, merge, and summarize PDF documents step by step.",
                 category = "Productivity",
                 sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/pdf",
-                trustTier = "Curated",
+                trustTier = "Verified official · Anthropic",
             ),
             CatalogSkill(
                 id = "anthropic-docx",
@@ -41,7 +42,7 @@ object SkillCatalog {
                 description = "Draft and revise .docx documents with tracked structure and styles.",
                 category = "Productivity",
                 sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/docx",
-                trustTier = "Curated",
+                trustTier = "Verified official · Anthropic",
             ),
             CatalogSkill(
                 id = "anthropic-internal-comms",
@@ -49,7 +50,7 @@ object SkillCatalog {
                 description = "Write status updates, newsletters, and FAQs in a clear company voice.",
                 category = "Writing",
                 sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/internal-comms",
-                trustTier = "Curated",
+                trustTier = "Verified official · Anthropic",
             ),
             CatalogSkill(
                 id = "anthropic-skill-creator",
@@ -57,7 +58,7 @@ object SkillCatalog {
                 description = "Design and test your own skill pack with a guided checklist.",
                 category = "Agent tooling",
                 sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
-                trustTier = "Curated",
+                trustTier = "Verified official · Anthropic",
             ),
             CatalogSkill(
                 id = "anthropic-frontend-design",
@@ -65,31 +66,26 @@ object SkillCatalog {
                 description = "Plan distinctive, production-grade web UI with clear design choices.",
                 category = "Coding",
                 sourceUrl = "https://github.com/anthropics/skills/tree/main/skills/frontend-design",
-                trustTier = "Curated",
-            ),
-            CatalogSkill(
-                id = "wshobson-mobile-android-design",
-                title = "Android design (Material 3)",
-                description = "Material 3 and Jetpack Compose layout, navigation, and component guidance.",
-                category = "Coding",
-                sourceUrl = "https://github.com/wshobson/agents/tree/main/plugins/ui-design/skills/mobile-android-design",
-                trustTier = "Curated",
-            ),
-            CatalogSkill(
-                id = "wshobson-accessibility",
-                title = "Accessibility compliance",
-                description = "WCAG checks and mobile accessibility patterns for inclusive apps.",
-                category = "Coding",
-                sourceUrl = "https://github.com/wshobson/agents/tree/main/plugins/ui-design/skills/accessibility-compliance",
-                trustTier = "Curated",
+                trustTier = "Verified official · Anthropic",
             ),
         )
 
-    /** Remote catalog minus packs already shipped offline or installed. */
+    /**
+     * The app publisher's own first-party skill (this repository). It is the only entry allowed
+     * outside the official-company allowlist; everything else must pass [OfficialSkillPolicy].
+     */
+    const val FIRST_PARTY_OWNER = "mohithreddycrm9/Universal-ai-skill-MVP-"
+
+    /** Official-only: allowlisted company org over HTTPS, or the app's own first-party skill. */
+    fun isAllowed(entry: CatalogSkill): Boolean =
+        entry.sourceUrl.startsWith("https://github.com/$FIRST_PARTY_OWNER/") ||
+            OfficialSkillPolicy.verifyUrl(entry.sourceUrl).accepted
+
+    /** Remote catalog minus packs already shipped offline or installed; community sources never shown. */
     fun featuredForUi(installed: List<SkillEntity>): List<CatalogSkill> {
         val bundledTitles = BundledSkills.packs.map { it.title.lowercase() }.toSet()
         val installedTitles = installed.map { it.title.lowercase() }.toSet()
-        return featured.filter { entry ->
+        return featured.filter(::isAllowed).filter { entry ->
             val titleKey = entry.title.lowercase()
             titleKey !in bundledTitles && titleKey !in installedTitles
         }
