@@ -2,18 +2,7 @@ package com.skillmcp.mentor.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Hub
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Explore
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.R
@@ -37,8 +25,10 @@ import androidx.navigation.compose.rememberNavController
 import com.skillmcp.mentor.data.AppContainer
 import com.skillmcp.mentor.security.BiometricGate
 import com.skillmcp.mentor.ui.components.ConnectLlmSheet
+import com.skillmcp.mentor.ui.components.FloatingMentorNavBar
 import com.skillmcp.mentor.ui.components.GuidedSetupSheet
 import com.skillmcp.mentor.ui.components.SkillInstallDialog
+import com.skillmcp.mentor.ui.components.onboarding.OnboardingFlow
 import com.skillmcp.mentor.ui.screens.ChatScreen
 import com.skillmcp.mentor.ui.screens.DiscoverScreen
 import com.skillmcp.mentor.ui.screens.ModelsScreen
@@ -124,6 +114,10 @@ fun MentorApp(container: AppContainer) {
         enabled = state.prefs.requireBiometricUnlock,
         onLockUnavailable = vm::onAppLockUnavailable,
     ) {
+        if (!state.prefs.hasSeenWelcome) {
+            OnboardingFlow(onFinished = vm::markWelcomeSeen)
+            return@BiometricGate
+        }
         GuidedSetupSheet(
             visible = !state.prefs.hasCompletedGuidedSetup && guidedVisible && connectProfileId == null,
             useCases = state.rankedUseCases,
@@ -149,36 +143,19 @@ fun MentorApp(container: AppContainer) {
             onDismiss = vm::dismissConnectLlm,
         )
         Scaffold(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 0.dp,
-                ) {
-                    MentorTab.entries.filter { it.showInBar }.forEach { tab ->
-                        val selected = highlightedTab == tab.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                nav.navigate(tab.route) {
-                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(tabIcon(tab), contentDescription = tab.localizedLabel()) },
-                            label = { Text(tab.localizedLabel()) },
-                            colors =
-                                NavigationBarItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                        )
-                    }
-                }
+                FloatingMentorNavBar(
+                    selectedRoute = highlightedTab,
+                    onSelect = { tab ->
+                        nav.navigate(tab.route) {
+                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    tabLabel = { it.localizedLabel() },
+                )
             },
         ) { padding ->
             NavHost(
@@ -197,12 +174,3 @@ fun MentorApp(container: AppContainer) {
     }
 }
 
-private fun tabIcon(tab: MentorTab): ImageVector =
-    when (tab) {
-        MentorTab.Chat -> Icons.AutoMirrored.Filled.Chat
-        MentorTab.Discover -> Icons.Outlined.Explore
-        MentorTab.Models -> Icons.Outlined.Hub
-        MentorTab.Usage -> Icons.Outlined.BarChart
-        MentorTab.Skills -> Icons.Outlined.AutoAwesome
-        MentorTab.Settings -> Icons.Outlined.Settings
-    }

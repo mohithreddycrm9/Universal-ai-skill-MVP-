@@ -70,8 +70,15 @@ import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.mentor.UiConversation
 import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.components.AppBackground
-import com.skillmcp.mentor.ui.components.ComposerBar
-import com.skillmcp.mentor.ui.components.MessageBubble
+import com.skillmcp.mentor.llm.TokenCostEstimator
+import com.skillmcp.mentor.ui.components.chat.ChatEmptyState
+import com.skillmcp.mentor.ui.components.chat.ChatMessageContent
+import com.skillmcp.mentor.ui.components.chat.PremiumComposerBar
+import com.skillmcp.mentor.ui.components.chat.PresetSegmentedControl
+import com.skillmcp.mentor.ui.components.chat.ThinkingDots
+import com.skillmcp.mentor.ui.components.chat.VoiceModeOverlay
+import com.skillmcp.mentor.ui.components.chat.popularUseCasesToStarters
+import com.skillmcp.mentor.ui.theme.MentorDimens
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.SuggestionChipRow
@@ -402,18 +409,11 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ModelPreset.entries.forEach { preset ->
-                        FilterChip(
-                            selected = state.prefs.modelPreset == preset,
-                            onClick = { vm.setModelPreset(preset) },
-                            label = { Text(preset.label) },
-                        )
-                    }
-                }
+                PresetSegmentedControl(
+                    selected = state.prefs.modelPreset,
+                    onSelect = vm::setModelPreset,
+                    modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 4.dp),
+                )
                 if (state.prefs.modelPreset == ModelPreset.DEEP && state.draft.isNotBlank()) {
                     val est = vm.estimatedSendCostUsd()
                     if (est > 0) {
@@ -434,71 +434,44 @@ fun ChatScreen(vm: MentorViewModel) {
                 ) {
                     if (state.messages.isEmpty() && !state.isSending) {
                         item("hero") {
-                            Column(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 32.dp),
-                                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                            ) {
-                                Text(
-                                    "New conversation",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "Ask a question or pick a starter below.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center,
-                                )
-                                Spacer(Modifier.height(20.dp))
-                                Text(
-                                    "Starters",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    items(state.popularUseCases, key = { it.id }) { useCase ->
-                                        PopularUseCaseCard(
-                                            useCase = useCase,
-                                            onClick = { vm.startPopularUseCase(useCase) },
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.height(16.dp))
-                                TabSuggestions(
-                                    title = "Try these",
-                                    suggestions = ScreenSuggestions.forScreen(SuggestionScreen.CHAT),
-                                    onSelect = vm::applySuggestion,
-                                )
-                            }
+                            ChatEmptyState(
+                                displayName = state.prefs.displayName,
+                                starters =
+                                    popularUseCasesToStarters(state.popularUseCases, vm::startPopularUseCase),
+                            )
                         }
                     }
+                    val profile = state.activeLlmProfile
                     items(state.messages, key = { it.id }) { message ->
                         if (message.content.isNotBlank()) {
-                            MessageBubble(content = message.content, isUser = message.role == "user")
+                            val isUser = message.role == "user"
+                            ChatMessageContent(
+                                content = message.content,
+                                isUser = isUser,
+                                isStreaming = false,
+                                modelLabel = if (!isUser) profile?.name else null,
+                                estimatedCostUsd =
+                                    if (!isUser && profile != null) {
+                                        TokenCostEstimator.estimateReplyCost(profile, message.content)
+                                    } else {
+                                        null
+                                    },
+                            )
                         }
                     }
                     if (state.isSending && state.streamPreview.isNotBlank()) {
                         item("stream-preview") {
-                            MessageBubble(content = state.streamPreview, isUser = false)
+                            ChatMessageContent(
+                                content = state.streamPreview,
+                                isUser = false,
+                                isStreaming = true,
+                                modelLabel = profile?.name,
+                                estimatedCostUsd = null,
+                            )
                         }
                     } else if (state.isSending) {
                         item("stream-typing") {
-                            Text(
-                                "● ● ●",
-                                modifier = Modifier.padding(20.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.titleMedium,
-                            )
+                            ThinkingDots()
                         }
                     }
                 }
@@ -546,14 +519,28 @@ fun ChatScreen(vm: MentorViewModel) {
                     }
                 }
 
-                ComposerBar(
+                val canVision = state.activeLlmProfile?.let { VisionCapabilities.supportsVision(it) } == true
+                PremiumComposerBar(
                     draft = state.draft,
                     onDraftChange = vm::onDraftChange,
                     onSend = vm::sendMessage,
                     onMic = onMic,
+                    onAttach =
+                        if (canVision) {
+                            { attachLauncher.launch(arrayOf("image/*", "application/pdf")) }
+                        } else {
+                            null
+                        },
                     isSending = state.isSending,
                     isListening = state.isListening,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 12.dp),
+                )
+            }
+            if (state.isListening) {
+                VoiceModeOverlay(
+                    transcript = state.draft,
+                    listening = true,
+                    onDismiss = { /* ends when listen completes */ },
                 )
             }
         }

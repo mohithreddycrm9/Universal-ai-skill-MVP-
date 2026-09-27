@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.CodeMentor" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.CodeMentor" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.CodeMentor.Main</item>
+    </style>
+    <style name="Theme.CodeMentor.Main" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

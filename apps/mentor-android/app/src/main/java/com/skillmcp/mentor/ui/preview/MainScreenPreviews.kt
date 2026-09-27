@@ -27,8 +27,8 @@ import com.skillmcp.mentor.llm.defaultLlmProfiles
 import com.skillmcp.mentor.mentor.UiMessage
 import com.skillmcp.mentor.ui.MentorUiState
 import com.skillmcp.mentor.ui.components.AppBackground
-import com.skillmcp.mentor.ui.components.ComposerBar
-import com.skillmcp.mentor.ui.components.MessageBubble
+import com.skillmcp.mentor.ui.components.chat.ChatMessageContent
+import com.skillmcp.mentor.ui.components.chat.PremiumComposerBar
 import com.skillmcp.mentor.ui.components.ScreenHeader
 import com.skillmcp.mentor.ui.components.TabSuggestions
 import com.skillmcp.mentor.ui.screens.DiscoverScreenContent
@@ -114,14 +114,21 @@ internal fun ChatScreenPreviewContent(state: MentorUiState) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.messages, key = { it.id }) { msg ->
-                    MessageBubble(content = msg.content, isUser = msg.role == "user")
+                    ChatMessageContent(
+                        content = msg.content,
+                        isUser = msg.role == "user",
+                        isStreaming = false,
+                        modelLabel = if (msg.role != "user") "OpenAI" else null,
+                        estimatedCostUsd = null,
+                    )
                 }
             }
-            ComposerBar(
+            PremiumComposerBar(
                 draft = state.draft,
                 onDraftChange = {},
                 onSend = {},
                 onMic = {},
+                onAttach = null,
                 isListening = false,
                 isSending = false,
                 modifier = Modifier.fillMaxWidth(),

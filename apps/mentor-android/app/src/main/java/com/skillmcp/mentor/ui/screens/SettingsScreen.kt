@@ -43,6 +43,8 @@ import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.LegalDocumentSheet
 import com.skillmcp.mentor.ui.components.TabSuggestions
+import com.skillmcp.mentor.ui.components.settings.SettingsProfileHeader
+import com.skillmcp.mentor.ui.theme.MentorDimens
 import com.skillmcp.mentor.ui.theme.ThemeMode
 import com.skillmcp.mentor.ui.theme.userLabel
 
@@ -171,12 +173,25 @@ fun SettingsScreen(vm: MentorViewModel) {
                 Modifier
                     .fillMaxSize()
                     .verticalScroll(scroll)
-                    .padding(16.dp),
+                    .padding(MentorDimens.ScreenHorizontal),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            SettingsProfileHeader(
+                displayName = prefs.displayName,
+                profile = state.activeLlmProfile,
+                monthSpendUsd = state.usageTotals.estimatedUsd,
+                monthlyBudgetUsd = prefs.dailyBudgetUsd * 30,
+            )
             com.skillmcp.mentor.ui.components.ScreenHeader(
                 title = "Settings",
                 subtitle = "Personalize your assistant, voice, and sync.",
+            )
+            OutlinedTextField(
+                value = prefs.displayName,
+                onValueChange = { name -> vm.updatePrefs { p -> p.copy(displayName = name) } },
+                label = { Text("Your name (greeting)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
             )
 
             TabSuggestions(
@@ -396,6 +411,11 @@ fun SettingsScreen(vm: MentorViewModel) {
             )
 
             Text("Appearance", style = MaterialTheme.typography.titleMedium)
+            RowSwitch(
+                label = "Use wallpaper colours (Material You)",
+                checked = prefs.useDynamicColor,
+                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(useDynamicColor = on) } },
+            )
             ThemeMode.entries.forEach { mode ->
                 val selected = prefs.themeMode == mode
                 if (selected) {

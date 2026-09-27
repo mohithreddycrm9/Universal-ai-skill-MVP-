@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +18,7 @@ import com.skillmcp.mentor.ui.MentorApp
 import com.skillmcp.mentor.ui.theme.CodeMentorTheme
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as MentorApplication).container
@@ -33,6 +35,7 @@ class MainActivity : FragmentActivity() {
                 darkTheme = prefs.resolvedDarkTheme(systemDark),
                 accentHue = prefs.accentHue,
                 fontScale = prefs.fontScale,
+                dynamicColor = prefs.useDynamicColor,
             ) {
                 MentorApp(container = container)
             }

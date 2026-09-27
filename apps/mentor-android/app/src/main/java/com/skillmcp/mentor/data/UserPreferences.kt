@@ -56,6 +56,8 @@ data class MentorPrefs(
     val voiceHandsFree: Boolean = false,
     val backupIncludeApiKeys: Boolean = false,
     val internalLaunchToken: String = "",
+    val useDynamicColor: Boolean = false,
+    val displayName: String = "",
 ) {
     companion object {
         const val DEFAULT_ASSISTANT_PROMPT =
@@ -119,6 +121,8 @@ class UserPreferences(
                 voiceHandsFree = prefs[KEY_VOICE_HANDS_FREE] ?: false,
                 backupIncludeApiKeys = prefs[KEY_BACKUP_KEYS] ?: false,
                 internalLaunchToken = prefs[KEY_INTERNAL_TOKEN] ?: "",
+                useDynamicColor = prefs[KEY_DYNAMIC_COLOR] ?: false,
+                displayName = prefs[KEY_DISPLAY_NAME] ?: "",
             )
         }
 
@@ -168,6 +172,8 @@ class UserPreferences(
             prefs[KEY_VOICE_HANDS_FREE] = next.voiceHandsFree
             prefs[KEY_BACKUP_KEYS] = next.backupIncludeApiKeys
             prefs[KEY_INTERNAL_TOKEN] = next.internalLaunchToken
+            prefs[KEY_DYNAMIC_COLOR] = next.useDynamicColor
+            prefs[KEY_DISPLAY_NAME] = next.displayName
         }
     }
 
@@ -227,5 +233,7 @@ class UserPreferences(
         val KEY_VOICE_HANDS_FREE = booleanPreferencesKey("voice_hands_free")
         val KEY_BACKUP_KEYS = booleanPreferencesKey("backup_include_api_keys")
         val KEY_INTERNAL_TOKEN = stringPreferencesKey("internal_launch_token")
+        val KEY_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
+        val KEY_DISPLAY_NAME = stringPreferencesKey("display_name")
     }
 }

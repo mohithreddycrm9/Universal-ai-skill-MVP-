@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FF1D4ED8</color>
-    <color name="widget_surface">#FFF5F5F5</color>
-    <color name="widget_outline">#FFE5E5E5</color>
-    <color name="widget_title_text">#FF171717</color>
-    <color name="widget_body_text">#FF525252</color>
-    <color name="widget_button_bg">#FFEAEAEA</color>
-    <color name="widget_button_primary_bg">#FF1D4ED8</color>
-    <color name="widget_button_text">#FF171717</color>
+    <color name="splash_background">#4F46E5</color>
+    <color name="ic_launcher_background">#4F46E5</color>
+    <color name="widget_surface">#FFFFFFFF</color>
+    <color name="widget_outline">#FFE2E8F0</color>
+    <color name="widget_title_text">#FF0F172A</color>
+    <color name="widget_body_text">#FF64748B</color>
+    <color name="widget_button_bg">#FFF1F5F9</color>
+    <color name="widget_button_primary_bg">#FF4F46E5</color>
+    <color name="widget_button_text">#FF0F172A</color>
     <color name="widget_button_primary_text">#FFFFFFFF</color>
 </resources>
