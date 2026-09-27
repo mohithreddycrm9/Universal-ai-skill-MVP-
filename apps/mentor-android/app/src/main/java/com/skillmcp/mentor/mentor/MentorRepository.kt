@@ -5,6 +5,7 @@ import com.skillmcp.mentor.data.db.BuildEventEntity
 import com.skillmcp.mentor.data.db.ChatMessageEntity
 import com.skillmcp.mentor.data.db.MentorDao
 import com.skillmcp.mentor.data.db.ProjectEntity
+import com.skillmcp.mentor.data.db.ReplyVersionEntity
 import com.skillmcp.mentor.data.db.SkillEntity
 import com.skillmcp.mentor.llm.LlmChatResult
 import com.skillmcp.mentor.llm.LlmProfile
@@ -39,6 +40,10 @@ data class UiMessage(
     val id: String,
     val role: String,
     val content: String,
+    /** Number of regenerated versions of an assistant reply (1 = never regenerated). */
+    val versionCount: Int = 1,
+    /** 0-based index of the version currently shown. */
+    val versionIndex: Int = 0,
 )
 
 data class SendMessageResult(
@@ -129,7 +134,101 @@ class MentorRepository(
 
     fun observeMessages(): Flow<List<UiMessage>> =
         observeActiveConversationId().flatMapLatest { id ->
-            dao.observeMessages(id).map { list -> list.map { UiMessage(it.id, it.role, it.content) } }
+            combine(dao.observeMessages(id), dao.observeReplyVersions(id)) { list, versions ->
+                val byMessage = versions.groupBy({ it.messageId }, { it.content })
+                list.map { entity ->
+                    val v = byMessage[entity.id].orEmpty()
+                    UiMessage(
+                        id = entity.id,
+                        role = entity.role,
+                        content = entity.content,
+                        versionCount = v.size.coerceAtLeast(1),
+                        versionIndex = ChatBranching.visibleVersionIndex(v, entity.content),
+                    )
+                }
+            }
+        }
+
+    private suspend fun uiMessagesFor(projectId: String): List<UiMessage> =
+        dao.messagesFor(projectId).map { UiMessage(it.id, it.role, it.content) }
+
+    /**
+     * Edit & resend: removes [messageId] (a user message in the active chat) and everything after it.
+     * The caller then sends the edited text as a normal new turn. Returns false if nothing was removed.
+     */
+    suspend fun dropFromMessage(messageId: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val projectId = userPreferences.current().activeConversationId.ifBlank { defaultProjectId }
+            val ids = ChatBranching.idsToDropForEdit(uiMessagesFor(projectId), messageId)
+            if (ids.isEmpty()) return@withContext false
+            dao.deleteReplyVersionsFor(ids)
+            dao.deleteMessages(ids)
+            syncCoordinator.publishStateSnapshot()
+            true
+        }
+
+    /**
+     * Regenerates the latest reply in place (same message id). Every version is kept in reply_versions
+     * so the user can switch between them; on failure the current reply is left untouched.
+     */
+    suspend fun regenerateReply(
+        assistantMessageId: String,
+        onStreamUpdate: (String) -> Unit = {},
+        isCancelled: () -> Boolean = { false },
+    ): Result<String> =
+        withContext(Dispatchers.IO) {
+            val prefs = userPreferences.current()
+            val allowance = MessageAllowanceGuard.check(dao, prefs.dailyMessageLimit, prefs.weeklyMessageLimit)
+            if (!allowance.allowed) return@withContext Result.failure(SpendLimitException(allowance))
+            val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }
+            val context =
+                ChatBranching.regenerateContext(uiMessagesFor(projectId), assistantMessageId)
+                    ?: return@withContext Result.failure(IllegalStateException("Only the latest reply can be regenerated"))
+            val profile = llmProfileRepository.activeProfile()
+            val result =
+                streamReply(
+                    prefs = prefs,
+                    profile = profile,
+                    projectId = projectId,
+                    history = context.history.map { ChatMessageDto(it.role, it.content) },
+                    userText = context.userMessage.content,
+                    userPayload = context.userMessage.content,
+                    vision = null,
+                    onStreamUpdate = onStreamUpdate,
+                    isCancelled = isCancelled,
+                )
+            val chat = result.getOrElse { return@withContext Result.failure(it) }
+            val existing = dao.replyVersions(assistantMessageId)
+            val all = ChatBranching.versionsAfterRegenerate(existing.map { it.content }, context.reply.content, chat.content)
+            val now = System.currentTimeMillis()
+            dao.deleteReplyVersionsFor(listOf(assistantMessageId))
+            dao.insertReplyVersions(
+                all.mapIndexed { i, content ->
+                    ReplyVersionEntity(UUID.randomUUID().toString(), assistantMessageId, projectId, content, i, now + i)
+                },
+            )
+            dao.getMessage(assistantMessageId)?.let { dao.updateMessage(it.copy(content = chat.content)) }
+            onSuccessChat(projectId, profile, chat, prefs)
+            Result.success(chat.content)
+        }
+
+    /** Shows another saved version of a regenerated reply. */
+    suspend fun selectReplyVersion(messageId: String, index: Int) =
+        withContext(Dispatchers.IO) {
+            val version = dao.replyVersions(messageId).getOrNull(index) ?: return@withContext
+            dao.getMessage(messageId)?.let { dao.updateMessage(it.copy(content = version.content)) }
+        }
+
+    /** Drawer search: messages whose text matches, with a short snippet around the match. */
+    suspend fun searchMessageHits(query: String, limit: Int = 20): List<MessageSearchHit> =
+        withContext(Dispatchers.IO) {
+            val q = query.trim()
+            if (q.length < 2) return@withContext emptyList()
+            val names = dao.allProjects().associate { it.id to it.name }
+            dao.searchMessages(q, limit).mapNotNull { m ->
+                val name = names[m.projectId] ?: return@mapNotNull null
+                MessageSearchHit(m.projectId, name, m.id, SearchSnippet.around(m.content, q))
+            }
         }
 
     fun observeSkills() = dao.observeSkills()
@@ -167,7 +266,7 @@ class MentorRepository(
         dao.upsertProject(
             ProjectEntity(
                 id = id,
-                name = name.ifBlank { "New chat" },
+                name = name.ifBlank { "New chat" }, // replaced by ChatTitle after the first message
                 goal = "",
                 updatedAt = System.currentTimeMillis(),
             ),
@@ -207,6 +306,8 @@ class MentorRepository(
 
     suspend fun deleteConversation(id: String) {
         if (id == defaultProjectId) return
+        dao.deleteReplyVersionsForProject(id)
+        dao.deleteMessagesForProject(id)
         dao.deleteProject(id)
         val active = userPreferences.current().activeConversationId
         if (active == id) {
@@ -266,14 +367,7 @@ class MentorRepository(
                 ),
             )
             onUserMessageSaved()
-
-            val skillContext = buildSkillContext(projectId)
-            val extraContext =
-                extensionOrchestrator.augmentExtraContext(
-                    userMessage = text,
-                    skillContext = skillContext,
-                    enabledPluginIds = prefs.enabledPluginIds,
-                )
+            autoTitleIfNeeded(projectId, text, isFirstUserMessage = historyList.none { it.role == "user" })
 
             val userPayload =
                 buildString {
@@ -283,17 +377,16 @@ class MentorRepository(
                         append(pdfExtract.trim())
                     }
                 }
-            val history = historyList.filter { it.role == "user" || it.role == "assistant" }
             val result =
-                llmStreaming.streamChat(
+                streamReply(
+                    prefs = prefs,
                     profile = profile,
-                    systemPrompt = PersonalizationPrompt.compose(prefs),
-                    history = history,
-                    userMessage = userPayload,
-                    extraContext = extraContext,
+                    projectId = projectId,
+                    history = historyList,
+                    userText = text,
+                    userPayload = userPayload,
                     vision = vision,
-                    onChunk = onStreamUpdate,
-                    temperature = prefs.modelPreset.temperature,
+                    onStreamUpdate = onStreamUpdate,
                     isCancelled = isCancelled,
                 )
 
@@ -320,6 +413,46 @@ class MentorRepository(
             onSuccessChat(projectId, profile, chat, prefs)
             Result.success(SendMessageResult(chat.content, assistantId))
         }
+
+    private suspend fun streamReply(
+        prefs: com.skillmcp.mentor.data.MentorPrefs,
+        profile: LlmProfile,
+        projectId: String,
+        history: List<ChatMessageDto>,
+        userText: String,
+        userPayload: String,
+        vision: com.skillmcp.mentor.llm.ChatVisionAttachment?,
+        onStreamUpdate: (String) -> Unit,
+        isCancelled: () -> Boolean,
+    ): Result<LlmChatResult> {
+        val skillContext = buildSkillContext(projectId)
+        val extraContext =
+            extensionOrchestrator.augmentExtraContext(
+                userMessage = userText,
+                skillContext = skillContext,
+                enabledPluginIds = prefs.enabledPluginIds,
+            )
+        return llmStreaming.streamChat(
+            profile = profile,
+            systemPrompt = PersonalizationPrompt.compose(prefs),
+            history = history.filter { it.role == "user" || it.role == "assistant" },
+            userMessage = userPayload,
+            extraContext = extraContext,
+            vision = vision,
+            onChunk = onStreamUpdate,
+            temperature = prefs.modelPreset.temperature,
+            isCancelled = isCancelled,
+        )
+    }
+
+    /** New chats are titled from their first message instead of keeping "New chat". */
+    private suspend fun autoTitleIfNeeded(projectId: String, firstText: String, isFirstUserMessage: Boolean) {
+        if (!isFirstUserMessage) return
+        val project = dao.allProjects().find { it.id == projectId } ?: return
+        if (!ChatTitle.isPlaceholder(project.name)) return
+        val title = ChatTitle.fromFirstMessage(firstText) ?: return
+        dao.upsertProject(project.copy(name = title))
+    }
 
     private suspend fun onSuccessChat(
         projectId: String,

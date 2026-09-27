@@ -3,6 +3,7 @@ package com.skillmcp.mentor.data.db
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Transaction
@@ -20,6 +21,20 @@ data class ChatMessageEntity(
     val projectId: String,
     val role: String,
     val content: String,
+    val createdAt: Long,
+)
+
+/**
+ * Earlier and current versions of a regenerated assistant reply. [ChatMessageEntity.content] holds the
+ * version the user is viewing; this table keeps every version (idx 0 = the original reply).
+ */
+@Entity(tableName = "reply_versions", indices = [Index("messageId")])
+data class ReplyVersionEntity(
+    @PrimaryKey val id: String,
+    val messageId: String,
+    val projectId: String,
+    val content: String,
+    val idx: Int,
     val createdAt: Long,
 )
 
@@ -153,6 +168,47 @@ interface MentorDao {
     @Update
     suspend fun updateMessage(message: ChatMessageEntity)
 
+    @Query("SELECT * FROM chat_messages WHERE projectId = :projectId ORDER BY createdAt ASC")
+    suspend fun messagesFor(projectId: String): List<ChatMessageEntity>
+
+    @Query("SELECT * FROM chat_messages WHERE id = :id LIMIT 1")
+    suspend fun getMessage(id: String): ChatMessageEntity?
+
+    @Query("DELETE FROM chat_messages WHERE id IN (:ids)")
+    suspend fun deleteMessages(ids: List<String>)
+
+    @Query("DELETE FROM chat_messages WHERE projectId = :projectId")
+    suspend fun deleteMessagesForProject(projectId: String)
+
+    @Query("SELECT * FROM reply_versions WHERE projectId = :projectId ORDER BY idx ASC")
+    fun observeReplyVersions(projectId: String): Flow<List<ReplyVersionEntity>>
+
+    @Query("SELECT * FROM reply_versions WHERE messageId = :messageId ORDER BY idx ASC")
+    suspend fun replyVersions(messageId: String): List<ReplyVersionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertReplyVersions(rows: List<ReplyVersionEntity>)
+
+    @Query("DELETE FROM reply_versions WHERE messageId IN (:messageIds)")
+    suspend fun deleteReplyVersionsFor(messageIds: List<String>)
+
+    @Query("DELETE FROM reply_versions WHERE projectId = :projectId")
+    suspend fun deleteReplyVersionsForProject(projectId: String)
+
+    @Query("DELETE FROM reply_versions")
+    suspend fun deleteAllReplyVersions()
+
+    /** Message hits for drawer search (content match), newest first. */
+    @Query(
+        """
+        SELECT * FROM chat_messages
+        WHERE content LIKE '%' || :query || '%'
+        ORDER BY createdAt DESC
+        LIMIT :limit
+        """,
+    )
+    suspend fun searchMessages(query: String, limit: Int): List<ChatMessageEntity>
+
     @Query("DELETE FROM projects WHERE id = :id")
     suspend fun deleteProject(id: String)
 
@@ -256,6 +312,7 @@ interface MentorDao {
         deleteAllSavedPrompts()
         deleteAllBuildEvents()
         deleteAllLlmUsage()
+        deleteAllReplyVersions()
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -316,8 +373,9 @@ interface MentorDao {
         LlmUsageEntity::class,
         ConversationSkillEntity::class,
         SavedPromptEntity::class,
+        ReplyVersionEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class MentorDatabase : RoomDatabase() {
