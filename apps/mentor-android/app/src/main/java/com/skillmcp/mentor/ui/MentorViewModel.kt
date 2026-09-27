@@ -108,6 +108,8 @@ data class MentorUiState(
     val pendingShare: SharePayload? = null,
     val pendingSkillInstall: SkillInstallRequest? = null,
     val lastExportMarkdown: String? = null,
+    /** Shown immediately after send until the message is persisted. */
+    val pendingUserMessage: String? = null,
 )
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -138,6 +140,7 @@ class MentorViewModel(
     val backupPassphrasePrompt = MutableStateFlow(false)
     val backupRestorePassphrasePrompt = MutableStateFlow(false)
     val drawerSearchResults = MutableStateFlow<List<UiConversation>?>(null)
+    private val pendingUserMessage = MutableStateFlow<String?>(null)
 
     private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val openChatRequests: SharedFlow<Unit> = openChatRequestsInner.asSharedFlow()
@@ -333,12 +336,14 @@ class MentorViewModel(
 
     private val interactionState =
         combine(
-            combine(draft, isSending, isListening) { d, s, l -> Triple(d, s, l) },
+            combine(draft, isSending, isListening, pendingUserMessage) { d, s, l, pending ->
+                Quad(d, s, l, pending)
+            },
             combine(status, statusDetails, activeStep, lastCommand) { st, details, step, cmd ->
                 Quad(st, details, step, cmd)
             },
         ) { a, b ->
-            InteractionSlice(a.first, a.second, a.third, b.first, b.second, b.third, b.fourth)
+            InteractionSlice(a.first, a.second, a.third, a.fourth, b.first, b.second, b.third, b.fourth)
         }
 
     private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
@@ -347,6 +352,7 @@ class MentorViewModel(
         val draft: String,
         val isSending: Boolean,
         val isListening: Boolean,
+        val pendingUserMessage: String?,
         val status: String?,
         val statusDetails: String?,
         val activeStep: String,
@@ -385,6 +391,7 @@ class MentorViewModel(
                 statusDetails = interaction.statusDetails,
                 activeStep = interaction.activeStep,
                 lastCommand = interaction.lastCommand,
+                pendingUserMessage = interaction.pendingUserMessage,
                 streamPreview = core.streamPreview,
                 savedPrompts = core.savedPrompts,
                 skillToggles = core.skillToggles,
@@ -685,6 +692,8 @@ class MentorViewModel(
     fun sendMessage() {
         val text = draft.value.trim()
         if (text.isEmpty() || isSending.value) return
+        draft.value = ""
+        pendingUserMessage.value = text
         viewModelScope.launch {
             streamCancelled.set(false)
             isSending.value = true
@@ -704,11 +713,11 @@ class MentorViewModel(
                 )
             streamPreview.value = ""
             isSending.value = false
+            pendingUserMessage.value = null
             if (result.isSuccess) {
                 pendingVision.value = null
                 pendingPdfExtract.value = null
                 pendingImagePreviewUri.value = null
-                draft.value = ""
                 val send = result.getOrNull() ?: return@launch
                 val reply = send.content
                 val p = prefs.current()
