@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.components.chat
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -214,11 +216,22 @@ fun AssistantHeader(modelLabel: String?) {
             Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
         }
         Text(
-            modelLabel ?: stringResource(R.string.app_name),
+            stringResource(R.string.app_name),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
         )
+        // Small caption naming the model that wrote this reply (chats can mix models).
+        if (!modelLabel.isNullOrBlank()) {
+            val by = stringResource(R.string.model_reply_by, modelLabel)
+            Text(
+                modelLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.semantics { contentDescription = by },
+            )
+        }
     }
 }
 

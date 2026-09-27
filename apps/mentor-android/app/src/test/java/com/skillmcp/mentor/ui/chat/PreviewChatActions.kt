@@ -40,4 +40,6 @@ object PreviewChatActions : ChatScreenActions {
     override fun stopReadAloud() = Unit
     override fun sendFollowUp(prompt: String) = Unit
     override fun shareChatText(conversationId: String) = Unit
+    override fun switchChatModel(profileId: String) = Unit
+    override fun connectModel(profileId: String) = Unit
 }

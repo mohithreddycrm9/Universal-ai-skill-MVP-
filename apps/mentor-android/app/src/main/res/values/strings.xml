@@ -279,4 +279,20 @@
     <string name="onboarding_name_title">What should I call you?</string>
     <string name="onboarding_name_body">Optional. Your name stays on this device and makes greetings personal.</string>
     <string name="onboarding_name_label">Your name</string>
+    <string name="attach_image_needs_vision">%1$s can\'t read images. Switch to a model that can, such as OpenAI, Google or Anthropic.</string>
+    <string name="attach_image_unreadable">Couldn\'t read that image.</string>
+    <string name="model_image_dropped">%1$s can\'t read images, so only your text was sent.</string>
+    <string name="model_switched_to">Switched to %1$s</string>
+    <string name="model_sheet_title">Choose a model</string>
+    <string name="model_sheet_subtitle">Switching keeps this chat. The new model reads the conversation so far and continues from there.</string>
+    <string name="model_sheet_connected">Connected</string>
+    <string name="model_sheet_not_connected">Not connected</string>
+    <string name="model_sheet_connect">Connect</string>
+    <string name="model_sheet_current">In use</string>
+    <string name="model_sheet_manage">Manage models &amp; keys</string>
+    <string name="model_cap_images">Images</string>
+    <string name="model_cap_local">On your network</string>
+    <string name="model_cap_context">%1$s context</string>
+    <string name="model_chip_cd">Model: %1$s. Tap to switch models.</string>
+    <string name="model_reply_by">Written by %1$s</string>
 </resources>

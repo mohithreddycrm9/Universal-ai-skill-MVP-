@@ -31,6 +31,7 @@ import com.skillmcp.mentor.skills.SkillCatalog
 import com.skillmcp.mentor.llm.GoogleLlmSignIn
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
+import com.skillmcp.mentor.llm.ConversationContext
 import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.llm.UsageByDayRow
 import com.skillmcp.mentor.llm.UsageByModelRow
@@ -131,7 +132,15 @@ data class MentorUiState(
     val speakingMessageId: String? = null,
     /** Drawer search: messages whose text matched, one per chat. */
     val messageSearchHits: List<com.skillmcp.mentor.mentor.MessageSearchHit> = emptyList(),
-)
+) {
+    /** The model this chat uses: its remembered model if still saved, else the app-wide active model. */
+    val chatLlmProfile: LlmProfile?
+        get() =
+            conversations.find { it.id == activeConversationId }?.llmProfileId
+                ?.takeIf { it.isNotBlank() }
+                ?.let { id -> llmProfiles.find { it.id == id } }
+                ?: activeLlmProfile
+}
 
 /** Chat state that isn't persisted: edit/regenerate/read-aloud targets and message search hits. */
 data class ChatExtras(
@@ -778,14 +787,18 @@ class MentorViewModel(
         viewModelScope.launch {
             when {
                 mimeType?.startsWith("image/") == true -> {
-                    val profile = uiState.value.activeLlmProfile
+                    val profile = uiState.value.chatLlmProfile
                     if (profile == null || !VisionCapabilities.supportsVision(profile)) {
-                        status.value = "Image input requires OpenAI, Google, or Anthropic."
+                        status.value =
+                            appContext.getString(
+                                com.skillmcp.mentor.R.string.attach_image_needs_vision,
+                                profile?.let { ConversationContext.modelLabel(it) } ?: "",
+                            )
                         return@launch
                     }
                     val vision = ImageAttachmentProcessor.fromUri(appContext, uri)
                     if (vision == null) {
-                        status.value = "Could not read image."
+                        status.value = appContext.getString(com.skillmcp.mentor.R.string.attach_image_unreadable)
                         return@launch
                     }
                     pendingVision.value = vision
@@ -831,6 +844,18 @@ class MentorViewModel(
     override fun shareChatMarkdown(conversationId: String) {
         viewModelScope.launch { shareText(container.chatExporter.exportConversationMarkdown(conversationId), conversationId) }
     }
+
+    /** Mid-chat model switch: same conversation, full history goes to the new model on the next turn. */
+    override fun switchChatModel(profileId: String) {
+        val profile = uiState.value.llmProfiles.find { it.id == profileId } ?: return
+        if (!profile.isConfigured()) {
+            openConnectLlm(profileId)
+            return
+        }
+        viewModelScope.launch { repository.switchChatModel(profileId) }
+    }
+
+    override fun connectModel(profileId: String) = openConnectLlm(profileId)
 
     override fun shareChatText(conversationId: String) {
         viewModelScope.launch { shareText(container.chatExporter.exportConversationText(conversationId), conversationId) }
@@ -924,6 +949,9 @@ class MentorViewModel(
                 pendingPdfExtract.value = null
                 pendingImagePreviewUri.value = null
                 val send = result.getOrNull() ?: return@launch
+                if (send.imageDropped) {
+                    status.value = appContext.getString(com.skillmcp.mentor.R.string.model_image_dropped, send.modelLabel)
+                }
                 val reply = send.content
                 val p = prefs.current()
                 if (p.speakResponses && (fromVoice || p.voiceHandsFree)) {

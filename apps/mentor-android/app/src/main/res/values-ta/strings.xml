@@ -275,4 +275,20 @@
     <string name="onboarding_name_title">நான் உங்களை எப்படி அழைக்கட்டும்?</string>
     <string name="onboarding_name_body">விருப்பத்தேர்வு. உங்கள் பெயர் இந்தச் சாதனத்திலேயே இருக்கும், வாழ்த்துகளைத் தனிப்பட்டதாக்கும்.</string>
     <string name="onboarding_name_label">உங்கள் பெயர்</string>
+    <string name="attach_image_needs_vision">%1$s படங்களைப் படிக்க முடியாது. OpenAI, Google அல்லது Anthropic போன்ற படிக்கக்கூடிய மாதிரிக்கு மாறவும்.</string>
+    <string name="attach_image_unreadable">அந்தப் படத்தைப் படிக்க முடியவில்லை.</string>
+    <string name="model_image_dropped">%1$s படங்களைப் படிக்க முடியாது, எனவே உங்கள் உரை மட்டும் அனுப்பப்பட்டது.</string>
+    <string name="model_switched_to">%1$s-க்கு மாற்றப்பட்டது</string>
+    <string name="model_sheet_title">மாதிரியைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="model_sheet_subtitle">மாற்றினாலும் இந்த அரட்டை அப்படியே இருக்கும். புதிய மாதிரி இதுவரையிலான உரையாடலைப் படித்து அங்கிருந்து தொடரும்.</string>
+    <string name="model_sheet_connected">இணைக்கப்பட்டவை</string>
+    <string name="model_sheet_not_connected">இணைக்கப்படாதவை</string>
+    <string name="model_sheet_connect">இணைக்கவும்</string>
+    <string name="model_sheet_current">பயன்பாட்டில்</string>
+    <string name="model_sheet_manage">மாதிரிகள் &amp; விசைகளை நிர்வகிக்கவும்</string>
+    <string name="model_cap_images">படங்கள்</string>
+    <string name="model_cap_local">உங்கள் நெட்வொர்க்கில்</string>
+    <string name="model_cap_context">%1$s சூழல்</string>
+    <string name="model_chip_cd">மாதிரி: %1$s. மாதிரியை மாற்ற தட்டவும்.</string>
+    <string name="model_reply_by">%1$s எழுதியது</string>
 </resources>

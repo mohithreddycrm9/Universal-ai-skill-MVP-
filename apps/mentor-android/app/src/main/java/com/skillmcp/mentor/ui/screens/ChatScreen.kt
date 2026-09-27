@@ -167,6 +167,7 @@ fun ChatScreenContent(
     val drawerSections = groupConversationsForDrawer(filteredChats)
     var deleteTarget by remember { mutableStateOf<UiConversation?>(null) }
     var chatMenuOpen by remember { mutableStateOf(false) }
+    var showModelSheet by remember { mutableStateOf(false) }
     val chatTitle =
         state.conversations.find { it.id == state.activeConversationId }?.name
             ?: stringResource(R.string.nav_chat)
@@ -245,7 +246,7 @@ fun ChatScreenContent(
                 Text(
                     stringResource(
                         R.string.chat_share_consent_body,
-                        state.activeLlmProfile?.name ?: stringResource(R.string.chat_share_consent_model_fallback),
+                        state.chatLlmProfile?.name ?: stringResource(R.string.chat_share_consent_model_fallback),
                     ),
                 )
             },
@@ -416,13 +417,39 @@ fun ChatScreenContent(
                 )
             }
             Column(Modifier.fillMaxSize().imePadding()) {
+                if (showModelSheet) {
+                    com.skillmcp.mentor.ui.components.chat.ModelSwitcherSheet(
+                        profiles = state.llmProfiles,
+                        currentId = state.chatLlmProfile?.id,
+                        onPick = {
+                            showModelSheet = false
+                            vm.switchChatModel(it.id)
+                        },
+                        onConnect = {
+                            showModelSheet = false
+                            vm.connectModel(it.id)
+                        },
+                        onManage = {
+                            showModelSheet = false
+                            vm.requestOpenTab("models")
+                        },
+                        onDismiss = { showModelSheet = false },
+                    )
+                }
                 TopAppBar(
                     title = {
-                        Text(
-                            chatTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 2,
-                        )
+                        Column {
+                            Text(
+                                chatTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                            com.skillmcp.mentor.ui.components.chat.ModelChip(
+                                profile = state.chatLlmProfile,
+                                onClick = { showModelSheet = true },
+                            )
+                        }
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawer.open() } }) {
@@ -551,10 +578,17 @@ fun ChatScreenContent(
                             )
                         }
                     }
-                    val profile = state.activeLlmProfile
-                    val lastId = state.messages.lastOrNull()?.id
+                    val chatModelLabel = state.chatLlmProfile?.let { com.skillmcp.mentor.llm.ConversationContext.modelLabel(it) }
+                    val lastId = state.messages.lastOrNull { it.role == "user" || it.role == "assistant" }?.id
                     items(state.messages, key = { it.id }) { message ->
                         val isUser = message.role == "user"
+                        if (message.role == com.skillmcp.mentor.llm.ROLE_MODEL_SWITCH) {
+                            com.skillmcp.mentor.ui.components.chat.ModelSwitchDivider(
+                                modelLabel = message.content,
+                                modifier = calmItemModifier(reduceMotion),
+                            )
+                            return@items
+                        }
                         val regenerating = message.id == state.regeneratingMessageId
                         if (regenerating) {
                             // Regenerate streams into the same row (same key), replacing the reply in place.
@@ -566,11 +600,11 @@ fun ChatScreenContent(
                             ) { thinking ->
                                 if (thinking) {
                                     Column(Modifier.padding(top = 12.dp)) {
-                                        com.skillmcp.mentor.ui.components.chat.AssistantHeader(profile?.name)
+                                        com.skillmcp.mentor.ui.components.chat.AssistantHeader(chatModelLabel)
                                         ThinkingShimmerLine()
                                     }
                                 } else {
-                                    ChatMessageContent(content = state.streamPreview, isUser = false, isStreaming = true, modelLabel = profile?.name)
+                                    ChatMessageContent(content = state.streamPreview, isUser = false, isStreaming = true, modelLabel = chatModelLabel)
                                 }
                             }
                         } else if (message.content.isNotBlank()) {
@@ -579,7 +613,7 @@ fun ChatScreenContent(
                                 content = message.content,
                                 isUser = isUser,
                                 isStreaming = false,
-                                modelLabel = if (!isUser) profile?.name else null,
+                                modelLabel = if (!isUser) message.modelLabel.ifBlank { null } else null,
                                 onReply = { snippet -> vm.onDraftChange("> ${snippet.take(120)}\n\n") },
                                 onEdit = if (isUser && !state.isSending) ({ vm.startEdit(message.id) }) else null,
                                 isBeingEdited = message.id == state.editingMessageId,
@@ -655,7 +689,7 @@ fun ChatScreenContent(
                             ) { thinking ->
                                 if (thinking) {
                                     Column(Modifier.padding(top = 12.dp)) {
-                                        com.skillmcp.mentor.ui.components.chat.AssistantHeader(profile?.name)
+                                        com.skillmcp.mentor.ui.components.chat.AssistantHeader(chatModelLabel)
                                         ThinkingShimmerLine()
                                     }
                                 } else {
@@ -663,7 +697,7 @@ fun ChatScreenContent(
                                         content = state.streamPreview,
                                         isUser = false,
                                         isStreaming = true,
-                                        modelLabel = profile?.name,
+                                        modelLabel = chatModelLabel,
                                     )
                                 }
                             }

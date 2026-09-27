@@ -275,4 +275,20 @@
     <string name="onboarding_name_title">నేను మిమ్మల్ని ఏమని పిలవాలి?</string>
     <string name="onboarding_name_body">ఐచ్ఛికం. మీ పేరు ఈ పరికరంలోనే ఉంటుంది మరియు శుభాకాంక్షలను వ్యక్తిగతంగా చేస్తుంది.</string>
     <string name="onboarding_name_label">మీ పేరు</string>
+    <string name="attach_image_needs_vision">%1$s చిత్రాలను చదవలేదు. OpenAI, Google లేదా Anthropic వంటి చదవగలిగే మోడల్‌కు మారండి.</string>
+    <string name="attach_image_unreadable">ఆ చిత్రాన్ని చదవలేకపోయాం.</string>
+    <string name="model_image_dropped">%1$s చిత్రాలను చదవలేదు, కాబట్టి మీ టెక్స్ట్ మాత్రమే పంపబడింది.</string>
+    <string name="model_switched_to">%1$sకి మార్చబడింది</string>
+    <string name="model_sheet_title">మోడల్‌ను ఎంచుకోండి</string>
+    <string name="model_sheet_subtitle">మారినా ఈ చాట్ అలాగే ఉంటుంది. కొత్త మోడల్ ఇప్పటివరకు జరిగిన సంభాషణను చదివి అక్కడి నుండి కొనసాగిస్తుంది.</string>
+    <string name="model_sheet_connected">కనెక్ట్ అయినవి</string>
+    <string name="model_sheet_not_connected">కనెక్ట్ కానివి</string>
+    <string name="model_sheet_connect">కనెక్ట్ చేయండి</string>
+    <string name="model_sheet_current">వాడుకలో ఉంది</string>
+    <string name="model_sheet_manage">మోడల్‌లు &amp; కీలను నిర్వహించండి</string>
+    <string name="model_cap_images">చిత్రాలు</string>
+    <string name="model_cap_local">మీ నెట్‌వర్క్‌లో</string>
+    <string name="model_cap_context">%1$s సందర్భం</string>
+    <string name="model_chip_cd">మోడల్: %1$s. మోడల్ మార్చడానికి నొక్కండి.</string>
+    <string name="model_reply_by">%1$s రాసింది</string>
 </resources>

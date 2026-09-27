@@ -43,4 +43,6 @@ interface ChatScreenActions {
     fun stopReadAloud()
     fun sendFollowUp(prompt: String)
     fun shareChatText(conversationId: String)
+    fun switchChatModel(profileId: String)
+    fun connectModel(profileId: String)
 }

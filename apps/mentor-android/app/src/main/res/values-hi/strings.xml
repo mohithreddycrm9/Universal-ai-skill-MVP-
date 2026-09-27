@@ -275,4 +275,20 @@
     <string name="onboarding_name_title">मैं आपको क्या कहकर बुलाऊँ?</string>
     <string name="onboarding_name_body">वैकल्पिक। आपका नाम इसी डिवाइस पर रहता है और अभिवादन को व्यक्तिगत बनाता है।</string>
     <string name="onboarding_name_label">आपका नाम</string>
+    <string name="attach_image_needs_vision">%1$s इमेज नहीं पढ़ सकता। ऐसे मॉडल पर स्विच करें जो पढ़ सके, जैसे OpenAI, Google या Anthropic।</string>
+    <string name="attach_image_unreadable">वह इमेज पढ़ी नहीं जा सकी।</string>
+    <string name="model_image_dropped">%1$s इमेज नहीं पढ़ सकता, इसलिए केवल आपका टेक्स्ट भेजा गया।</string>
+    <string name="model_switched_to">%1$s पर स्विच किया</string>
+    <string name="model_sheet_title">मॉडल चुनें</string>
+    <string name="model_sheet_subtitle">स्विच करने पर यही चैट रहती है। नया मॉडल अब तक की बातचीत पढ़कर वहीं से आगे बढ़ता है।</string>
+    <string name="model_sheet_connected">जुड़े हुए</string>
+    <string name="model_sheet_not_connected">जुड़े नहीं</string>
+    <string name="model_sheet_connect">जोड़ें</string>
+    <string name="model_sheet_current">उपयोग में</string>
+    <string name="model_sheet_manage">मॉडल और कुंजियाँ प्रबंधित करें</string>
+    <string name="model_cap_images">इमेज</string>
+    <string name="model_cap_local">आपके नेटवर्क पर</string>
+    <string name="model_cap_context">%1$s संदर्भ</string>
+    <string name="model_chip_cd">मॉडल: %1$s। मॉडल बदलने के लिए टैप करें।</string>
+    <string name="model_reply_by">%1$s द्वारा लिखा गया</string>
 </resources>
