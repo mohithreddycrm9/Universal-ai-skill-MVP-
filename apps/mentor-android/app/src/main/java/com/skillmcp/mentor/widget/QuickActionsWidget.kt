@@ -53,7 +53,7 @@ class QuickActionsWidget : AppWidgetProvider() {
             Intent(context, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_OPEN_TAB
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
-                putExtra(AppLaunch.EXTRA_DRAFT, "")
+                putExtra(AppLaunch.EXTRA_VOICE_ON_OPEN, true)
                 putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, token)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }

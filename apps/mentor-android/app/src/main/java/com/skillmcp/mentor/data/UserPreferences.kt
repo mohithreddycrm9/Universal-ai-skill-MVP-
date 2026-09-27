@@ -6,17 +6,23 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.skillmcp.mentor.llm.ModelPreset
 import androidx.datastore.preferences.preferencesDataStore
 import com.skillmcp.mentor.ui.theme.ThemeMode
 import com.skillmcp.mentor.ui.theme.resolvesDark
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicReference
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "mentor_prefs")
 
@@ -58,6 +64,11 @@ data class MentorPrefs(
     val internalLaunchToken: String = "",
     val useDynamicColor: Boolean = false,
     val displayName: String = "",
+    val spendDailyBlockDismissedUntilMs: Long = 0L,
+    val weatherCity: String = "",
+    val weatherUseDeviceLocation: Boolean = false,
+    val crashReportingOptIn: Boolean = false,
+    val encryptedStorageMigrated: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_ASSISTANT_PROMPT =
@@ -81,6 +92,9 @@ class UserPreferences(
     private val context: Context,
     private val secureStore: LlmSecureStore,
 ) {
+    private val cache = AtomicReference(MentorPrefs())
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     val prefsFlow: Flow<MentorPrefs> =
         context.dataStore.data.map { prefs ->
             MentorPrefs(
@@ -123,10 +137,24 @@ class UserPreferences(
                 internalLaunchToken = prefs[KEY_INTERNAL_TOKEN] ?: "",
                 useDynamicColor = prefs[KEY_DYNAMIC_COLOR] ?: false,
                 displayName = prefs[KEY_DISPLAY_NAME] ?: "",
+                spendDailyBlockDismissedUntilMs = prefs[KEY_SPEND_DISMISS_UNTIL] ?: 0L,
+                weatherCity = prefs[KEY_WEATHER_CITY] ?: "",
+                weatherUseDeviceLocation = prefs[KEY_WEATHER_USE_LOCATION] ?: false,
+                crashReportingOptIn = prefs[KEY_CRASH_REPORTING] ?: false,
+                encryptedStorageMigrated = prefs[KEY_ENC_MIGRATED] ?: false,
             )
         }
 
-    fun current(): MentorPrefs = runBlocking { prefsFlow.first() }
+    fun current(): MentorPrefs = cache.get()
+
+    init {
+        scope.launch {
+            prefsFlow.collect { cache.set(it) }
+        }
+        runBlocking {
+            cache.set(prefsFlow.first())
+        }
+    }
 
     suspend fun resetToDefaults() {
         context.dataStore.edit { it.clear() }
@@ -174,6 +202,11 @@ class UserPreferences(
             prefs[KEY_INTERNAL_TOKEN] = next.internalLaunchToken
             prefs[KEY_DYNAMIC_COLOR] = next.useDynamicColor
             prefs[KEY_DISPLAY_NAME] = next.displayName
+            prefs[KEY_SPEND_DISMISS_UNTIL] = next.spendDailyBlockDismissedUntilMs
+            prefs[KEY_WEATHER_CITY] = next.weatherCity
+            prefs[KEY_WEATHER_USE_LOCATION] = next.weatherUseDeviceLocation
+            prefs[KEY_CRASH_REPORTING] = next.crashReportingOptIn
+            prefs[KEY_ENC_MIGRATED] = next.encryptedStorageMigrated
         }
     }
 
@@ -235,5 +268,10 @@ class UserPreferences(
         val KEY_INTERNAL_TOKEN = stringPreferencesKey("internal_launch_token")
         val KEY_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val KEY_DISPLAY_NAME = stringPreferencesKey("display_name")
+        val KEY_SPEND_DISMISS_UNTIL = longPreferencesKey("spend_daily_dismiss_until")
+        val KEY_WEATHER_CITY = stringPreferencesKey("weather_city")
+        val KEY_WEATHER_USE_LOCATION = booleanPreferencesKey("weather_use_location")
+        val KEY_CRASH_REPORTING = booleanPreferencesKey("crash_reporting_opt_in")
+        val KEY_ENC_MIGRATED = booleanPreferencesKey("encrypted_storage_migrated")
     }
 }

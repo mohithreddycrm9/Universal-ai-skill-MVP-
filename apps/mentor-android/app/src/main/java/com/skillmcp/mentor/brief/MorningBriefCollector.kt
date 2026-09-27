@@ -35,7 +35,7 @@ class MorningBriefCollector(
                 lines += calendarLines()
             }
             if (prefs.morningBriefWeather) {
-                lines += weatherLine()
+                lines += weatherLine(prefs)
             }
             if (prefs.morningBriefNews) {
                 lines += newsHeadlines()
@@ -83,11 +83,14 @@ class MorningBriefCollector(
         }
     }
 
-    private fun weatherLine(): String =
+    private fun weatherLine(prefs: MentorPrefs): String =
         runCatching {
+            val (lat, lon, label) = resolveWeatherCoords(prefs)
             val request =
                 Request.Builder()
-                    .url("https://api.open-meteo.com/v1/forecast?latitude=28.61&longitude=77.21&current_weather=true")
+                    .url(
+                        "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true",
+                    )
                     .get()
                     .build()
             http.newCall(request).execute().use { response ->
@@ -96,9 +99,34 @@ class MorningBriefCollector(
                 val current = json.optJSONObject("current_weather")
                 val temp = current?.optDouble("temperature")
                 val code = current?.optInt("weathercode")
-                "Weather (Delhi area): ${temp ?: "?"}°C, code $code — change city in a future update."
+                "Weather ($label): ${temp ?: "?"}°C, code $code (Open-Meteo)."
             }
         }.getOrElse { "Weather: could not fetch (offline?)." }
+
+    private fun resolveWeatherCoords(prefs: MentorPrefs): Triple<Double, Double, String> {
+        val city = prefs.weatherCity.trim()
+        if (city.isNotBlank()) {
+            val geo =
+                Request.Builder()
+                    .url("https://geocoding-api.open-meteo.com/v1/search?name=${java.net.URLEncoder.encode(city, "UTF-8")}&count=1")
+                    .get()
+                    .build()
+            http.newCall(geo).execute().use { response ->
+                if (response.isSuccessful) {
+                    val json = JSONObject(response.body?.string() ?: "{}")
+                    val results = json.optJSONArray("results")
+                    if (results != null && results.length() > 0) {
+                        val first = results.getJSONObject(0)
+                        val lat = first.getDouble("latitude")
+                        val lon = first.getDouble("longitude")
+                        val name = first.optString("name", city)
+                        return Triple(lat, lon, name)
+                    }
+                }
+            }
+        }
+        return Triple(28.6139, 77.2090, if (city.isBlank()) "default area" else city)
+    }
 
     private fun newsHeadlines(): String =
         runCatching {

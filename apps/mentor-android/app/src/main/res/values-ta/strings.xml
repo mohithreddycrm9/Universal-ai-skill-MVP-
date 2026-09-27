@@ -20,4 +20,7 @@
     <string name="shortcut_chat">அரட்டை திற</string>
     <string name="shortcut_chat_long">புதிய உரையாடல் தொடங்கு</string>
     <string name="support_email_label">ஆதரவு: mohithreddycrm9@gmail.com</string>
+    <string name="action_back">பின்செல்</string>
+    <string name="settings_models_keys">மாடல்கள் மற்றும் API விசைகள்</string>
+    <string name="settings_restore_backup">காப்பு URL இலிருந்து மீட்டமை</string>
 </resources>

@@ -71,7 +71,9 @@ fun SettingsScreen(vm: MentorViewModel) {
     var showLicenses by remember { mutableStateOf(false) }
     var confirmErase by remember { mutableStateOf(false) }
     var backupPassphrase by remember { mutableStateOf("") }
+    var restorePassphrase by remember { mutableStateOf("") }
     val backupPrompt by vm.backupPassphrasePrompt.collectAsState()
+    val restorePrompt by vm.backupRestorePassphrasePrompt.collectAsState()
     if (showPrivacy) {
         LegalDocumentSheet(
             title = "Privacy policy",
@@ -91,6 +93,41 @@ fun SettingsScreen(vm: MentorViewModel) {
             title = "Open source licenses",
             assetPath = "legal/open_source_licenses.html",
             onDismiss = { showLicenses = false },
+        )
+    }
+    if (restorePrompt) {
+        AlertDialog(
+            onDismissRequest = vm::dismissRestorePassphrase,
+            title = { Text("Restore backup") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Downloads the ciphertext from your backup URL and merges chats, messages, and skills. " +
+                            "Use the same passphrase you used when uploading a v2 backup.",
+                    )
+                    OutlinedTextField(
+                        value = restorePassphrase,
+                        onValueChange = { restorePassphrase = it },
+                        label = { Text("Passphrase (if required)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val phrase = restorePassphrase.toCharArray()
+                        restorePassphrase = ""
+                        vm.runRestoreNow(if (phrase.isNotEmpty()) phrase else null)
+                    },
+                ) {
+                    Text("Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = vm::dismissRestorePassphrase) { Text("Cancel") }
+            },
         )
     }
     if (backupPrompt) {
@@ -246,6 +283,15 @@ fun SettingsScreen(vm: MentorViewModel) {
                 checked = prefs.morningBriefWeather,
                 onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefWeather = on) } },
             )
+            if (prefs.morningBriefWeather) {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = prefs.weatherCity,
+                    onValueChange = { city -> vm.updatePrefs { p -> p.copy(weatherCity = city) } },
+                    label = { Text("Weather city (e.g. Hyderabad)") },
+                    singleLine = true,
+                )
+            }
             RowSwitch(
                 label = "News headlines",
                 checked = prefs.morningBriefNews,
@@ -258,6 +304,16 @@ fun SettingsScreen(vm: MentorViewModel) {
                     analyticsOptIn = it
                     vm.setAnalyticsOptIn(it)
                 },
+            )
+            RowSwitch(
+                label = "Send anonymous crash logs (opt-in)",
+                checked = prefs.crashReportingOptIn,
+                onCheckedChange = vm::setCrashReportingOptIn,
+            )
+            Text(
+                "When enabled, uncaught errors are logged locally and can be wired to Crashlytics or Sentry in release builds.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             RowSwitch(
                 label = "Hands-free voice (listen after each reply)",
@@ -320,8 +376,8 @@ fun SettingsScreen(vm: MentorViewModel) {
                 Text("Erase all local data")
             }
             Text(
-                "API keys and backup tokens are stored in EncryptedSharedPreferences (Android Keystore). " +
-                    "They are not included in backup or sync payloads.",
+                "API keys and backup tokens live in EncryptedSharedPreferences (Android Keystore). " +
+                    "Turn on “Include API keys in encrypted backup” to export them inside the ciphertext.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -405,7 +461,7 @@ fun SettingsScreen(vm: MentorViewModel) {
                 minLines = 3,
             )
             Text(
-                "Manage API keys and models in the Models tab.",
+                "Manage API keys and models under Settings → Models & API keys.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -505,6 +561,9 @@ fun SettingsScreen(vm: MentorViewModel) {
             )
             Button(onClick = vm::promptBackupPassphrase, modifier = Modifier.fillMaxWidth()) {
                 Text("Run backup now")
+            }
+            OutlinedButton(onClick = vm::promptRestorePassphrase, modifier = Modifier.fillMaxWidth()) {
+                Text("Restore from backup URL")
             }
         }
     }

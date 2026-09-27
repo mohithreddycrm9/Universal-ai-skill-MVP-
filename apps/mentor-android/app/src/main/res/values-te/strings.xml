@@ -20,4 +20,7 @@
     <string name="shortcut_chat">చాట్ తెరవండి</string>
     <string name="shortcut_chat_long">కొత్త సంభాషణ ప్రారంభించండి</string>
     <string name="support_email_label">సహాయం: mohithreddycrm9@gmail.com</string>
+    <string name="action_back">వెనక్కి</string>
+    <string name="settings_models_keys">మోడల్స్ &amp; API కీలు</string>
+    <string name="settings_restore_backup">బ్యాకప్ URL నుండి పునరుద్ధరించు</string>
 </resources>

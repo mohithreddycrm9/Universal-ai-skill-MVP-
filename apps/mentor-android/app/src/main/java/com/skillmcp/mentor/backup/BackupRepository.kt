@@ -80,4 +80,41 @@ class BackupRepository(
                 }
             }
         }
+
+    suspend fun restoreFromConfiguredUrl(passphrase: CharArray? = null): Result<String> =
+        withContext(Dispatchers.IO) {
+            val prefs = userPreferences.current()
+            val url = prefs.backupUploadUrl.trim()
+            if (url.isEmpty()) {
+                return@withContext Result.failure(IllegalStateException("Backup URL not configured"))
+            }
+            val requestBuilder = Request.Builder().url(url).get()
+            if (prefs.backupBearerToken.isNotBlank()) {
+                requestBuilder.header("Authorization", "Bearer ${prefs.backupBearerToken}")
+            }
+            runCatching {
+                http.newCall(requestBuilder.build()).execute().use { response ->
+                    if (!response.isSuccessful) error("Restore download failed: HTTP ${response.code}")
+                    val cipher = response.body?.string() ?: error("Empty backup body")
+                    val json =
+                        when {
+                            cipher.startsWith("v2:") -> {
+                                require(passphrase != null && passphrase.isNotEmpty()) {
+                                    "Passphrase required for this backup"
+                                }
+                                PassphraseEncryptor.decrypt(cipher, passphrase)
+                            }
+                            else -> encryptor.decrypt(cipher)
+                        }
+                    val snapshot = adapter.fromJson(json) ?: error("Invalid backup JSON")
+                    snapshot.projects.forEach { dao.upsertProject(it) }
+                    snapshot.messages.forEach { dao.insertMessage(it) }
+                    snapshot.skills.forEach { dao.upsertSkill(it) }
+                    snapshot.apiKeys.forEach { (id, key) ->
+                        if (key.isNotBlank()) secureStore.setKey(id, key)
+                    }
+                    "Restored ${snapshot.projects.size} chats, ${snapshot.messages.size} messages"
+                }
+            }
+        }
 }

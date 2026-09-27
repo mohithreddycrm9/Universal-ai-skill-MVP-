@@ -109,6 +109,7 @@ data class MentorUiState(
     val pendingShare: SharePayload? = null,
     val pendingSkillInstall: SkillInstallRequest? = null,
     val lastExportMarkdown: String? = null,
+    val messageCostsUsd: Map<String, Double> = emptyMap(),
 )
 
 class MentorViewModel(
@@ -135,6 +136,7 @@ class MentorViewModel(
     val pendingVision = MutableStateFlow<ChatVisionAttachment?>(null)
     val pendingPdfExtract = MutableStateFlow<String?>(null)
     val backupPassphrasePrompt = MutableStateFlow(false)
+    val backupRestorePassphrasePrompt = MutableStateFlow(false)
     val drawerSearchResults = MutableStateFlow<List<UiConversation>?>(null)
 
     private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -245,7 +247,15 @@ class MentorViewModel(
         val prefs: MentorPrefs,
     )
 
-    private val spendGuardFlow = repository.observeSpendGuard()
+    private val spendGuardFlow =
+        combine(repository.observeSpendGuard(), prefs.prefsFlow) { spend, mentorPrefs ->
+            com.skillmcp.mentor.policy.SpendPolicy.applyDailyDismiss(
+                spend,
+                mentorPrefs.spendDailyBlockDismissedUntilMs,
+            )
+        }
+    private val messageCostsUsd = MutableStateFlow<Map<String, Double>>(emptyMap())
+    private val streamCancelled = java.util.concurrent.atomic.AtomicBoolean(false)
     private val rankedUseCasesFlow = MutableStateFlow(UseCaseCatalog.featured)
 
     private val coreData =
@@ -353,8 +363,8 @@ class MentorViewModel(
     val uiState: StateFlow<MentorUiState> =
         combine(
             combine(coreData, interactionState) { core, interaction -> core to interaction },
-            combine(pendingShareConsent, pendingSkillInstall, lastExportMarkdown) { share, skillInstall, exportMd ->
-                Triple(share, skillInstall, exportMd)
+            combine(pendingShareConsent, pendingSkillInstall, lastExportMarkdown, messageCostsUsd) { share, skillInstall, exportMd, costs ->
+                Quad(share, skillInstall, exportMd, costs)
             },
         ) { a, b ->
             val core = a.first
@@ -362,6 +372,7 @@ class MentorViewModel(
             val share = b.first
             val skillInstall = b.second
             val exportMd = b.third
+            val costs = b.fourth
             MentorUiState(
                 messages = core.messages,
                 suggestions = core.suggestions,
@@ -391,6 +402,7 @@ class MentorViewModel(
                 pendingShare = share,
                 pendingSkillInstall = skillInstall,
                 lastExportMarkdown = exportMd,
+                messageCostsUsd = costs,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
@@ -516,7 +528,21 @@ class MentorViewModel(
     }
 
     fun dismissSpendBlockMessage() {
-        status.value = null
+        viewModelScope.launch {
+            val until = com.skillmcp.mentor.policy.SpendPolicy.nextLocalMidnightMs()
+            prefs.update { it.copy(spendDailyBlockDismissedUntilMs = until) }
+            status.value =
+                "Spend limit reminder hidden until " +
+                    com.skillmcp.mentor.policy.SpendPolicy.formatResetTime(until) +
+                    " (local midnight)."
+        }
+    }
+
+    fun cancelSend() {
+        streamCancelled.set(true)
+        isSending.value = false
+        streamPreview.value = ""
+        status.value = "Stopped"
     }
 
     fun exportChatsMarkdown() {
@@ -660,10 +686,9 @@ class MentorViewModel(
         viewModelScope.launch { repository.setConversationFolderTag(id, tag) }
     }
 
-    fun shareActiveChatMarkdown() {
+    fun shareChatMarkdown(conversationId: String) {
         viewModelScope.launch {
-            val id = uiState.value.activeConversationId
-            val md = container.chatExporter.exportConversationMarkdown(id)
+            val md = container.chatExporter.exportConversationMarkdown(conversationId)
             val intent =
                 Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
@@ -675,10 +700,9 @@ class MentorViewModel(
         }
     }
 
-    fun shareActiveChatPdf() {
+    fun shareChatPdf(conversationId: String) {
         viewModelScope.launch {
-            val id = uiState.value.activeConversationId
-            val file = container.chatPdfExporter.exportConversationPdf(id)
+            val file = container.chatPdfExporter.exportConversationPdf(conversationId)
             val uri =
                 FileProvider.getUriForFile(
                     appContext,
@@ -699,6 +723,7 @@ class MentorViewModel(
         val text = draft.value.trim()
         if (text.isEmpty() || isSending.value) return
         viewModelScope.launch {
+            streamCancelled.set(false)
             isSending.value = true
             status.value = null
             statusDetails.value = null
@@ -712,12 +737,18 @@ class MentorViewModel(
                     text = text,
                     vision = vision,
                     pdfExtract = pdf,
-                ) { partial -> streamPreview.value = partial }
+                    onStreamUpdate = { partial -> streamPreview.value = partial },
+                    isCancelled = { streamCancelled.get() },
+                )
             streamPreview.value = ""
             isSending.value = false
             if (result.isSuccess) {
                 draft.value = ""
-                val reply = result.getOrNull() ?: return@launch
+                val send = result.getOrNull() ?: return@launch
+                val reply = send.content
+                if (send.assistantMessageId.isNotBlank() && send.costUsd > 0) {
+                    messageCostsUsd.value = messageCostsUsd.value + (send.assistantMessageId to send.costUsd)
+                }
                 val p = prefs.current()
                 if (p.speakResponses) {
                     speakAndThen(reply) {
@@ -976,6 +1007,33 @@ class MentorViewModel(
                 onSuccess = { status.value = it },
                 onFailure = { status.value = it.message ?: "Backup failed" },
             )
+        }
+    }
+
+    fun promptRestorePassphrase() {
+        backupRestorePassphrasePrompt.value = true
+    }
+
+    fun dismissRestorePassphrase() {
+        backupRestorePassphrasePrompt.value = false
+    }
+
+    fun runRestoreNow(passphrase: CharArray? = null) {
+        viewModelScope.launch {
+            backupRestorePassphrasePrompt.value = false
+            container.backupRepository.restoreFromConfiguredUrl(passphrase).fold(
+                onSuccess = {
+                    status.value = it
+                    repository.bootstrap()
+                },
+                onFailure = { status.value = it.message ?: "Restore failed" },
+            )
+        }
+    }
+
+    fun setCrashReportingOptIn(enabled: Boolean) {
+        viewModelScope.launch {
+            prefs.update { it.copy(crashReportingOptIn = enabled) }
         }
     }
 

@@ -14,6 +14,8 @@ import com.skillmcp.mentor.llm.MultiLlmClient
 import com.skillmcp.mentor.policy.SpendCheck
 import com.skillmcp.mentor.policy.SpendGuard
 import com.skillmcp.mentor.policy.SpendLimitException
+import com.skillmcp.mentor.policy.SpendPolicy
+import com.skillmcp.mentor.llm.TokenCostEstimator
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import java.util.concurrent.TimeUnit
@@ -36,6 +38,12 @@ data class UiMessage(
     val id: String,
     val role: String,
     val content: String,
+)
+
+data class SendMessageResult(
+    val content: String,
+    val assistantMessageId: String,
+    val costUsd: Double,
 )
 
 data class UiConversation(
@@ -234,13 +242,15 @@ class MentorRepository(
         vision: com.skillmcp.mentor.llm.ChatVisionAttachment? = null,
         pdfExtract: String? = null,
         onStreamUpdate: (String) -> Unit = {},
-    ): Result<String> =
+        isCancelled: () -> Boolean = { false },
+    ): Result<SendMessageResult> =
         withContext(Dispatchers.IO) {
             bootstrap()
             val prefs = userPreferences.current()
             val spend =
                 SpendGuard.check(dao, prefs.dailyBudgetUsd, prefs.weeklyBudgetUsd)
-            if (!spend.allowed) {
+            val bypassDaily = SpendPolicy.shouldBypassDailyBlock(prefs.spendDailyBlockDismissedUntilMs)
+            if (!spend.allowed && !(bypassDaily && spend.blockReason == com.skillmcp.mentor.policy.SpendBlockReason.DAILY)) {
                 return@withContext Result.failure(SpendLimitException(spend))
             }
             val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }
@@ -285,22 +295,32 @@ class MentorRepository(
                     vision = vision,
                     onChunk = onStreamUpdate,
                     temperature = prefs.modelPreset.temperature,
+                    isCancelled = isCancelled,
                 )
 
-            result.onSuccess { chat ->
-                dao.insertMessage(
-                    ChatMessageEntity(
-                        UUID.randomUUID().toString(),
-                        projectId,
-                        "assistant",
-                        chat.content,
-                        System.currentTimeMillis(),
-                    ),
-                )
-                onSuccessChat(projectId, profile, chat, prefs)
+            if (result.isFailure) {
+                onFailureChat(projectId, profile, result.exceptionOrNull() ?: Exception("Send failed"))
+                return@withContext Result.failure(result.exceptionOrNull()!!)
             }
-            result.onFailure { err -> onFailureChat(projectId, profile, err) }
-            result.map { it.content }
+            val chat = result.getOrThrow()
+            val assistantId = UUID.randomUUID().toString()
+            dao.insertMessage(
+                ChatMessageEntity(
+                    assistantId,
+                    projectId,
+                    "assistant",
+                    chat.content,
+                    System.currentTimeMillis(),
+                ),
+            )
+            onSuccessChat(projectId, profile, chat, prefs)
+            val cost =
+                chat.usage?.let { u ->
+                    val input = u.promptTokens * profile.inputCostPer1M / 1_000_000.0
+                    val output = u.completionTokens * profile.outputCostPer1M / 1_000_000.0
+                    input + output
+                } ?: TokenCostEstimator.estimateReplyCost(profile, chat.content)
+            Result.success(SendMessageResult(chat.content, assistantId, cost))
         }
 
     private suspend fun onSuccessChat(

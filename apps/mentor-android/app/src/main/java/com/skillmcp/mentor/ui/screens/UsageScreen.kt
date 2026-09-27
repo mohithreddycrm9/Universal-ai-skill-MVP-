@@ -12,13 +12,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,7 +26,8 @@ import com.skillmcp.mentor.ui.MentorViewModel
 import com.skillmcp.mentor.ui.UsageWindow
 import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.GlassCard
-import com.skillmcp.mentor.ui.components.ScreenHeader
+import com.skillmcp.mentor.ui.components.BudgetAmountField
+import com.skillmcp.mentor.ui.components.SecondaryScreenTopBar
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
 import com.skillmcp.mentor.ui.components.StatCard
@@ -39,23 +40,27 @@ import java.util.Locale
 fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
     val state by vm.uiState.collectAsState()
     val totals = state.usageTotals
+    var showInr by remember { mutableStateOf(false) }
 
     AppBackground {
         if (onBack != null) {
-            TopAppBar(
-                title = { Text("Usage") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+            SecondaryScreenTopBar(
+                title = "Usage",
+                subtitle = "Track requests, tokens, and estimated spend across your models.",
+                onBack = onBack,
             )
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            item {
-                ScreenHeader(
-                    title = "Usage",
-                    subtitle = "Track requests, tokens, and estimated spend across your models.",
-                )
+            if (onBack == null) {
+                item {
+                    com.skillmcp.mentor.ui.components.ScreenHeader(
+                        title = "Usage",
+                        subtitle = "Track requests, tokens, and estimated spend across your models.",
+                    )
+                }
             }
             item {
                 TabSuggestions(
@@ -90,9 +95,37 @@ fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
                 }
             }
             item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !showInr,
+                        onClick = { showInr = false },
+                        label = { Text("USD") },
+                        colors =
+                            FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
+                    )
+                    FilterChip(
+                        selected = showInr,
+                        onClick = { showInr = true },
+                        label = { Text("INR (est.)") },
+                        colors =
+                            FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
+                    )
+                }
+            }
+            item {
+                val spendLabel =
+                    if (showInr) {
+                        "₹${String.format(Locale.US, "%.2f", totals.estimatedUsd * 83.0)}"
+                    } else {
+                        "$${String.format(Locale.US, "%.4f", totals.estimatedUsd)}"
+                    }
                 StatCard(
                     title = "Estimated spend",
-                    value = "$${String.format(Locale.US, "%.4f", totals.estimatedUsd)}",
+                    value = spendLabel,
                     subtitle = "Based on rates in Models",
                 )
             }
@@ -128,7 +161,7 @@ fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
             }
             if (state.usageByDay.isNotEmpty()) {
                 item {
-                    UsageSpendBarChart(days = state.usageByDay)
+                    UsageSpendBarChart(days = state.usageByDay, showInr = showInr)
                 }
             }
             item {
@@ -138,23 +171,17 @@ fun UsageScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                OutlinedTextField(
+                BudgetAmountField(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    value = if (state.prefs.dailyBudgetUsd > 0) state.prefs.dailyBudgetUsd.toString() else "",
-                    onValueChange = { v ->
-                        vm.updatePrefs { p -> p.copy(dailyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
-                    },
-                    label = { Text("Daily budget (0 = off)") },
-                    singleLine = true,
+                    amountUsd = state.prefs.dailyBudgetUsd,
+                    onAmountCommitted = { v -> vm.updatePrefs { p -> p.copy(dailyBudgetUsd = v) } },
+                    label = "Daily budget (0 = off)",
                 )
-                OutlinedTextField(
+                BudgetAmountField(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    value = if (state.prefs.weeklyBudgetUsd > 0) state.prefs.weeklyBudgetUsd.toString() else "",
-                    onValueChange = { v ->
-                        vm.updatePrefs { p -> p.copy(weeklyBudgetUsd = v.toDoubleOrNull() ?: 0.0) }
-                    },
-                    label = { Text("Weekly budget (0 = off)") },
-                    singleLine = true,
+                    amountUsd = state.prefs.weeklyBudgetUsd,
+                    onAmountCommitted = { v -> vm.updatePrefs { p -> p.copy(weeklyBudgetUsd = v) } },
+                    label = "Weekly budget (0 = off)",
                 )
             }
             items(state.usageByDay) { day ->

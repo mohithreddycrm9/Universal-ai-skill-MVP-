@@ -71,10 +71,13 @@ fun MentorApp(container: AppContainer) {
     val guidedVisible by vm.guidedSetupVisible.collectAsState()
     val connectProfileId by vm.connectLlmProfileId.collectAsState()
     val connectProfile = state.llmProfiles.find { it.id == connectProfileId }
-    var returnRoute by remember { mutableStateOf(MentorTab.Discover.route) }
+    var advancedParentTab by remember { mutableStateOf(MentorTab.Discover.route) }
 
     val highlightedTab =
-        MentorTab.entries.find { it.route == current }?.barParentRoute() ?: current
+        when (current) {
+            MentorTab.Models.route, MentorTab.Usage.route, MentorTab.Skills.route -> advancedParentTab
+            else -> MentorTab.entries.find { it.route == current }?.barParentRoute() ?: current
+        }
 
     LaunchedEffect(vm) {
         vm.openChatRequests.collect {
@@ -88,9 +91,14 @@ fun MentorApp(container: AppContainer) {
 
     LaunchedEffect(vm) {
         vm.openTabRequests.collect { route ->
-            val from = current
+            val from = nav.currentBackStackEntry?.destination?.route ?: MentorTab.Chat.route
             if (route in listOf("models", "usage", "skills")) {
-                returnRoute = from
+                advancedParentTab =
+                    if (from == MentorTab.Settings.route) {
+                        MentorTab.Settings.route
+                    } else {
+                        MentorTab.Discover.route
+                    }
             }
             val dest = MentorTab.entries.find { it.route == route }?.route ?: MentorTab.Chat.route
             nav.navigate(dest) {
@@ -99,12 +107,7 @@ fun MentorApp(container: AppContainer) {
         }
     }
 
-    val onAdvancedBack: () -> Unit = {
-        nav.navigate(returnRoute) {
-            popUpTo(returnRoute) { inclusive = false }
-            launchSingleTop = true
-        }
-    }
+    val onAdvancedBack: () -> Unit = { nav.popBackStack() }
 
     if (current in listOf("models", "usage", "skills")) {
         BackHandler(onBack = onAdvancedBack)

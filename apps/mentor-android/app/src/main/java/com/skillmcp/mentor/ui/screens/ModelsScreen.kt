@@ -28,8 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillmcp.mentor.llm.LlmProfile
 import com.skillmcp.mentor.llm.LlmProviderKind
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.skillmcp.mentor.llm.connectionLabel
 import com.skillmcp.mentor.llm.isConfigured
@@ -38,7 +36,7 @@ import com.skillmcp.mentor.ui.components.AppBackground
 import com.skillmcp.mentor.ui.components.GlassCard
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
-import com.skillmcp.mentor.ui.components.ScreenHeader
+import com.skillmcp.mentor.ui.components.SecondaryScreenTopBar
 import com.skillmcp.mentor.ui.components.TabSuggestions
 import java.util.UUID
 
@@ -50,20 +48,23 @@ fun ModelsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
 
     AppBackground {
         if (onBack != null) {
-            TopAppBar(
-                title = { Text("Models") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+            SecondaryScreenTopBar(
+                title = "Models",
+                subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
+                onBack = onBack,
             )
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            item {
-                ScreenHeader(
-                    title = "Models",
-                    subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
-                )
+            if (onBack == null) {
+                item {
+                    com.skillmcp.mentor.ui.components.ScreenHeader(
+                        title = "Models",
+                        subtitle = "Connect a provider and paste an API key, or sign in on the provider website.",
+                    )
+                }
             }
             item {
                 TabSuggestions(

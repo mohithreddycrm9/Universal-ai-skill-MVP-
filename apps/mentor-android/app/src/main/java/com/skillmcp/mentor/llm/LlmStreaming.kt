@@ -32,6 +32,7 @@ class LlmStreaming(
         vision: ChatVisionAttachment? = null,
         onChunk: (String) -> Unit,
         temperature: Double = 0.7,
+        isCancelled: () -> Boolean = { false },
     ): Result<LlmChatResult> =
         runCatching {
             val started = System.currentTimeMillis()
@@ -48,10 +49,10 @@ class LlmStreaming(
             }
             when (profile.kind) {
                 LlmProviderKind.HUGGING_FACE ->
-                    streamHuggingFace(profile, system, history, userMessage, onChunk, temperature)
+                    streamHuggingFace(profile, system, history, userMessage, onChunk, temperature, isCancelled)
                 LlmProviderKind.OPENAI_COMPAT,
                 LlmProviderKind.OLLAMA,
-                -> streamOpenAiCompat(profile, system, history, userMessage, vision, onChunk, temperature)
+                -> streamOpenAiCompat(profile, system, history, userMessage, vision, onChunk, temperature, isCancelled)
                 else -> {
                     val client = MultiLlmClient(https, ollamaHttp)
                     val result =
@@ -69,13 +70,14 @@ class LlmStreaming(
         userMessage: String,
         onChunk: (String) -> Unit,
         temperature: Double,
+        isCancelled: () -> Boolean = { false },
     ): LlmChatResult {
         val resolved =
             profile.copy(
                 baseUrl = profile.baseUrl.ifBlank { HuggingFaceDefaults.ROUTER_BASE_URL },
             )
         return try {
-            streamOpenAiCompat(resolved, system, history, userMessage, null, onChunk, temperature)
+            streamOpenAiCompat(resolved, system, history, userMessage, null, onChunk, temperature, isCancelled)
         } catch (routerError: Exception) {
             val client = MultiLlmClient(https, ollamaHttp)
             val result =
@@ -99,6 +101,7 @@ class LlmStreaming(
         vision: ChatVisionAttachment?,
         onChunk: (String) -> Unit,
         temperature: Double,
+        isCancelled: () -> Boolean = { false },
     ): LlmChatResult {
         val resolvedBase =
             if (profile.kind == LlmProviderKind.HUGGING_FACE && profile.baseUrl.isBlank()) {
@@ -137,13 +140,18 @@ class LlmStreaming(
         val full = StringBuilder()
         var promptTokens = 0
         var completionTokens = 0
-        httpFor(profile).newCall(builder.build()).execute().use { response ->
+        val call = httpFor(profile).newCall(builder.build())
+        call.execute().use { response ->
             if (!response.isSuccessful) {
                 val err = response.body?.string() ?: ""
                 error("Stream HTTP ${response.code}")
             }
             val source = response.body?.source()?.buffer() ?: error("Empty stream body")
             while (!source.exhausted()) {
+                if (isCancelled()) {
+                    call.cancel()
+                    break
+                }
                 val line = source.readUtf8Line() ?: break
                 if (!line.startsWith("data:")) continue
                 val payload = line.removePrefix("data:").trim()

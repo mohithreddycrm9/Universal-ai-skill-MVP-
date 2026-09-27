@@ -60,7 +60,16 @@ Complete IARC questionnaire: no violence; user-generated chat; reference AI/LLM.
 
 `targetSdk = 35` (see `app/build.gradle.kts`).
 
-## 8. Post-launch
+## 8. Staged rollout (recommended)
+
+1. **Internal testing** — team devices, smoke Chat / Models / backup restore.
+2. **Closed testing** — 20–50 users; watch vitals for 3–7 days.
+3. **Open testing** (optional) — broader feedback before production.
+4. **Production** — start at **20%** staged rollout in Play Console; increase to 50% → 100% if crash-free sessions stay above 99%.
+
+Document Ollama LAN setup for testers: `docs/OLLAMA_LAN.md`.
+
+## 9. Post-launch
 
 - Monitor Play vitals (crashes, ANRs)
 - Bump `versionCode` every release; update `versionName` as needed

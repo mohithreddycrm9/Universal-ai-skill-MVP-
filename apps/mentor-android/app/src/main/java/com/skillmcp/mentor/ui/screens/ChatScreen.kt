@@ -211,8 +211,8 @@ fun ChatScreen(vm: MentorViewModel) {
                             tagTarget = chat
                             tagDraft = chat.folderTag
                         },
-                        onShareMarkdown = vm::shareActiveChatMarkdown,
-                        onSharePdf = vm::shareActiveChatPdf,
+                        onShareMarkdown = { vm.shareChatMarkdown(chat.id) },
+                        onSharePdf = { vm.shareChatPdf(chat.id) },
                     )
                 }
                 NavigationDrawerItem(
@@ -400,6 +400,14 @@ fun ChatScreen(vm: MentorViewModel) {
                                     androidx.compose.material3.TextButton(onClick = vm::dismissSpendBlockMessage) {
                                         Text("Wait until tomorrow")
                                     }
+                                    val resetMs = state.prefs.spendDailyBlockDismissedUntilMs
+                                    if (resetMs > System.currentTimeMillis()) {
+                                        Text(
+                                            "Resets at midnight (hidden until then)",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onErrorContainer,
+                                        )
+                                    }
                                 } else {
                                     androidx.compose.material3.TextButton(onClick = { vm.requestOpenTab("usage") }) {
                                         Text("Adjust on Usage")
@@ -451,8 +459,9 @@ fun ChatScreen(vm: MentorViewModel) {
                                 isStreaming = false,
                                 modelLabel = if (!isUser) profile?.name else null,
                                 estimatedCostUsd =
-                                    if (!isUser && profile != null) {
-                                        TokenCostEstimator.estimateReplyCost(profile, message.content)
+                                    if (!isUser) {
+                                        state.messageCostsUsd[message.id]
+                                            ?: profile?.let { TokenCostEstimator.estimateReplyCost(it, message.content) }
                                     } else {
                                         null
                                     },
@@ -520,6 +529,14 @@ fun ChatScreen(vm: MentorViewModel) {
                 }
 
                 val canVision = state.activeLlmProfile?.let { VisionCapabilities.supportsVision(it) } == true
+                if (state.isSending) {
+                    androidx.compose.material3.TextButton(
+                        onClick = vm::cancelSend,
+                        modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal),
+                    ) {
+                        Text("Stop")
+                    }
+                }
                 PremiumComposerBar(
                     draft = state.draft,
                     onDraftChange = vm::onDraftChange,

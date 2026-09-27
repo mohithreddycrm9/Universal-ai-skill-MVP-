@@ -47,7 +47,10 @@ internal object VisionJson {
         if (vision != null) {
             parts.put(
                 JSONObject()
-                    .put("inline_data", JSONObject().put("mime_type", vision.mimeType).put("data", vision.jpegBase64)),
+                    .put(
+                        "inlineData",
+                        JSONObject().put("mimeType", vision.mimeType).put("data", vision.jpegBase64),
+                    ),
             )
         }
         parts.put(JSONObject().put("text", text))
