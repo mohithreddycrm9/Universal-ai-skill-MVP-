@@ -6,6 +6,12 @@
     <string name="nav_settings">సెట్టింగ్‌లు</string>
     <string name="nav_activity">కార్యకలాపం</string>
     <string name="widget_title">Lumina శార్ట్‌కట్‌లు</string>
+    <string name="welcome_title">Luminaకు స్వాగతం</string>
+    <string name="unlock_app_title">Lumina అన్‌లాక్ చేయండి</string>
+    <string name="settings_widget_hint_prefix">హోమ్ స్క్రీన్ విడ్జెట్ జోడించండి: లాంచర్‌ను నొక్కి పట్టుకోండి → విడ్జెట్‌లు → </string>
+    <string name="widget_picker_hint_prefix">విడ్జెట్ జోడించండి: హోమ్ స్క్రీన్‌ను నొక్కి పట్టుకోండి → విడ్జెట్‌లు → </string>
+    <string name="voice_tile_label">Lumina వాయిస్</string>
+    <string name="chat_export_all_header">Lumina — చాట్ ఎగుమతి</string>
     <string name="widget_subtitle">హోమ్ స్క్రీన్ నుండి త్వరిత పనులు</string>
     <string name="widget_morning_brief">బ్రీఫ్</string>
     <string name="widget_meal_plan">భోజనం</string>

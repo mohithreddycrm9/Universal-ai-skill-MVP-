@@ -6,6 +6,12 @@
     <string name="nav_settings">सेटिंग्स</string>
     <string name="nav_activity">गतिविधि</string>
     <string name="widget_title">Lumina शॉर्टकट</string>
+    <string name="welcome_title">Lumina में आपका स्वागत है</string>
+    <string name="unlock_app_title">Lumina अनलॉक करें</string>
+    <string name="settings_widget_hint_prefix">होम स्क्रीन विजेट जोड़ें: लॉन्चर दबाकर रखें → विजेट → </string>
+    <string name="widget_picker_hint_prefix">विजेट जोड़ें: होम स्क्रीन दबाकर रखें → विजेट → </string>
+    <string name="voice_tile_label">Lumina वॉइस</string>
+    <string name="chat_export_all_header">Lumina — चैट निर्यात</string>
     <string name="widget_subtitle">होम स्क्रीन से त्वरित कार्य</string>
     <string name="widget_morning_brief">ब्रीफ</string>
     <string name="widget_meal_plan">भोजन</string>
