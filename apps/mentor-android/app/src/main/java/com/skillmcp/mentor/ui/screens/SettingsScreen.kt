@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Public
@@ -297,6 +298,14 @@ fun SettingsScreenContent(
                     title = stringResource(R.string.settings_add_abilities),
                     subtitle = stringResource(R.string.settings_abilities_sub),
                     onClick = { vm.requestOpenTab("skills") },
+                )
+                SettingsDivider()
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.Verified,
+                    title = stringResource(R.string.settings_suggest_skills),
+                    subtitle = stringResource(R.string.settings_suggest_skills_sub),
+                    checked = prefs.suggestOfficialSkills,
+                    onCheckedChange = { on -> vm.updatePrefs { it.copy(suggestOfficialSkills = on) } },
                 )
                 SettingsDivider()
                 SettingsNavRow(

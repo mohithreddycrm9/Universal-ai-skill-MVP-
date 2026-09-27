@@ -45,4 +45,8 @@ interface ChatScreenActions {
     fun shareChatText(conversationId: String)
     fun switchChatModel(profileId: String)
     fun connectModel(profileId: String)
+    /** "Use this skill" on the ready-skill card: install (with consent) if needed and turn on for this chat. */
+    fun useSuggestedSkill(skillId: String)
+    /** "Not now": hides the card and never offers those skills again in this chat. */
+    fun dismissSkillSuggestion()
 }

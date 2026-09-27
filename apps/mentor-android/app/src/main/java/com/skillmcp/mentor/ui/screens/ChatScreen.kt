@@ -731,6 +731,17 @@ fun ChatScreenContent(
                     }
                 }
 
+                state.skillSuggestion?.let { suggestion ->
+                    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                    com.skillmcp.mentor.ui.components.chat.SkillSuggestionCard(
+                        suggestion = suggestion,
+                        onUse = vm::useSuggestedSkill,
+                        onDismiss = vm::dismissSkillSuggestion,
+                        onOpenDocs = { url -> if (url.startsWith("https://")) uriHandler.openUri(url) },
+                        modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 4.dp),
+                    )
+                }
+
                 if (pendingImageUri != null || !pendingPdf.isNullOrBlank()) {
                     Row(
                         modifier =

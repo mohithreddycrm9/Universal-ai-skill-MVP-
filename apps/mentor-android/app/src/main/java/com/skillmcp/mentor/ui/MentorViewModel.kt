@@ -132,6 +132,8 @@ data class MentorUiState(
     val speakingMessageId: String? = null,
     /** Drawer search: messages whose text matched, one per chat. */
     val messageSearchHits: List<com.skillmcp.mentor.mentor.MessageSearchHit> = emptyList(),
+    /** "Ready: <official skill>" card for a build request in the active chat. */
+    val skillSuggestion: com.skillmcp.mentor.ui.chat.SkillSuggestionUi? = null,
 ) {
     /** The model this chat uses: its remembered model if still saved, else the app-wide active model. */
     val chatLlmProfile: LlmProfile?
@@ -148,6 +150,7 @@ data class ChatExtras(
     val regeneratingMessageId: String? = null,
     val speakingMessageId: String? = null,
     val messageSearchHits: List<com.skillmcp.mentor.mentor.MessageSearchHit> = emptyList(),
+    val skillSuggestion: com.skillmcp.mentor.ui.chat.SkillSuggestionUi? = null,
 )
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
@@ -462,6 +465,7 @@ class MentorViewModel(
                 regeneratingMessageId = extras.regeneratingMessageId,
                 speakingMessageId = extras.speakingMessageId,
                 messageSearchHits = extras.messageSearchHits,
+                skillSuggestion = extras.skillSuggestion?.takeIf { it.conversationId == core.activeConversationId },
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
@@ -908,6 +912,7 @@ class MentorViewModel(
                 text = text,
             )
         draft.value = ""
+        evaluateSkillSuggestions(text)
         pendingUserMessage.value = pending
         isSending.value = true
         chatExtras.value = chatExtras.value.copy(editingMessageId = null)
@@ -1179,13 +1184,156 @@ class MentorViewModel(
         pendingSkillInstall.value = null
         viewModelScope.launch {
             status.value = "Importing skill…"
-            repository.importSkill(req.sourceUrl).fold(
+            // A suggested official skill was prefetched in the background: install it without waiting.
+            val prefetched = prefetchedSkills[req.sourceUrl]
+            val result =
+                if (prefetched != null) {
+                    runCatching { repository.installImportedSkill(prefetched) }
+                } else {
+                    repository.importSkill(req.sourceUrl)
+                }
+            result.fold(
                 onSuccess = {
                     container.usageAnalytics.record(UsageAnalytics.EVENT_SKILL, it.id)
                     status.value = "Imported ${it.title}"
+                    markSuggestionActive { item -> item.skill.skillUrl == req.sourceUrl }
                 },
                 onFailure = { status.value = it.message ?: "Import failed" },
             )
+        }
+    }
+
+    private val prefetchedSkills = java.util.concurrent.ConcurrentHashMap<String, com.skillmcp.mentor.skills.ImportedSkill>()
+
+    private fun setSkillSuggestion(value: com.skillmcp.mentor.ui.chat.SkillSuggestionUi?) {
+        chatExtras.value = chatExtras.value.copy(skillSuggestion = value)
+    }
+
+    private suspend fun activeSkillIds(conversationId: String): Set<String> =
+        uiState.value.skills.filter { repository.isSkillEnabled(conversationId, it.id) }.map { it.id }.toSet()
+
+    /**
+     * On-device build-intent check for a sent message (no model call). Local verified index first;
+     * only when nothing matches, one policy-checked live GitHub search.
+     */
+    private fun evaluateSkillSuggestions(text: String) {
+        viewModelScope.launch {
+            val p = prefs.current()
+            val convo = p.activeConversationId.ifBlank { "default" }
+            if (!p.suggestOfficialSkills) {
+                setSkillSuggestion(null)
+                return@launch
+            }
+            val finder = container.officialSkillFinder
+            val dismissed = com.skillmcp.mentor.skills.finder.SkillSuggestionMemory(p.dismissedSkillSuggestions).dismissedIn(convo)
+            val active = activeSkillIds(convo)
+            val decision =
+                com.skillmcp.mentor.skills.finder.SkillSuggestionEngine.decide(
+                    message = text,
+                    skills = finder.cached().skills,
+                    enabled = true,
+                    dismissed = dismissed,
+                    activeSkillIds = active,
+                )
+            when (decision) {
+                com.skillmcp.mentor.skills.finder.SkillSuggestionDecision.None -> setSkillSuggestion(null)
+                is com.skillmcp.mentor.skills.finder.SkillSuggestionDecision.Ready -> showReadySkills(convo, decision.skills, foundOnGitHub = false)
+                is com.skillmcp.mentor.skills.finder.SkillSuggestionDecision.SearchGitHub -> {
+                    val company = decision.intent.company
+                    setSkillSuggestion(
+                        com.skillmcp.mentor.ui.chat.SkillSuggestionUi(convo, searching = true, searchingCompany = company),
+                    )
+                    when (val result = finder.searchLive(decision.intent)) {
+                        is com.skillmcp.mentor.skills.finder.LiveSearchResult.Found -> {
+                            val fresh = result.skills.filter { it.id !in dismissed && it.installedSkillId !in active }.take(3)
+                            if (fresh.isEmpty()) setSkillSuggestion(null) else showReadySkills(convo, fresh, foundOnGitHub = true)
+                        }
+                        is com.skillmcp.mentor.skills.finder.LiveSearchResult.NoneFound ->
+                            setSkillSuggestion(
+                                if (result.company == null) {
+                                    null
+                                } else {
+                                    com.skillmcp.mentor.ui.chat.SkillSuggestionUi(convo, noOfficialCompany = result.company, docsUrl = result.docsUrl)
+                                },
+                            )
+                        else ->
+                            setSkillSuggestion(
+                                company?.let { com.skillmcp.mentor.ui.chat.SkillSuggestionUi(convo, unavailableCompany = it) },
+                            )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showReadySkills(
+        convo: String,
+        skills: List<com.skillmcp.mentor.skills.finder.OfficialSkill>,
+        foundOnGitHub: Boolean,
+    ) {
+        setSkillSuggestion(
+            com.skillmcp.mentor.ui.chat.SkillSuggestionUi(
+                conversationId = convo,
+                items = skills.map { com.skillmcp.mentor.ui.chat.SkillSuggestionItem(it, foundOnGitHub = foundOnGitHub, prefetched = prefetchedSkills.containsKey(it.skillUrl)) },
+            ),
+        )
+        // Background prefetch of each SKILL.md (HTTPS, official repos only) so "Use this skill" is instant.
+        skills.filter { !prefetchedSkills.containsKey(it.skillUrl) && com.skillmcp.mentor.skills.finder.OfficialSkillPolicy.verifyUrl(it.skillUrl).accepted }
+            .forEach { skill ->
+                viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    container.skillImporter.importFromRepoUrl(skill.skillUrl).onSuccess { imported ->
+                        prefetchedSkills[skill.skillUrl] = imported
+                        val current = chatExtras.value.skillSuggestion ?: return@onSuccess
+                        setSkillSuggestion(
+                            current.copy(items = current.items.map { if (it.skill.id == skill.id) it.copy(prefetched = true) else it }),
+                        )
+                    }
+                }
+            }
+    }
+
+    private fun markSuggestionActive(match: (com.skillmcp.mentor.ui.chat.SkillSuggestionItem) -> Boolean) {
+        val current = chatExtras.value.skillSuggestion ?: return
+        val hit = current.items.firstOrNull(match) ?: return
+        setSkillSuggestion(current.copy(items = listOf(hit.copy(active = true))))
+    }
+
+    override fun useSuggestedSkill(skillId: String) {
+        val current = chatExtras.value.skillSuggestion ?: return
+        val item = current.items.firstOrNull { it.skill.id == skillId } ?: return
+        val skill = item.skill
+        // Policy re-check right before anything is installed or turned on.
+        if (!com.skillmcp.mentor.skills.finder.OfficialSkillPolicy.verifyUrl(skill.skillUrl).accepted) {
+            setSkillSuggestion(null)
+            return
+        }
+        viewModelScope.launch {
+            val installed = uiState.value.skills.any { it.id == skill.installedSkillId }
+            if (installed) {
+                repository.setSkillEnabledForConversation(current.conversationId, skill.installedSkillId, true)
+                skillToggles.value = skillToggles.value + (skill.installedSkillId to true)
+                markSuggestionActive { it.skill.id == skillId }
+            } else {
+                requestInstallFromUrl(
+                    url = skill.skillUrl,
+                    title = skill.name,
+                    trustTier = "Verified official · ${skill.company}",
+                    needsNetwork = true,
+                )
+            }
+        }
+    }
+
+    override fun dismissSkillSuggestion() {
+        val current = chatExtras.value.skillSuggestion ?: return
+        setSkillSuggestion(null)
+        if (current.items.isEmpty()) return
+        viewModelScope.launch {
+            prefs.update { p ->
+                val memory = com.skillmcp.mentor.skills.finder.SkillSuggestionMemory(p.dismissedSkillSuggestions)
+                current.items.forEach { memory.dismiss(current.conversationId, it.skill.id) }
+                p.copy(dismissedSkillSuggestions = memory.entries())
+            }
         }
     }
 

@@ -77,6 +77,10 @@ data class MentorPrefs(
     val aboutMe: String = "",
     val responseInstructions: String = "",
     val personalizationEnabled: Boolean = true,
+    /** Offer "Ready: <official skill>" when a message asks to build something (on-device matching). */
+    val suggestOfficialSkills: Boolean = true,
+    /** "conversationId|skillId" pairs the user answered "Not now" to. */
+    val dismissedSkillSuggestions: Set<String> = emptySet(),
 ) {
     companion object {
         const val DEFAULT_ASSISTANT_PROMPT =
@@ -156,6 +160,8 @@ class UserPreferences(
                 aboutMe = prefs[KEY_ABOUT_ME] ?: "",
                 responseInstructions = prefs[KEY_RESPONSE_INSTRUCTIONS] ?: "",
                 personalizationEnabled = prefs[KEY_PERSONALIZATION_ON] ?: true,
+                suggestOfficialSkills = prefs[KEY_SUGGEST_OFFICIAL_SKILLS] ?: true,
+                dismissedSkillSuggestions = prefs[KEY_DISMISSED_SKILL_SUGGESTIONS] ?: emptySet(),
             )
         }
 
@@ -231,6 +237,8 @@ class UserPreferences(
             prefs[KEY_ABOUT_ME] = next.aboutMe
             prefs[KEY_RESPONSE_INSTRUCTIONS] = next.responseInstructions
             prefs[KEY_PERSONALIZATION_ON] = next.personalizationEnabled
+            prefs[KEY_SUGGEST_OFFICIAL_SKILLS] = next.suggestOfficialSkills
+            prefs[KEY_DISMISSED_SKILL_SUGGESTIONS] = next.dismissedSkillSuggestions
         }
     }
 
@@ -303,5 +311,7 @@ class UserPreferences(
         val KEY_ABOUT_ME = stringPreferencesKey("about_me")
         val KEY_RESPONSE_INSTRUCTIONS = stringPreferencesKey("response_instructions")
         val KEY_PERSONALIZATION_ON = booleanPreferencesKey("personalization_enabled")
+        val KEY_SUGGEST_OFFICIAL_SKILLS = booleanPreferencesKey("suggest_official_skills")
+        val KEY_DISMISSED_SKILL_SUGGESTIONS = stringSetPreferencesKey("dismissed_skill_suggestions")
     }
 }

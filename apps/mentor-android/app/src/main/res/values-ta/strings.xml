@@ -321,4 +321,18 @@
         <item quantity="one">%1$d அதிகாரப்பூர்வ ஸ்கில்</item>
         <item quantity="other">%1$d அதிகாரப்பூர்வ ஸ்கில்கள்</item>
     </plurals>
+    <string name="skill_suggest_ready">தயார்: %1$s</string>
+    <string name="skill_suggest_active">இந்த அரட்டையில் இயக்கத்தில்: %1$s</string>
+    <string name="skill_suggest_active_body">இந்த அரட்டையில் உதவியாளர் இப்போது இந்த ஸ்கில்லின் அதிகாரப்பூர்வ SKILL.md வழிமுறைகளைப் பின்பற்றும்.</string>
+    <string name="skill_suggest_use">இந்த ஸ்கில்லைப் பயன்படுத்து</string>
+    <string name="skill_suggest_not_now">இப்போது வேண்டாம்</string>
+    <string name="skill_suggest_found_badge">GitHub இல் கிடைத்தது · சரிபார்க்கப்பட்ட அதிகாரப்பூர்வம் · %1$s</string>
+    <string name="skill_suggest_official">அதிகாரப்பூர்வ</string>
+    <string name="skill_suggest_searching">GitHub இல் அதிகாரப்பூர்வ %1$s ஸ்கில் தேடப்படுகிறது…</string>
+    <string name="skill_suggest_none_found">அதிகாரப்பூர்வ %1$s ஸ்கில் கிடைக்கவில்லை</string>
+    <string name="skill_suggest_none_body">நிறுவனத்தின் GitHub-சரிபார்க்கப்பட்ட அமைப்பின் களஞ்சியங்களிலிருந்து மட்டுமே Lumina ஸ்கில்களைப் பரிந்துரைக்கும். சமூக ஸ்கில்கள் பரிந்துரைக்கப்படாது.</string>
+    <string name="skill_suggest_docs">அதிகாரப்பூர்வ %1$s டெவலப்பர் ஆவணங்களைத் திற</string>
+    <string name="skill_suggest_unavailable">இப்போது GitHub இல் அதிகாரப்பூர்வ %1$s ஸ்கில்லைச் சரிபார்க்க முடியவில்லை</string>
+    <string name="settings_suggest_skills">அதிகாரப்பூர்வ ஸ்கில்களைப் பரிந்துரை</string>
+    <string name="settings_suggest_skills_sub">நீங்கள் எதையாவது உருவாக்கக் கேட்கும்போது, பொருந்தும் சரிபார்க்கப்பட்ட அதிகாரப்பூர்வ ஸ்கில்லைத் தயாராக வைக்கும்</string>
 </resources>

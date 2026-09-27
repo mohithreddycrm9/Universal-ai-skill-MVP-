@@ -321,4 +321,18 @@
         <item quantity="one">%1$d आधिकारिक स्किल</item>
         <item quantity="other">%1$d आधिकारिक स्किल्स</item>
     </plurals>
+    <string name="skill_suggest_ready">तैयार: %1$s</string>
+    <string name="skill_suggest_active">इस चैट में चालू: %1$s</string>
+    <string name="skill_suggest_active_body">सहायक अब इस चैट में इस स्किल के आधिकारिक SKILL.md निर्देशों का पालन करेगा।</string>
+    <string name="skill_suggest_use">यह स्किल उपयोग करें</string>
+    <string name="skill_suggest_not_now">अभी नहीं</string>
+    <string name="skill_suggest_found_badge">GitHub पर मिला · सत्यापित आधिकारिक · %1$s</string>
+    <string name="skill_suggest_official">आधिकारिक</string>
+    <string name="skill_suggest_searching">GitHub पर आधिकारिक %1$s स्किल खोजी जा रही है…</string>
+    <string name="skill_suggest_none_found">कोई आधिकारिक %1$s स्किल नहीं मिली</string>
+    <string name="skill_suggest_none_body">Lumina केवल कंपनी के GitHub-सत्यापित संगठन के रिपॉज़िटरी की स्किल्स सुझाता है। कम्युनिटी स्किल्स नहीं सुझाई जातीं।</string>
+    <string name="skill_suggest_docs">आधिकारिक %1$s डेवलपर डॉक्स खोलें</string>
+    <string name="skill_suggest_unavailable">अभी GitHub पर आधिकारिक %1$s स्किल नहीं जाँच सके</string>
+    <string name="settings_suggest_skills">आधिकारिक स्किल्स सुझाएँ</string>
+    <string name="settings_suggest_skills_sub">जब आप कुछ बनाने को कहें, तो मेल खाती सत्यापित आधिकारिक स्किल तैयार रखें</string>
 </resources>

@@ -321,4 +321,18 @@
         <item quantity="one">%1$d అధికారిక స్కిల్</item>
         <item quantity="other">%1$d అధికారిక స్కిల్స్</item>
     </plurals>
+    <string name="skill_suggest_ready">సిద్ధం: %1$s</string>
+    <string name="skill_suggest_active">ఈ చాట్‌లో ఆన్: %1$s</string>
+    <string name="skill_suggest_active_body">ఈ చాట్‌లో అసిస్టెంట్ ఇప్పుడు ఈ స్కిల్ అధికారిక SKILL.md సూచనలను పాటిస్తుంది.</string>
+    <string name="skill_suggest_use">ఈ స్కిల్ వాడండి</string>
+    <string name="skill_suggest_not_now">ఇప్పుడు వద్దు</string>
+    <string name="skill_suggest_found_badge">GitHub లో దొరికింది · ధృవీకృత అధికారిక · %1$s</string>
+    <string name="skill_suggest_official">అధికారిక</string>
+    <string name="skill_suggest_searching">GitHub లో అధికారిక %1$s స్కిల్ కోసం చూస్తున్నాం…</string>
+    <string name="skill_suggest_none_found">అధికారిక %1$s స్కిల్ దొరకలేదు</string>
+    <string name="skill_suggest_none_body">Lumina కంపెనీ GitHub-ధృవీకృత సంస్థ రిపోజిటరీల స్కిల్స్‌ను మాత్రమే సూచిస్తుంది. కమ్యూనిటీ స్కిల్స్ సూచించబడవు.</string>
+    <string name="skill_suggest_docs">అధికారిక %1$s డెవలపర్ డాక్స్ తెరవండి</string>
+    <string name="skill_suggest_unavailable">ప్రస్తుతం GitHub లో అధికారిక %1$s స్కిల్ తనిఖీ చేయలేకపోయాం</string>
+    <string name="settings_suggest_skills">అధికారిక స్కిల్స్ సూచించండి</string>
+    <string name="settings_suggest_skills_sub">మీరు ఏదైనా తయారు చేయమని అడిగినప్పుడు, సరిపోయే ధృవీకృత అధికారిక స్కిల్‌ను సిద్ధంగా ఉంచండి</string>
 </resources>

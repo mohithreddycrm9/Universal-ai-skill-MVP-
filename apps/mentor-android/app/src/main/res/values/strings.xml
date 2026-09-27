@@ -325,4 +325,18 @@
         <item quantity="one">%1$d official skill</item>
         <item quantity="other">%1$d official skills</item>
     </plurals>
+    <string name="skill_suggest_ready">Ready: %1$s</string>
+    <string name="skill_suggest_active">Active in this chat: %1$s</string>
+    <string name="skill_suggest_active_body">The assistant now follows this skill\'s official SKILL.md instructions in this chat.</string>
+    <string name="skill_suggest_use">Use this skill</string>
+    <string name="skill_suggest_not_now">Not now</string>
+    <string name="skill_suggest_found_badge">Found on GitHub · Verified official · %1$s</string>
+    <string name="skill_suggest_official">official</string>
+    <string name="skill_suggest_searching">Looking on GitHub for an official %1$s skill…</string>
+    <string name="skill_suggest_none_found">No official %1$s skill found</string>
+    <string name="skill_suggest_none_body">Lumina only offers skills from repositories owned by the company\'s GitHub-verified organisation. Community skills are not suggested.</string>
+    <string name="skill_suggest_docs">Open official %1$s developer docs</string>
+    <string name="skill_suggest_unavailable">Couldn\'t check GitHub for an official %1$s skill right now</string>
+    <string name="settings_suggest_skills">Suggest official skills</string>
+    <string name="settings_suggest_skills_sub">When you ask to build something, get the matching verified official skill ready</string>
 </resources>

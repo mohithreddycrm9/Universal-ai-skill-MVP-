@@ -594,7 +594,13 @@ class MentorRepository(
 
     suspend fun importSkill(repoUrl: String): Result<SkillEntity> =
         withContext(Dispatchers.IO) {
-            skillImporter.importFromRepoUrl(repoUrl).map { imported ->
+            skillImporter.importFromRepoUrl(repoUrl).map { imported -> installImportedSkill(imported) }
+        }
+
+    /** Stores an already-downloaded skill and turns it on for the active chat. */
+    suspend fun installImportedSkill(imported: com.skillmcp.mentor.skills.ImportedSkill): SkillEntity =
+        withContext(Dispatchers.IO) {
+            run {
                 val entity =
                     SkillEntity(
                         id = imported.id,

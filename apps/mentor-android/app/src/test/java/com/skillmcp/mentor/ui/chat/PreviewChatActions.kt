@@ -42,4 +42,6 @@ object PreviewChatActions : ChatScreenActions {
     override fun shareChatText(conversationId: String) = Unit
     override fun switchChatModel(profileId: String) = Unit
     override fun connectModel(profileId: String) = Unit
+    override fun useSuggestedSkill(skillId: String) = Unit
+    override fun dismissSkillSuggestion() = Unit
 }
