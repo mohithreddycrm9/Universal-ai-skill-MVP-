@@ -5,10 +5,15 @@
             <certificates src="system" />
         </trust-anchors>
     </base-config>
-    <!-- Emulator / loopback Ollama only; LAN http:// is gated in [OllamaHttpClient] + [UrlSecurityPolicy]. -->
+    <!-- Emulator / loopback Ollama. -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">localhost</domain>
         <domain includeSubdomains="false">127.0.0.1</domain>
         <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+    <!-- Home-network Ollama: placeholder zone that only the Ollama OkHttp client can resolve, and only
+         to private IPs the user entered (see LanCleartextBridge). ".invalid" never resolves publicly. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">ollama-lan.invalid</domain>
     </domain-config>
 </network-security-config>

@@ -16,6 +16,11 @@ object OllamaHttpClient {
             .connectTimeout(connectSec, TimeUnit.SECONDS)
             .readTimeout(readSec, TimeUnit.SECONDS)
             .connectionSpecs(listOf(ConnectionSpec.MODERN_TLS, ConnectionSpec.CLEARTEXT))
+            // Home-network Ollama over http:// via the NSC-permitted placeholder zone (see LanCleartextBridge).
+            .addInterceptor(LanCleartextBridge.interceptor)
+            .dns(LanCleartextBridge.dns)
+            // A redirect would skip the bridge; never follow one to another host in cleartext.
+            .followRedirects(false)
             .hostnameVerifier { hostname, session ->
                 if (isLiteralPrivateOrLocalHost(hostname)) {
                     true
