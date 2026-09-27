@@ -58,7 +58,7 @@ fun SettingsScreen(vm: MentorViewModel) {
     SettingsScreenContent(state = state, backupPrompt = backupPrompt, restorePrompt = restorePrompt, vm = vm)
 }
 
-/** Stateless settings UI; previews pass [com.skillmcp.mentor.ui.settings.PreviewSettingsActions]. */
+/** Stateless settings UI; snapshot tests pass a no-op PreviewSettingsActions (src/test). */
 @Composable
 fun SettingsScreenContent(
     state: com.skillmcp.mentor.ui.MentorUiState,

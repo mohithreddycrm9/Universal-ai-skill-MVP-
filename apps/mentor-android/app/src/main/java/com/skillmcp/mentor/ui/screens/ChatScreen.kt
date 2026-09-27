@@ -116,7 +116,7 @@ fun ChatScreen(vm: MentorViewModel) {
     )
 }
 
-/** Stateless chat UI; previews pass [com.skillmcp.mentor.ui.chat.PreviewChatActions]. */
+/** Stateless chat UI; snapshot tests pass a no-op PreviewChatActions (src/test). */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun ChatScreenContent(
