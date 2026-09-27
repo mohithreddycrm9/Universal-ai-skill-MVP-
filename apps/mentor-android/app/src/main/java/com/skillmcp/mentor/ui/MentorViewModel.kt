@@ -42,7 +42,10 @@ import com.skillmcp.mentor.mentor.UiMessage
 import com.skillmcp.mentor.util.UserFacingError
 import com.skillmcp.mentor.util.UserFacingErrors
 import com.skillmcp.mentor.llm.TokenCostEstimator
-import com.skillmcp.mentor.util.AttachmentTextExtractor
+import com.skillmcp.mentor.llm.ChatVisionAttachment
+import com.skillmcp.mentor.llm.VisionCapabilities
+import com.skillmcp.mentor.util.ImageAttachmentProcessor
+import com.skillmcp.mentor.util.PdfTextExtractor
 import com.skillmcp.mentor.voice.ElevenLabsVoiceClient
 import android.content.Intent
 import android.net.Uri
@@ -129,7 +132,8 @@ class MentorViewModel(
     val pendingShareConsent = MutableStateFlow<SharePayload?>(null)
     val pendingSkillInstall = MutableStateFlow<SkillInstallRequest?>(null)
     val lastExportMarkdown = MutableStateFlow<String?>(null)
-    val pendingAttachment = MutableStateFlow<Uri?>(null)
+    val pendingVision = MutableStateFlow<ChatVisionAttachment?>(null)
+    val pendingPdfExtract = MutableStateFlow<String?>(null)
     val backupPassphrasePrompt = MutableStateFlow(false)
     val drawerSearchResults = MutableStateFlow<List<UiConversation>?>(null)
 
@@ -610,20 +614,39 @@ class MentorViewModel(
 
     fun attachFromUri(uri: Uri, mimeType: String?) {
         viewModelScope.launch {
-            pendingAttachment.value = uri
-            val desc = AttachmentTextExtractor.describeForModel(appContext, uri, mimeType)
-            draft.value =
-                buildString {
-                    append(draft.value.trim())
-                    if (isNotEmpty()) append("\n\n")
-                    append(desc)
+            when {
+                mimeType?.startsWith("image/") == true -> {
+                    val profile = uiState.value.activeLlmProfile
+                    if (profile == null || !VisionCapabilities.supportsVision(profile)) {
+                        status.value = "Image input requires OpenAI, Google, or Anthropic."
+                        return@launch
+                    }
+                    val vision = ImageAttachmentProcessor.fromUri(appContext, uri)
+                    if (vision == null) {
+                        status.value = "Could not read image."
+                        return@launch
+                    }
+                    pendingVision.value = vision
+                    pendingPdfExtract.value = null
+                    status.value = "Image attached — describe what you want to know."
                 }
-            status.value = "Attachment added to message"
+                mimeType == "application/pdf" -> {
+                    pendingVision.value = null
+                    pendingPdfExtract.value = PdfTextExtractor.extractText(appContext, uri)
+                    status.value = "PDF text extracted and will be sent with your message."
+                }
+                else -> {
+                    pendingVision.value = null
+                    pendingPdfExtract.value = null
+                    status.value = "Unsupported attachment type."
+                }
+            }
         }
     }
 
     fun clearAttachment() {
-        pendingAttachment.value = null
+        pendingVision.value = null
+        pendingPdfExtract.value = null
     }
 
     fun searchChats(query: String) {
@@ -680,9 +703,16 @@ class MentorViewModel(
             status.value = null
             statusDetails.value = null
             streamPreview.value = ""
-            pendingAttachment.value = null
+            val vision = pendingVision.value
+            val pdf = pendingPdfExtract.value
+            pendingVision.value = null
+            pendingPdfExtract.value = null
             val result =
-                repository.sendUserMessage(text) { partial -> streamPreview.value = partial }
+                repository.sendUserMessage(
+                    text = text,
+                    vision = vision,
+                    pdfExtract = pdf,
+                ) { partial -> streamPreview.value = partial }
             streamPreview.value = ""
             isSending.value = false
             if (result.isSuccess) {

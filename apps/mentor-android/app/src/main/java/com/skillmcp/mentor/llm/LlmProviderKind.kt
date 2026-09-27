@@ -1,12 +1,11 @@
 package com.skillmcp.mentor.llm
 
 enum class LlmProviderKind(val label: String) {
-    OPENAI_COMPAT("OpenAI-compatible"),
+    OPENAI_COMPAT("Other AI service (advanced)"),
     HUGGING_FACE("Hugging Face"),
     ANTHROPIC("Anthropic Claude"),
     GEMINI("Google Generative API"),
     OLLAMA("Ollama (local)"),
-    ON_DEVICE("On-device (Gemini Nano)"),
 }
 
 data class LlmProfile(
@@ -70,16 +69,6 @@ fun defaultLlmProfiles(): List<LlmProfile> =
             kind = LlmProviderKind.OLLAMA,
             baseUrl = "http://10.0.2.2:11434/",
             model = "llama3.2",
-            inputCostPer1M = 0.0,
-            outputCostPer1M = 0.0,
-            isBuiltIn = true,
-        ),
-        LlmProfile(
-            id = "on-device",
-            name = "On-device AI",
-            kind = LlmProviderKind.ON_DEVICE,
-            baseUrl = "",
-            model = "gemini-nano",
             inputCostPer1M = 0.0,
             outputCostPer1M = 0.0,
             isBuiltIn = true,

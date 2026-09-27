@@ -85,6 +85,12 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+
+    sourceSets {
+        getByName("test") {
+            assets.srcDir("$projectDir/schemas")
+        }
+    }
 }
 
 dependencies {
@@ -116,6 +122,7 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -131,6 +138,7 @@ dependencies {
     testImplementation("app.cash.paparazzi:paparazzi:1.3.5")
     testImplementation("androidx.room:room-testing:2.6.1")
     testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
 
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
@@ -140,18 +148,30 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
-tasks.matching { it.name == "bundleRelease" || it.name == "assembleRelease" }.configureEach {
-    doFirst {
-        val keystorePath = System.getenv("MENTOR_RELEASE_KEYSTORE")
-        if (keystorePath.isNullOrBlank()) {
-            throw GradleException(
-                "Release build requires MENTOR_RELEASE_KEYSTORE (and MENTOR_KEYSTORE_PASSWORD, " +
-                    "MENTOR_KEY_ALIAS, MENTOR_KEY_PASSWORD). See GO_LIVE.md.",
-            )
+fun requireReleaseSigningEnv() {
+    val keystorePath = System.getenv("MENTOR_RELEASE_KEYSTORE")
+    if (keystorePath.isNullOrBlank()) {
+        throw GradleException(
+            "Release build requires MENTOR_RELEASE_KEYSTORE (and MENTOR_KEYSTORE_PASSWORD, " +
+                "MENTOR_KEY_ALIAS, MENTOR_KEY_PASSWORD). See GO_LIVE.md.",
+        )
+    }
+    if (!file(keystorePath).exists()) {
+        throw GradleException("Release keystore not found at: $keystorePath")
+    }
+    listOf(
+        "MENTOR_KEYSTORE_PASSWORD",
+        "MENTOR_KEY_ALIAS",
+        "MENTOR_KEY_PASSWORD",
+    ).forEach { key ->
+        if (System.getenv(key).isNullOrBlank()) {
+            throw GradleException("Release build requires $key.")
         }
-        val file = file(keystorePath)
-        if (!file.exists()) {
-            throw GradleException("Release keystore not found at: $keystorePath")
-        }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    if (hasTask(":app:bundleRelease") || hasTask(":app:assembleRelease")) {
+        requireReleaseSigningEnv()
     }
 }

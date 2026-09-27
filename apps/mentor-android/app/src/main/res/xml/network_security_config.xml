@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Cloud providers use HTTPS; local Ollama on LAN often uses HTTP to private IPs. -->
-    <!-- HTTPS for cloud APIs; cleartext needed for LAN Ollama (private IPs cannot be listed exhaustively). -->
-    <base-config cleartextTrafficPermitted="true">
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

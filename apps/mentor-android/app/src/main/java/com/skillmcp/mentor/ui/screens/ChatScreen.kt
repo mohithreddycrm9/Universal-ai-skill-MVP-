@@ -56,6 +56,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.skillmcp.mentor.llm.ModelPreset
+import com.skillmcp.mentor.llm.VisionCapabilities
 import com.skillmcp.mentor.llm.connectSignInBlurb
 import com.skillmcp.mentor.llm.isConfigured
 import com.skillmcp.mentor.ui.components.PromptLibrarySheet
@@ -311,11 +312,14 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     },
                     actions = {
-                        IconButton(
-                            onClick = { attachLauncher.launch(arrayOf("image/*", "application/pdf", "text/*")) },
-                            modifier = Modifier.size(48.dp),
-                        ) {
-                            Icon(Icons.Default.AttachFile, contentDescription = "Attach file")
+                        val canVision = state.activeLlmProfile?.let { VisionCapabilities.supportsVision(it) } == true
+                        if (canVision) {
+                            IconButton(
+                                onClick = { attachLauncher.launch(arrayOf("image/*", "application/pdf")) },
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(Icons.Default.AttachFile, contentDescription = "Attach image or PDF")
+                            }
                         }
                         IconButton(
                             onClick = { showPrompts = true },

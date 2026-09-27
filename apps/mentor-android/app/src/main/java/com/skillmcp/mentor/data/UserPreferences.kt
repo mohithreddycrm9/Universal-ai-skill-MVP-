@@ -55,6 +55,7 @@ data class MentorPrefs(
     val morningBriefTasks: Boolean = true,
     val voiceHandsFree: Boolean = false,
     val backupIncludeApiKeys: Boolean = false,
+    val internalLaunchToken: String = "",
 ) {
     companion object {
         const val DEFAULT_ASSISTANT_PROMPT =
@@ -117,6 +118,7 @@ class UserPreferences(
                 morningBriefTasks = prefs[KEY_BRIEF_TASKS] ?: true,
                 voiceHandsFree = prefs[KEY_VOICE_HANDS_FREE] ?: false,
                 backupIncludeApiKeys = prefs[KEY_BACKUP_KEYS] ?: false,
+                internalLaunchToken = prefs[KEY_INTERNAL_TOKEN] ?: "",
             )
         }
 
@@ -165,6 +167,7 @@ class UserPreferences(
             prefs[KEY_BRIEF_TASKS] = next.morningBriefTasks
             prefs[KEY_VOICE_HANDS_FREE] = next.voiceHandsFree
             prefs[KEY_BACKUP_KEYS] = next.backupIncludeApiKeys
+            prefs[KEY_INTERNAL_TOKEN] = next.internalLaunchToken
         }
     }
 
@@ -223,5 +226,6 @@ class UserPreferences(
         val KEY_BRIEF_TASKS = booleanPreferencesKey("brief_tasks")
         val KEY_VOICE_HANDS_FREE = booleanPreferencesKey("voice_hands_free")
         val KEY_BACKUP_KEYS = booleanPreferencesKey("backup_include_api_keys")
+        val KEY_INTERNAL_TOKEN = stringPreferencesKey("internal_launch_token")
     }
 }

@@ -136,19 +136,19 @@ private fun ProviderCard(
     GlassCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RowWithRadio(
+                modifier = Modifier.weight(1f),
                 selected = selected,
                 onSelect = onSelectActive,
                 title = profile.name,
                 subtitle = "${profile.kind.label} · ${profile.model}",
             )
-            AssistChip(
-                onClick = onConnect,
-                label = { Text(if (configured) "Manage" else "Connect") },
-            )
+            OutlinedButton(onClick = onConnect) {
+                Text(if (configured) "Edit" else "Connect")
+            }
         }
         Text(
             profile.connectionLabel(),
@@ -179,12 +179,13 @@ private fun ProviderCard(
 
 @Composable
 private fun RowWithRadio(
+    modifier: Modifier = Modifier,
     selected: Boolean,
     onSelect: () -> Unit,
     title: String,
     subtitle: String?,
 ) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         RadioButton(selected = selected, onClick = onSelect)
         Column {
             Text(title, fontWeight = FontWeight.Medium)

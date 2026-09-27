@@ -33,11 +33,13 @@ class DailyBriefWorker(
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, "daily-brief")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
+        val launchToken = container.internalLaunchToken.ensureToken()
         val continueIntent =
             Intent(applicationContext, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_OPEN_TAB
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
                 putExtra(AppLaunch.EXTRA_DRAFT, brief.chatPrompt)
+                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, launchToken)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         val openPending =

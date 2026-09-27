@@ -34,7 +34,6 @@ class LlmProfileRepository(
             }
         }
         ensureBuiltInProfile("huggingface", defaultLlmProfiles().find { it.id == "huggingface" })
-        ensureBuiltInProfile("on-device", defaultLlmProfiles().find { it.id == "on-device" })
         migrateLegacyGoogleProfileId()
         val prefs = userPreferences.current()
         if (prefs.activeLlmProfileId.isBlank()) {

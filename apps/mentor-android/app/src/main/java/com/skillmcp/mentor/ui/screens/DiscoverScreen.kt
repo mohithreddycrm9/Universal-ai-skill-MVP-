@@ -29,6 +29,23 @@ import com.skillmcp.mentor.ui.components.StatCard
 @Composable
 fun DiscoverScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
+    DiscoverScreenContent(
+        state = state,
+        onConnect = vm::openConnectLlm,
+        onPopularUseCase = vm::startPopularUseCase,
+        onOpenUsage = { vm.requestOpenTab("usage") },
+        onOpenModels = { vm.requestOpenTab("models") },
+    )
+}
+
+@Composable
+internal fun DiscoverScreenContent(
+    state: com.skillmcp.mentor.ui.MentorUiState,
+    onConnect: (String) -> Unit,
+    onPopularUseCase: (com.skillmcp.mentor.mentor.PopularUseCase) -> Unit,
+    onOpenUsage: () -> Unit,
+    onOpenModels: () -> Unit,
+) {
     val profile = state.activeLlmProfile
 
     AppBackground {
@@ -52,7 +69,7 @@ fun DiscoverScreen(vm: MentorViewModel) {
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Button(onClick = { vm.openConnectLlm(profile.id) }, modifier = Modifier.fillMaxWidth()) {
+                            Button(onClick = { onConnect(profile.id) }, modifier = Modifier.fillMaxWidth()) {
                                 Text("Connect ${profile.name}")
                             }
                         }
@@ -65,7 +82,7 @@ fun DiscoverScreen(vm: MentorViewModel) {
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(state.rankedUseCases.take(10), key = { it.id }) { useCase ->
-                        PopularUseCaseCard(useCase = useCase, onClick = { vm.startPopularUseCase(useCase) })
+                        PopularUseCaseCard(useCase = useCase, onClick = { onPopularUseCase(useCase) })
                     }
                 }
             }
@@ -94,7 +111,7 @@ fun DiscoverScreen(vm: MentorViewModel) {
                 }
             }
             item {
-                OutlinedButton(onClick = { vm.requestOpenTab("usage") }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = onOpenUsage, modifier = Modifier.fillMaxWidth()) {
                     Text("Open full usage dashboard")
                 }
             }
@@ -106,11 +123,11 @@ fun DiscoverScreen(vm: MentorViewModel) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("On-device & local models", fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Use Ollama on your home network or explore Gemini Nano when your device supports it — no cloud key required for local hosts.",
+                            "Use Ollama on your home network for local inference — no cloud API key required for your own host.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        OutlinedButton(onClick = { vm.requestOpenTab("models") }, modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(onClick = onOpenModels, modifier = Modifier.fillMaxWidth()) {
                             Text("Set up Ollama or Hugging Face")
                         }
                     }

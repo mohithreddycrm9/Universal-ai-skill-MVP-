@@ -13,21 +13,27 @@
 <body>
   <h1>Privacy Policy</h1>
   <p><strong>Last updated:</strong> September 2026</p>
-  <p>Universal AI is a bring-your-own-key assistant. You control which model providers you connect and which API keys you store.</p>
+  <p>Universal AI (Mentor) is a bring-your-own-key assistant. You choose which model providers to connect and which API keys to store on your device.</p>
   <h2>Data we store on your device</h2>
   <ul>
     <li>Chat history, skills, and usage statistics in a local SQLite database (Room) on your device.</li>
     <li>API keys and tokens in Android encrypted storage (EncryptedSharedPreferences).</li>
     <li>App preferences (theme, budgets, reminders) in DataStore.</li>
+    <li>Optional encrypted backup payloads you upload to a URL you configure.</li>
   </ul>
   <h2>Data sent to third parties</h2>
-  <p>When you send a message, the app contacts the LLM provider you selected (OpenAI, Anthropic, Google, Hugging Face, Ollama, or your custom endpoint) using credentials you supplied. We do not operate a central chat server.</p>
-  <p>Optional features (encrypted backup upload, WebSocket sync, ElevenLabs voice, Hugging Face Hub search) only run when you configure URLs or keys.</p>
+  <p>When you send a message, the app contacts the LLM provider you selected using credentials you supplied. We do not operate a central chat server.</p>
+  <p><strong>Attachments:</strong> Images are resized on device and sent via your provider’s vision API when supported. PDF text may be extracted on device and included in the prompt.</p>
+  <p><strong>Morning brief:</strong> Optional calendar reads (with permission), weather from Open-Meteo, and news from public RSS feeds when you enable those sections.</p>
+  <p>Optional features (encrypted backup, sync, ElevenLabs voice, Hugging Face search) only run when you configure them.</p>
+  <h2>Backup and API keys</h2>
+  <p>When backup includes API keys, they are encrypted before upload. A passphrase lets you restore on another device; without it, restore may work only on this device.</p>
   <h2>Permissions</h2>
   <ul>
-    <li><strong>Internet</strong> — model APIs and optional sync/backup.</li>
-    <li><strong>Microphone</strong> — voice input when you tap the mic button.</li>
+    <li><strong>Internet</strong> — model APIs, weather, news, optional sync/backup.</li>
+    <li><strong>Microphone</strong> — voice input when you tap the mic.</li>
     <li><strong>Notifications</strong> — optional daily brief reminder.</li>
+    <li><strong>Calendar</strong> — optional morning brief; event titles/times only when granted.</li>
     <li><strong>Biometric</strong> — optional app unlock.</li>
   </ul>
   <h2>On-device analytics (optional)</h2>

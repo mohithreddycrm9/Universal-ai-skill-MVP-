@@ -23,5 +23,5 @@
     <string name="google_web_client_id" translatable="false"></string>
     <string name="support_email" translatable="false">mohithreddycrm9@gmail.com</string>
     <string name="support_email_label">Support: mohithreddycrm9@gmail.com</string>
-    <string name="privacy_policy_url" translatable="false">https://raw.githubusercontent.com/mohithreddycrm9/Universal-ai-skill-MVP-/main/apps/mentor-android/app/src/main/assets/legal/privacy_policy.html</string>
+    <string name="privacy_policy_url" translatable="false">https://raw.githubusercontent.com/mohithreddycrm9/Universal-ai-skill-MVP-/main/docs/mentor-privacy-policy.html</string>
 </resources>

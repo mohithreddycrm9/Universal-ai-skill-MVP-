@@ -35,23 +35,36 @@ data class AppLockAuthenticators(
     val canPrompt: Boolean = allowed != 0
 }
 
-fun appLockAuthenticators(context: Context): AppLockAuthenticators {
-    val manager = BiometricManager.from(context)
-    val hasBiometric =
-        manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
-            BiometricManager.BIOMETRIC_SUCCESS
-    val hasDeviceCredential =
-        manager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                BiometricManager.Authenticators.DEVICE_CREDENTIAL,
-        ) == BiometricManager.BIOMETRIC_SUCCESS
+internal fun resolveAppLockAuthenticators(
+    biometricStrongResult: Int,
+    biometricOrCredentialResult: Int,
+): AppLockAuthenticators {
+    val hasBiometric = biometricStrongResult == BiometricManager.BIOMETRIC_SUCCESS
+    val hasDeviceCredential = biometricOrCredentialResult == BiometricManager.BIOMETRIC_SUCCESS
     val allowed =
         when {
             hasBiometric -> BiometricManager.Authenticators.BIOMETRIC_STRONG
             hasDeviceCredential -> BiometricManager.Authenticators.DEVICE_CREDENTIAL
             else -> 0
         }
-    return AppLockAuthenticators(allowed = allowed, hasBiometric = hasBiometric, hasDeviceCredential = hasDeviceCredential)
+    return AppLockAuthenticators(
+        allowed = allowed,
+        hasBiometric = hasBiometric,
+        hasDeviceCredential = hasDeviceCredential,
+    )
+}
+
+fun appLockAuthenticators(context: Context): AppLockAuthenticators {
+    val manager = BiometricManager.from(context)
+    return resolveAppLockAuthenticators(
+        biometricStrongResult =
+            manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG),
+        biometricOrCredentialResult =
+            manager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL,
+            ),
+    )
 }
 
 @Composable

@@ -10,7 +10,7 @@ object TokenCostEstimator {
         preset: ModelPreset,
         historyChars: Int = 0,
     ): Double {
-        if (profile.kind == LlmProviderKind.ON_DEVICE || profile.kind == LlmProviderKind.OLLAMA) return 0.0
+        if (profile.kind == LlmProviderKind.OLLAMA) return 0.0
         val inputTokens = estimateTokens(draft) + historyChars / 4
         val outputTokens =
             when (preset) {

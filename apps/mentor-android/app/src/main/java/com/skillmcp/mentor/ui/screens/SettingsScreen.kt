@@ -58,6 +58,12 @@ fun SettingsScreen(vm: MentorViewModel) {
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) vm.setDailyBriefReminder(true)
         }
+    val calendarPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                vm.updatePrefs { p -> p.copy(morningBriefCalendar = true) }
+            }
+        }
     var showPrivacy by remember { mutableStateOf(false) }
     var showTerms by remember { mutableStateOf(false) }
     var showLicenses by remember { mutableStateOf(false) }
@@ -205,9 +211,20 @@ fun SettingsScreen(vm: MentorViewModel) {
                 onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefTasks = on) } },
             )
             RowSwitch(
-                label = "Calendar (when available)",
+                label = "Calendar (events shared with your AI provider in the brief)",
                 checked = prefs.morningBriefCalendar,
-                onCheckedChange = { on -> vm.updatePrefs { p -> p.copy(morningBriefCalendar = on) } },
+                onCheckedChange = { on ->
+                    if (!on) {
+                        vm.updatePrefs { p -> p.copy(morningBriefCalendar = false) }
+                    } else if (
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) ==
+                            PackageManager.PERMISSION_GRANTED
+                    ) {
+                        vm.updatePrefs { p -> p.copy(morningBriefCalendar = true) }
+                    } else {
+                        calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
+                    }
+                },
             )
             RowSwitch(
                 label = "Weather",
@@ -484,7 +501,11 @@ private fun RowSwitch(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            label,
+            modifier = Modifier.weight(1f).padding(end = 8.dp),
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }

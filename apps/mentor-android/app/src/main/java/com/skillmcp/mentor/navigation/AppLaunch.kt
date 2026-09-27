@@ -9,4 +9,5 @@ object AppLaunch {
     /** Set on intents created by this app (widget, shortcuts, notifications). */
     const val EXTRA_INTERNAL = "internal_launch"
     const val EXTRA_VOICE_ON_OPEN = "voice_on_open"
+    const val EXTRA_INTERNAL_TOKEN = "internal_launch_token"
 }

@@ -7,8 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import com.skillmcp.mentor.MainActivity
+import com.skillmcp.mentor.MentorApplication
 import com.skillmcp.mentor.R
 import com.skillmcp.mentor.navigation.AppLaunch
+import kotlinx.coroutines.runBlocking
 
 class QuickActionsWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -23,12 +25,18 @@ class QuickActionsWidget : AppWidgetProvider() {
         }
     }
 
+    private fun internalToken(context: Context): String {
+        val container = (context.applicationContext as MentorApplication).container
+        return runBlocking { container.internalLaunchToken.ensureToken() }
+    }
+
     private fun pendingUseCase(context: Context, useCaseId: String): PendingIntent {
+        val token = internalToken(context)
         val intent =
             Intent(context, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_USE_CASE
                 putExtra(AppLaunch.EXTRA_USE_CASE_ID, useCaseId)
-                putExtra(AppLaunch.EXTRA_INTERNAL, true)
+                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, token)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(
@@ -40,11 +48,13 @@ class QuickActionsWidget : AppWidgetProvider() {
     }
 
     private fun pendingAsk(context: Context): PendingIntent {
+        val token = internalToken(context)
         val intent =
             Intent(context, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_OPEN_TAB
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, "chat")
                 putExtra(AppLaunch.EXTRA_DRAFT, "")
+                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, token)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(
@@ -56,11 +66,12 @@ class QuickActionsWidget : AppWidgetProvider() {
     }
 
     private fun pendingTab(context: Context, route: String): PendingIntent {
+        val token = internalToken(context)
         val intent =
             Intent(context, MainActivity::class.java).apply {
                 action = AppLaunch.ACTION_OPEN_TAB
                 putExtra(AppLaunch.EXTRA_TAB_ROUTE, route)
-                putExtra(AppLaunch.EXTRA_INTERNAL, true)
+                putExtra(AppLaunch.EXTRA_INTERNAL_TOKEN, token)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         return PendingIntent.getActivity(

@@ -15,17 +15,7 @@ import com.skillmcp.mentor.data.resolvedDarkTheme
 import com.skillmcp.mentor.navigation.AppLaunch
 import com.skillmcp.mentor.ui.MentorApp
 import com.skillmcp.mentor.ui.theme.CodeMentorTheme
-import com.skillmcp.mentor.util.LocaleHelper
-
 class MainActivity : FragmentActivity() {
-    override fun attachBaseContext(newBase: Context) {
-        val tag =
-            runCatching {
-                (newBase.applicationContext as MentorApplication).container.userPreferences.current().appLanguageTag
-            }.getOrElse { "system" }
-        super.attachBaseContext(LocaleHelper.wrap(newBase, tag))
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -61,14 +51,14 @@ class MainActivity : FragmentActivity() {
         if (intent == null) return
         when (intent.action) {
             AppLaunch.ACTION_USE_CASE -> {
-                if (!isTrustedInternalIntent(intent)) return
+                if (!isTrustedInternalLaunch(intent, container)) return
                 val id = intent.getStringExtra(AppLaunch.EXTRA_USE_CASE_ID)
                 if (!id.isNullOrBlank()) {
                     container.launchIntentHolder.push(LaunchAction.UseCase(id))
                 }
             }
             AppLaunch.ACTION_OPEN_TAB -> {
-                if (!isTrustedInternalIntent(intent)) return
+                if (!isTrustedInternalLaunch(intent, container)) return
                 val tab = intent.getStringExtra(AppLaunch.EXTRA_TAB_ROUTE) ?: "chat"
                 container.launchIntentHolder.push(LaunchAction.OpenTab(tab))
                 if (intent.getBooleanExtra(AppLaunch.EXTRA_VOICE_ON_OPEN, false)) {
@@ -86,7 +76,7 @@ class MainActivity : FragmentActivity() {
             }
         }
         val draft = intent.getStringExtra(AppLaunch.EXTRA_DRAFT)
-        if (!draft.isNullOrBlank()) {
+        if (!draft.isNullOrBlank() && isTrustedInternalLaunch(intent, container)) {
             container.launchIntentHolder.push(LaunchAction.Draft(draft))
         }
     }
@@ -111,10 +101,12 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    /** Only handles explicit in-app launches (widget, shortcuts, notifications); no public intent-filter. */
-    private fun isTrustedInternalIntent(intent: Intent): Boolean {
-        val component = intent.component ?: return false
-        if (component.packageName != packageName) return false
-        return component.className == MainActivity::class.java.name
+    /** Widget, tile, and notification PendingIntents include a secret token stored on device. */
+    private fun isTrustedInternalLaunch(
+        intent: Intent,
+        container: com.skillmcp.mentor.data.AppContainer,
+    ): Boolean {
+        val token = container.userPreferences.current().internalLaunchToken
+        return container.internalLaunchToken.matches(intent, token)
     }
 }

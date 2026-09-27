@@ -87,4 +87,5 @@ class AppContainer(context: Context) {
 
     val chatExporter = ChatExporter(database.mentorDao())
     val usageAnalytics = UsageAnalytics(appContext)
+    val internalLaunchToken = InternalLaunchToken(userPreferences)
 }

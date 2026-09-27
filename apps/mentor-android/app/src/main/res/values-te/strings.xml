@@ -4,6 +4,20 @@
     <string name="nav_chat">చాట్</string>
     <string name="nav_discover">కనుగొనండి</string>
     <string name="nav_settings">సెట్టింగ్‌లు</string>
+    <string name="widget_title">యూనివర్సల్ AI శార్ట్‌కట్‌లు</string>
+    <string name="widget_subtitle">హోమ్ స్క్రీన్ నుండి త్వరిత పనులు</string>
+    <string name="widget_morning_brief">బ్రీఫ్</string>
+    <string name="widget_meal_plan">భోజనం</string>
+    <string name="widget_open_chat">చాట్</string>
     <string name="widget_ask_anything">ఏదైనా అడగండి…</string>
     <string name="tile_voice_chat">వాయిస్ చాట్</string>
+    <string name="shortcut_morning_brief">ఉదయం బ్రీఫ్</string>
+    <string name="shortcut_morning_brief_long">ఈ రోజు మీ టాప్ 3 పనులు</string>
+    <string name="shortcut_polish">సందేశం మెరుగుపరచండి</string>
+    <string name="shortcut_polish_long">టెక్స్ట్ లేదా ఇమెయిల్ మార్చండి</string>
+    <string name="shortcut_meal">భోజన ప్రణాళిక</string>
+    <string name="shortcut_meal_long">వారపు భోజనం మరియు కిరాణా జాబితా</string>
+    <string name="shortcut_chat">చాట్ తెరవండి</string>
+    <string name="shortcut_chat_long">కొత్త సంభాషణ ప్రారంభించండి</string>
+    <string name="support_email_label">సహాయం: mohithreddycrm9@gmail.com</string>
 </resources>

@@ -1,13 +1,10 @@
 package com.skillmcp.mentor.ui
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
-import com.skillmcp.mentor.ui.theme.CodeMentorTheme
+import com.skillmcp.mentor.ui.preview.ChatScreenPreview
+import com.skillmcp.mentor.ui.preview.DiscoverScreenPreview
+import com.skillmcp.mentor.ui.preview.SettingsScreenPreview
 import org.junit.Rule
 import org.junit.Test
 
@@ -20,41 +17,32 @@ class MainScreensSnapshotTest {
         )
 
     @Test
-    fun chatHeader_light() {
-        paparazzi.snapshot {
-            CodeMentorTheme(darkTheme = false) {
-                Text(
-                    "Universal AI — Chat",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
-        }
+    fun chatScreen_light() {
+        paparazzi.snapshot { ChatScreenPreview(darkTheme = false) }
     }
 
     @Test
-    fun settingsHeader_dark() {
-        paparazzi.snapshot {
-            CodeMentorTheme(darkTheme = true) {
-                Text(
-                    "Settings",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
-        }
+    fun chatScreen_dark() {
+        paparazzi.snapshot { ChatScreenPreview(darkTheme = true) }
     }
 
     @Test
-    fun discoverHeader_light() {
-        paparazzi.snapshot {
-            CodeMentorTheme(darkTheme = false) {
-                Text(
-                    "Discover",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
-        }
+    fun discoverScreen_light() {
+        paparazzi.snapshot { DiscoverScreenPreview(darkTheme = false) }
+    }
+
+    @Test
+    fun discoverScreen_dark() {
+        paparazzi.snapshot { DiscoverScreenPreview(darkTheme = true) }
+    }
+
+    @Test
+    fun settingsScreen_light() {
+        paparazzi.snapshot { SettingsScreenPreview(darkTheme = false) }
+    }
+
+    @Test
+    fun settingsScreen_dark() {
+        paparazzi.snapshot { SettingsScreenPreview(darkTheme = true) }
     }
 }

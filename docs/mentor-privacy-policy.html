@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Universal AI (Mentor)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; padding: 16px; max-width: 42rem; margin: 0 auto; color: #1a1a1a; }
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p><strong>Last updated:</strong> September 2026</p>
+  <p>Universal AI (Mentor) is a bring-your-own-key assistant. You choose which model providers to connect and which API keys to store on your device.</p>
+
+  <h2>Data stored on your device</h2>
+  <ul>
+    <li>Chat history, skills, and usage statistics in a local SQLite database (Room).</li>
+    <li>API keys and tokens in Android encrypted storage (EncryptedSharedPreferences).</li>
+    <li>App preferences (theme, budgets, reminders) in DataStore.</li>
+    <li>Optional encrypted backup payloads you upload to a URL you configure.</li>
+  </ul>
+
+  <h2>Data sent to third parties</h2>
+  <p>When you send a message, the app contacts the LLM provider you selected (OpenAI-compatible APIs, Anthropic, Google Generative API, Hugging Face, or Ollama on your network) using credentials you supplied. We do not operate a central chat server.</p>
+  <p><strong>Attachments:</strong> Images you attach are resized on device and sent to your chosen provider using that provider’s vision API when supported. PDF text may be extracted on device and included in the message. Providers process this content under their own policies.</p>
+  <p><strong>Morning brief (optional):</strong> If enabled, the app may read calendar events on device, request weather from <a href="https://open-meteo.com/">Open-Meteo</a>, and fetch news headlines from public RSS feeds (e.g. BBC). Summaries are composed locally or via your connected AI when you open the brief.</p>
+  <p>Other optional features (encrypted backup upload, WebSocket sync, ElevenLabs voice, Hugging Face Hub search) run only when you configure URLs or keys.</p>
+
+  <h2>Backup and key sync</h2>
+  <p>If you turn on backup/sync and include API keys, keys are encrypted with a passphrase you choose or with a device-bound key before upload. Without a passphrase, backups can typically be restored only on the same device. We do not hold your passphrase.</p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><strong>Internet</strong> — model APIs, weather, news, and optional sync/backup.</li>
+    <li><strong>Microphone</strong> — voice input when you use the mic.</li>
+    <li><strong>Notifications</strong> — optional daily brief reminder.</li>
+    <li><strong>Calendar</strong> — optional; reads event titles and times for the morning brief when you enable that section and grant permission.</li>
+    <li><strong>Biometric</strong> — optional app unlock.</li>
+  </ul>
+
+  <h2>On-device analytics (optional)</h2>
+  <p>If you enable <strong>Help improve Discover</strong>, the app stores anonymous counts of which workflows you use. Data stays on your device and is not uploaded.</p>
+
+  <h2>Your choices</h2>
+  <p>You can disconnect providers, clear credentials, disable backup/sync, and uninstall the app to remove on-device data. Backup is off by default.</p>
+
+  <h2>Contact</h2>
+  <p>For privacy questions, contact the developer listed on the app store listing.</p>
+</body>
+</html>

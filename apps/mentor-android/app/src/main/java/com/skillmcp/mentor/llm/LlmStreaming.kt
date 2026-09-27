@@ -12,12 +12,15 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class LlmStreaming(
-    private val http: OkHttpClient =
+    private val https: OkHttpClient =
         OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(300, TimeUnit.SECONDS)
             .build(),
+    private val ollamaHttp: OkHttpClient = OllamaHttpClient.create(30, 300),
 ) {
+    private fun httpFor(profile: LlmProfile): OkHttpClient =
+        if (profile.kind == LlmProviderKind.OLLAMA) ollamaHttp else https
     private val json = "application/json; charset=utf-8".toMediaType()
 
     fun streamChat(
@@ -26,6 +29,7 @@ class LlmStreaming(
         history: List<ChatMessageDto>,
         userMessage: String,
         extraContext: String = "",
+        vision: ChatVisionAttachment? = null,
         onChunk: (String) -> Unit,
         temperature: Double = 0.7,
     ): Result<LlmChatResult> =
@@ -39,21 +43,19 @@ class LlmStreaming(
                         append(extraContext.take(12_000))
                     }
                 }
+            if (vision != null && !VisionCapabilities.supportsVision(profile)) {
+                error("This model does not support image input. Connect OpenAI, Google, or Anthropic for vision.")
+            }
             when (profile.kind) {
-                LlmProviderKind.ON_DEVICE -> {
-                    val result = OnDeviceLlmClient().chat(system, history, userMessage)
-                    onChunk(result.content)
-                    result
-                }
                 LlmProviderKind.HUGGING_FACE ->
                     streamHuggingFace(profile, system, history, userMessage, onChunk, temperature)
                 LlmProviderKind.OPENAI_COMPAT,
                 LlmProviderKind.OLLAMA,
-                -> streamOpenAiCompat(profile, system, history, userMessage, onChunk, temperature)
+                -> streamOpenAiCompat(profile, system, history, userMessage, vision, onChunk, temperature)
                 else -> {
-                    val client = MultiLlmClient(http)
+                    val client = MultiLlmClient(https, ollamaHttp)
                     val result =
-                        client.chat(profile, systemPrompt, history, userMessage, extraContext).getOrThrow()
+                        client.chat(profile, systemPrompt, history, userMessage, extraContext, vision).getOrThrow()
                     onChunk(result.content)
                     result.copy(latencyMs = System.currentTimeMillis() - started)
                 }
@@ -73,15 +75,16 @@ class LlmStreaming(
                 baseUrl = profile.baseUrl.ifBlank { HuggingFaceDefaults.ROUTER_BASE_URL },
             )
         return try {
-            streamOpenAiCompat(resolved, system, history, userMessage, onChunk, temperature)
+            streamOpenAiCompat(resolved, system, history, userMessage, null, onChunk, temperature)
         } catch (routerError: Exception) {
-            val client = MultiLlmClient(http)
+            val client = MultiLlmClient(https, ollamaHttp)
             val result =
                 client.chat(
                     profile = resolved,
                     systemPrompt = system,
                     history = history,
                     userMessage = userMessage,
+                    vision = null,
                 ).getOrElse { throw routerError }
             onChunk(result.content)
             result
@@ -93,6 +96,7 @@ class LlmStreaming(
         system: String,
         history: List<ChatMessageDto>,
         userMessage: String,
+        vision: ChatVisionAttachment?,
         onChunk: (String) -> Unit,
         temperature: Double,
     ): LlmChatResult {
@@ -113,7 +117,7 @@ class LlmStreaming(
             JSONArray().apply {
                 put(JSONObject().put("role", "system").put("content", system))
                 history.takeLast(20).forEach { put(JSONObject().put("role", it.role).put("content", it.content)) }
-                put(JSONObject().put("role", "user").put("content", userMessage))
+                put(VisionJson.openAiUserMessage(userMessage, vision))
             }
         val body =
             JSONObject()
@@ -133,7 +137,7 @@ class LlmStreaming(
         val full = StringBuilder()
         var promptTokens = 0
         var completionTokens = 0
-        http.newCall(builder.build()).execute().use { response ->
+        httpFor(profile).newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) {
                 val err = response.body?.string() ?: ""
                 error("Stream HTTP ${response.code}")

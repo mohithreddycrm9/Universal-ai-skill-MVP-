@@ -231,6 +231,8 @@ class MentorRepository(
 
     suspend fun sendUserMessage(
         text: String,
+        vision: com.skillmcp.mentor.llm.ChatVisionAttachment? = null,
+        pdfExtract: String? = null,
         onStreamUpdate: (String) -> Unit = {},
     ): Result<String> =
         withContext(Dispatchers.IO) {
@@ -264,14 +266,23 @@ class MentorRepository(
                     enabledPluginIds = prefs.enabledPluginIds,
                 )
 
+            val userPayload =
+                buildString {
+                    append(text)
+                    if (!pdfExtract.isNullOrBlank()) {
+                        append("\n\n--- PDF text ---\n")
+                        append(pdfExtract.trim())
+                    }
+                }
             val history = historyList.filter { it.role == "user" || it.role == "assistant" }
             val result =
                 llmStreaming.streamChat(
                     profile = profile,
                     systemPrompt = prefs.assistantSystemPrompt,
                     history = history,
-                    userMessage = text,
+                    userMessage = userPayload,
                     extraContext = extraContext,
+                    vision = vision,
                     onChunk = onStreamUpdate,
                     temperature = prefs.modelPreset.temperature,
                 )

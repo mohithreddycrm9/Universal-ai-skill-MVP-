@@ -13,13 +13,16 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class MultiLlmClient(
-    private val http: OkHttpClient =
+    private val https: OkHttpClient =
         OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(180, TimeUnit.SECONDS)
             .build(),
+    private val ollamaHttp: OkHttpClient = OllamaHttpClient.create(30, 180),
     private val moshi: Moshi = Moshi.Builder().build(),
 ) {
+    private fun httpFor(profile: LlmProfile): OkHttpClient =
+        if (profile.kind == LlmProviderKind.OLLAMA) ollamaHttp else https
     private val json = "application/json; charset=utf-8".toMediaType()
 
     fun chat(
@@ -28,19 +31,18 @@ class MultiLlmClient(
         history: List<ChatMessageDto>,
         userMessage: String,
         extraContext: String = "",
+        vision: ChatVisionAttachment? = null,
     ): Result<LlmChatResult> =
         runCatching {
             val started = System.currentTimeMillis()
             val system = buildSystemPrompt(systemPrompt, extraContext)
             val result =
                 when (profile.kind) {
-                    LlmProviderKind.OPENAI_COMPAT -> openAiCompat(profile, system, history, userMessage)
+                    LlmProviderKind.OPENAI_COMPAT -> openAiCompat(profile, system, history, userMessage, vision)
                     LlmProviderKind.HUGGING_FACE -> huggingFace(profile, system, history, userMessage)
-                    LlmProviderKind.ANTHROPIC -> anthropic(profile, system, history, userMessage)
-                    LlmProviderKind.GEMINI -> googleGenerative(profile, system, history, userMessage)
+                    LlmProviderKind.ANTHROPIC -> anthropic(profile, system, history, userMessage, vision)
+                    LlmProviderKind.GEMINI -> googleGenerative(profile, system, history, userMessage, vision)
                     LlmProviderKind.OLLAMA -> ollama(profile, system, history, userMessage)
-                    LlmProviderKind.ON_DEVICE ->
-                        OnDeviceLlmClient().chat(system, history, userMessage)
                 }
             result.copy(latencyMs = System.currentTimeMillis() - started)
         }
@@ -65,7 +67,7 @@ class MultiLlmClient(
                 baseUrl = profile.baseUrl.ifBlank { HuggingFaceDefaults.ROUTER_BASE_URL },
             )
         return runCatching {
-            openAiCompat(routerProfile, system, history, userMessage)
+            openAiCompat(routerProfile, system, history, userMessage, null)
         }.getOrElse {
             huggingFaceServerless(routerProfile, system, history, userMessage, it)
         }
@@ -113,6 +115,7 @@ class MultiLlmClient(
         system: String,
         history: List<ChatMessageDto>,
         userMessage: String,
+        vision: ChatVisionAttachment?,
     ): LlmChatResult {
         val base = profile.baseUrl.trimEnd('/') + "/"
         val url = "${base}chat/completions"
@@ -120,7 +123,7 @@ class MultiLlmClient(
             JSONArray().apply {
                 put(jsonMessage("system", system))
                 history.takeLast(20).forEach { put(jsonMessage(it.role, it.content)) }
-                put(jsonMessage("user", userMessage))
+                put(VisionJson.openAiUserMessage(userMessage, vision))
             }
         val body =
             JSONObject()
@@ -158,6 +161,7 @@ class MultiLlmClient(
         system: String,
         history: List<ChatMessageDto>,
         userMessage: String,
+        vision: ChatVisionAttachment?,
     ): LlmChatResult {
         val url = profile.baseUrl.trimEnd('/') + "/messages"
         val messages =
@@ -175,10 +179,7 @@ class MultiLlmClient(
                 put(
                     JSONObject()
                         .put("role", "user")
-                        .put(
-                            "content",
-                            JSONArray().put(JSONObject().put("type", "text").put("text", userMessage)),
-                        ),
+                        .put("content", VisionJson.anthropicUserContent(userMessage, vision)),
                 )
             }
         val body =
@@ -215,6 +216,7 @@ class MultiLlmClient(
         system: String,
         history: List<ChatMessageDto>,
         userMessage: String,
+        vision: ChatVisionAttachment?,
     ): LlmChatResult {
         val base = profile.baseUrl.trimEnd('/') + "/"
         val modelPath = "models/${profile.model}:generateContent"
@@ -234,7 +236,7 @@ class MultiLlmClient(
         contents.put(
             JSONObject()
                 .put("role", "user")
-                .put("parts", JSONArray().put(JSONObject().put("text", userMessage))),
+                .put("parts", VisionJson.geminiUserParts(userMessage, vision)),
         )
         val body =
             JSONObject()
@@ -273,7 +275,7 @@ class MultiLlmClient(
     ): LlmChatResult {
         val base = profile.baseUrl.trimEnd('/') + "/"
         if (profile.baseUrl.contains("/v1")) {
-            return openAiCompat(profile, system, history, userMessage)
+            return openAiCompat(profile, system, history, userMessage, null)
         }
         val url = "${base}api/chat"
         val messages =
@@ -309,7 +311,7 @@ class MultiLlmClient(
                 .post(body.toRequestBody(json))
                 .header("Content-Type", "application/json")
         headers(builder)
-        http.newCall(builder.build()).execute().use { response ->
+        httpFor(profile).newCall(builder.build()).execute().use { response ->
             val text = response.body?.string() ?: ""
             if (!response.isSuccessful) {
                 error("${profile.kind.label} HTTP ${response.code}")
