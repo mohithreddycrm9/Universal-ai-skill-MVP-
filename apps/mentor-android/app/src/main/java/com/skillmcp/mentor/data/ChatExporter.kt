@@ -2,9 +2,7 @@ package com.skillmcp.mentor.data
 
 import android.content.Context
 import com.skillmcp.mentor.R
-import com.skillmcp.mentor.data.db.ChatMessageEntity
 import com.skillmcp.mentor.data.db.MentorDao
-import com.skillmcp.mentor.data.db.ProjectEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -12,23 +10,38 @@ class ChatExporter(
     private val dao: MentorDao,
     private val appContext: Context,
 ) {
+    private suspend fun conversation(conversationId: String): Pair<String, List<ExportTurn>> {
+        val project = dao.allProjects().find { it.id == conversationId }
+        val title = project?.name ?: appContext.getString(R.string.app_name)
+        val turns =
+            dao.messagesFor(conversationId)
+                .filter { it.role == "user" || it.role == "assistant" }
+                .map { ExportTurn(it.role, it.content) }
+        return title to turns
+    }
+
     suspend fun exportConversationMarkdown(conversationId: String): String =
         withContext(Dispatchers.IO) {
-            val project = dao.allProjects().find { it.id == conversationId }
-            val title = project?.name ?: "Chat"
-            val messages = dao.allMessages().filter { it.projectId == conversationId }.sortedBy { it.createdAt }
-            buildString {
-                appendLine("# $title")
-                appendLine()
-                appendLine("_Exported ${java.time.Instant.now()}_")
-                appendLine()
-                messages.forEach { msg ->
-                    appendLine("## ${msg.role.replaceFirstChar { it.uppercase() }}")
-                    appendLine()
-                    appendLine(msg.content.trim())
-                    appendLine()
-                }
-            }
+            val (title, turns) = conversation(conversationId)
+            val date = java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date())
+            ChatExportFormat.markdown(
+                title = title,
+                turns = turns,
+                exportedOn = appContext.getString(R.string.chat_export_on, date),
+                userLabel = appContext.getString(R.string.chat_export_you),
+                assistantLabel = appContext.getString(R.string.app_name),
+            )
+        }
+
+    suspend fun exportConversationText(conversationId: String): String =
+        withContext(Dispatchers.IO) {
+            val (title, turns) = conversation(conversationId)
+            ChatExportFormat.plainText(
+                title = title,
+                turns = turns,
+                userLabel = appContext.getString(R.string.chat_export_you),
+                assistantLabel = appContext.getString(R.string.app_name),
+            )
         }
 
     suspend fun exportAllMarkdown(): String =
