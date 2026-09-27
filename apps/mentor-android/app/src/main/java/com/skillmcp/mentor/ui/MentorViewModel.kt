@@ -123,6 +123,22 @@ data class MentorUiState(
     val replyKey: String? = null,
     /** True while the thinking/streaming row should be rendered (reply not yet persisted). */
     val showReplySlot: Boolean = false,
+    /** User message being edited in the composer (edit & resend). */
+    val editingMessageId: String? = null,
+    /** Assistant message being regenerated in place (streams into the same row). */
+    val regeneratingMessageId: String? = null,
+    /** Message currently read aloud. */
+    val speakingMessageId: String? = null,
+    /** Drawer search: messages whose text matched, one per chat. */
+    val messageSearchHits: List<com.skillmcp.mentor.mentor.MessageSearchHit> = emptyList(),
+)
+
+/** Chat state that isn't persisted: edit/regenerate/read-aloud targets and message search hits. */
+data class ChatExtras(
+    val editingMessageId: String? = null,
+    val regeneratingMessageId: String? = null,
+    val speakingMessageId: String? = null,
+    val messageSearchHits: List<com.skillmcp.mentor.mentor.MessageSearchHit> = emptyList(),
 )
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
@@ -156,6 +172,9 @@ class MentorViewModel(
     val backupRestorePassphrasePrompt = MutableStateFlow(false)
     val drawerSearchResults = MutableStateFlow<List<UiConversation>?>(null)
     private val pendingUserMessage = MutableStateFlow<com.skillmcp.mentor.ui.chat.PendingSend?>(null)
+    private val chatExtras = MutableStateFlow(ChatExtras())
+    /** Auto read-aloud only follows a spoken question (like voice mode in other assistants). */
+    @Volatile private var lastInputWasVoice = false
 
     private val openChatRequestsInner = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val openChatRequests: SharedFlow<Unit> = openChatRequestsInner.asSharedFlow()
@@ -377,8 +396,8 @@ class MentorViewModel(
     val uiState: StateFlow<MentorUiState> =
         combine(
             combine(coreData, interactionState) { core, interaction -> core to interaction },
-            combine(pendingShareConsent, pendingSkillInstall, lastExportMarkdown) { share, skillInstall, exportMd ->
-                Triple(share, skillInstall, exportMd)
+            combine(pendingShareConsent, pendingSkillInstall, lastExportMarkdown, chatExtras) { share, skillInstall, exportMd, extras ->
+                Quad(share, skillInstall, exportMd, extras)
             },
         ) { a, b ->
             val core = a.first
@@ -386,6 +405,7 @@ class MentorViewModel(
             val share = b.first
             val skillInstall = b.second
             val exportMd = b.third
+            val extras = b.fourth
             val persistedIds = core.messages.mapTo(HashSet()) { it.id }
             MentorUiState(
                 messages = core.messages,
@@ -429,6 +449,10 @@ class MentorViewModel(
                 pendingShare = share,
                 pendingSkillInstall = skillInstall,
                 lastExportMarkdown = exportMd,
+                editingMessageId = extras.editingMessageId,
+                regeneratingMessageId = extras.regeneratingMessageId,
+                speakingMessageId = extras.speakingMessageId,
+                messageSearchHits = extras.messageSearchHits,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MentorUiState())
 
@@ -483,7 +507,7 @@ class MentorViewModel(
         }
         viewModelScope.launch {
             container.shareTextHolder.pending.collect { payload ->
-                if (payload != null && payload.text.isNotBlank()) {
+                if (payload != null && (payload.text.isNotBlank() || payload.imageUri != null)) {
                     container.shareTextHolder.consume()
                     if (payload.sendsToAiProvider) {
                         pendingShareConsent.value = payload
@@ -522,6 +546,7 @@ class MentorViewModel(
     }
 
     override fun onDraftChange(value: String) {
+        lastInputWasVoice = false
         draft.value = value
     }
 
@@ -550,6 +575,8 @@ class MentorViewModel(
         val payload = pendingShareConsent.value ?: return
         draft.value = payload.text
         pendingShareConsent.value = null
+        // A shared image becomes the attachment of the next message (same path as the + button).
+        payload.imageUri?.let { attachFromUri(Uri.parse(it), payload.imageMimeType ?: "image/*") }
         status.value = null
         openChatRequestsInner.tryEmit(Unit)
     }
@@ -571,7 +598,88 @@ class MentorViewModel(
         streamCancelled.set(true)
         isSending.value = false
         streamPreview.value = ""
-        status.value = "Stopped"
+        chatExtras.value = chatExtras.value.copy(regeneratingMessageId = null)
+        status.value = null
+    }
+
+    override fun startEdit(messageId: String) {
+        if (isSending.value) return
+        val message = uiState.value.messages.find { it.id == messageId && it.role == "user" } ?: return
+        chatExtras.value = chatExtras.value.copy(editingMessageId = messageId)
+        draft.value = message.content
+        lastInputWasVoice = false
+    }
+
+    override fun cancelEdit() {
+        if (chatExtras.value.editingMessageId == null) return
+        chatExtras.value = chatExtras.value.copy(editingMessageId = null)
+        draft.value = ""
+    }
+
+    override fun regenerate(messageId: String) {
+        if (isSending.value) return
+        stopReadAloud()
+        chatExtras.value = chatExtras.value.copy(regeneratingMessageId = messageId, editingMessageId = null)
+        isSending.value = true
+        viewModelScope.launch {
+            streamCancelled.set(false)
+            status.value = null
+            statusDetails.value = null
+            streamPreview.value = ""
+            val result =
+                repository.regenerateReply(
+                    assistantMessageId = messageId,
+                    onStreamUpdate = { partial -> streamPreview.value = partial },
+                    isCancelled = { streamCancelled.get() },
+                )
+            if (result.isSuccess) {
+                // Keep streaming text on screen until the updated row arrives, so the swap is invisible.
+                val text = result.getOrNull().orEmpty()
+                withTimeoutOrNull(1_500) { uiState.first { s -> s.messages.any { it.id == messageId && it.content == text } } }
+            } else if (!streamCancelled.get()) {
+                val parsed = result.exceptionOrNull()?.let(UserFacingErrors::parse) ?: UserFacingError("Regenerate failed", null)
+                status.value = parsed.summary
+                statusDetails.value = parsed.details
+            }
+            isSending.value = false
+            streamPreview.value = ""
+            chatExtras.value = chatExtras.value.copy(regeneratingMessageId = null)
+        }
+    }
+
+    override fun selectReplyVersion(messageId: String, index: Int) {
+        viewModelScope.launch { repository.selectReplyVersion(messageId, index) }
+    }
+
+    override fun readAloud(messageId: String, text: String) {
+        voice.stopSpeaking()
+        chatExtras.value = chatExtras.value.copy(speakingMessageId = messageId)
+        viewModelScope.launch {
+            val p = prefs.current()
+            val eleven =
+                if (p.elevenLabsApiKey.isNotBlank() && p.elevenLabsVoiceId.isNotBlank()) {
+                    ElevenLabsVoiceClient(p.elevenLabsApiKey, p.elevenLabsVoiceId, appContext.cacheDir)
+                } else {
+                    null
+                }
+            voice.speak(com.skillmcp.mentor.mentor.SpeechText.fromMarkdown(text), p.voiceLocaleTag, eleven)
+            if (chatExtras.value.speakingMessageId == messageId) {
+                chatExtras.value = chatExtras.value.copy(speakingMessageId = null)
+            }
+        }
+    }
+
+    override fun stopReadAloud() {
+        if (chatExtras.value.speakingMessageId == null) return
+        voice.stopSpeaking()
+        chatExtras.value = chatExtras.value.copy(speakingMessageId = null)
+    }
+
+    override fun sendFollowUp(prompt: String) {
+        if (isSending.value) return
+        draft.value = prompt
+        lastInputWasVoice = false
+        sendMessage()
     }
 
     override fun exportChatsMarkdown() {
@@ -675,13 +783,13 @@ class MentorViewModel(
                     pendingVision.value = vision
                     pendingImagePreviewUri.value = uri
                     pendingPdfExtract.value = null
-                    status.value = "Image attached — describe what you want to know."
+                    status.value = null
                 }
                 mimeType == "application/pdf" -> {
                     pendingVision.value = null
                     pendingImagePreviewUri.value = null
                     pendingPdfExtract.value = PdfTextExtractor.extractText(appContext, uri)
-                    status.value = "PDF text extracted and will be sent with your message."
+                    status.value = null
                 }
                 else -> {
                     pendingVision.value = null
@@ -702,6 +810,9 @@ class MentorViewModel(
         viewModelScope.launch {
             drawerSearchResults.value =
                 if (query.isBlank()) null else repository.searchConversations(query)
+            val hits =
+                if (query.isBlank()) emptyList() else com.skillmcp.mentor.mentor.SearchSnippet.onePerConversation(repository.searchMessageHits(query))
+            chatExtras.value = chatExtras.value.copy(messageSearchHits = hits)
         }
     }
 
@@ -710,17 +821,25 @@ class MentorViewModel(
     }
 
     override fun shareChatMarkdown(conversationId: String) {
-        viewModelScope.launch {
-            val md = container.chatExporter.exportConversationMarkdown(conversationId)
-            val intent =
-                Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_SUBJECT, "Chat export")
-                    putExtra(Intent.EXTRA_TEXT, md)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            appContext.startActivity(Intent.createChooser(intent, "Share chat").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        }
+        viewModelScope.launch { shareText(container.chatExporter.exportConversationMarkdown(conversationId), conversationId) }
+    }
+
+    override fun shareChatText(conversationId: String) {
+        viewModelScope.launch { shareText(container.chatExporter.exportConversationText(conversationId), conversationId) }
+    }
+
+    private fun shareText(body: String, conversationId: String) {
+        val title = uiState.value.conversations.find { it.id == conversationId }?.name
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                if (!title.isNullOrBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
+                putExtra(Intent.EXTRA_TEXT, body)
+            }
+        appContext.startActivity(
+            Intent.createChooser(intent, appContext.getString(com.skillmcp.mentor.R.string.chat_share_chat))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
     }
 
     override fun shareChatPdf(conversationId: String) {
@@ -744,7 +863,11 @@ class MentorViewModel(
 
     override fun sendMessage() {
         val text = draft.value.trim()
-        if (text.isEmpty() || isSending.value) return
+        if (text.isEmpty() || isSending.value || chatExtras.value.regeneratingMessageId != null) return
+        val editId = chatExtras.value.editingMessageId
+        val fromVoice = lastInputWasVoice
+        lastInputWasVoice = false
+        stopReadAloud()
         val pending =
             com.skillmcp.mentor.ui.chat.PendingSend(
                 userMessageId = java.util.UUID.randomUUID().toString(),
@@ -754,7 +877,10 @@ class MentorViewModel(
         draft.value = ""
         pendingUserMessage.value = pending
         isSending.value = true
+        chatExtras.value = chatExtras.value.copy(editingMessageId = null)
         viewModelScope.launch {
+            // Edit & resend: the edited message and everything after it are replaced by this new turn.
+            if (editId != null) repository.dropFromMessage(editId)
             streamCancelled.set(false)
             status.value = null
             statusDetails.value = null
@@ -792,7 +918,7 @@ class MentorViewModel(
                 val send = result.getOrNull() ?: return@launch
                 val reply = send.content
                 val p = prefs.current()
-                if (p.speakResponses) {
+                if (p.speakResponses && (fromVoice || p.voiceHandsFree)) {
                     speakAndThen(reply) {
                         if (p.voiceHandsFree) startHandsFreeTurn(autoSend = true)
                     }
@@ -838,6 +964,7 @@ class MentorViewModel(
             voice.listenOnce(locale).also { isListening.value = false }
                 .onSuccess { heard ->
                     draft.value = heard
+                    lastInputWasVoice = heard.isNotBlank()
                     if (autoSend && heard.isNotBlank()) sendMessage()
                 }
                 .onFailure { err -> status.value = err.message ?: "Voice input failed" }
@@ -864,7 +991,7 @@ class MentorViewModel(
 
     override fun newConversation() {
         viewModelScope.launch {
-            repository.createConversation("Chat ${System.currentTimeMillis() % 1000}")
+            repository.createConversation("New chat")
         }
     }
 

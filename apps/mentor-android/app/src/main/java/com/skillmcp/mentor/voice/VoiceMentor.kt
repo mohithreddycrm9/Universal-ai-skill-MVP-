@@ -142,6 +142,11 @@ class VoiceMentor(private val context: Context) {
         activeRecognizer = null
     }
 
+    /** Stops read-aloud started with [speak] (system TTS). */
+    fun stopSpeaking() {
+        tts?.stop()
+    }
+
     fun shutdown() {
         cancelListening()
         tts?.shutdown()

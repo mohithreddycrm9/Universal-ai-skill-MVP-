@@ -98,6 +98,22 @@ import com.skillmcp.mentor.ui.components.chat.popularUseCasesToStarters
 import com.skillmcp.mentor.ui.theme.MentorDimens
 import com.skillmcp.mentor.mentor.ScreenSuggestions
 import com.skillmcp.mentor.mentor.SuggestionScreen
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DriveFileRenameOutline
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.automirrored.rounded.Label
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.PushPin
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
@@ -136,10 +152,21 @@ fun ChatScreenContent(
     var tagDraft by remember { mutableStateOf("") }
     val context = LocalContext.current
     LaunchedEffect(drawerQuery) { vm.searchChats(drawerQuery) }
+    // Title/tag matches are listed as chats; chats that only match inside messages get a snippet row.
     val filteredChats =
-        searchResults
-            ?: state.conversations.filter { it.name.contains(drawerQuery, ignoreCase = true) }
+        if (drawerQuery.isBlank()) {
+            state.conversations
+        } else {
+            state.conversations.filter {
+                it.name.contains(drawerQuery, ignoreCase = true) || it.folderTag.contains(drawerQuery, ignoreCase = true)
+            }
+        }
+    val filteredIds = filteredChats.mapTo(HashSet()) { it.id }
+    val messageHits =
+        if (drawerQuery.isBlank() || searchResults == null) emptyList() else state.messageSearchHits.filter { it.conversationId !in filteredIds }
     val drawerSections = groupConversationsForDrawer(filteredChats)
+    var deleteTarget by remember { mutableStateOf<UiConversation?>(null) }
+    var chatMenuOpen by remember { mutableStateOf(false) }
     val chatTitle =
         state.conversations.find { it.id == state.activeConversationId }?.name
             ?: stringResource(R.string.nav_chat)
@@ -216,8 +243,10 @@ fun ChatScreenContent(
             title = { Text(stringResource(R.string.chat_share_consent_title)) },
             text = {
                 Text(
-                    "Shared content will be sent to ${state.activeLlmProfile?.name ?: "your connected model"} when you tap Send. " +
-                        "The provider may process URLs and text on their servers.",
+                    stringResource(
+                        R.string.chat_share_consent_body,
+                        state.activeLlmProfile?.name ?: stringResource(R.string.chat_share_consent_model_fallback),
+                    ),
                 )
             },
             confirmButton = {
@@ -259,7 +288,7 @@ fun ChatScreenContent(
                             renameDraft = chat.name
                         },
                         onTogglePin = { vm.pinConversation(chat.id, !chat.pinned) },
-                        onDelete = { vm.deleteConversation(chat.id) },
+                        onDelete = { deleteTarget = chat },
                         onSetTag = {
                             tagTarget = chat
                             tagDraft = chat.folderTag
@@ -268,13 +297,18 @@ fun ChatScreenContent(
                         onSharePdf = { vm.shareChatPdf(chat.id) },
                     )
                 },
+                messageHits = messageHits,
+                onOpenHit = { hit ->
+                    vm.selectConversation(hit.conversationId)
+                    scope.launch { drawer.close() }
+                },
                 // The tab bar is hidden inside a conversation; the drawer keeps the other tabs one tap away.
                 footer = {
                     androidx.compose.material3.HorizontalDivider(Modifier.padding(vertical = 8.dp))
                     androidx.compose.material3.NavigationDrawerItem(
                         label = { Text(stringResource(R.string.nav_discover)) },
                         selected = false,
-                        icon = { Icon(Icons.Outlined.Explore, contentDescription = null) },
+                        icon = { Icon(Icons.Rounded.Explore, contentDescription = null) },
                         onClick = {
                             scope.launch { drawer.close() }
                             vm.requestOpenTab("discover")
@@ -284,7 +318,7 @@ fun ChatScreenContent(
                     androidx.compose.material3.NavigationDrawerItem(
                         label = { Text(stringResource(R.string.nav_settings)) },
                         selected = false,
-                        icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                        icon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
                         onClick = {
                             scope.launch { drawer.close() }
                             vm.requestOpenTab("settings")
@@ -296,6 +330,25 @@ fun ChatScreenContent(
         },
     ) {
         AppBackground {
+            deleteTarget?.let { chat ->
+                AlertDialog(
+                    onDismissRequest = { deleteTarget = null },
+                    icon = { Icon(Icons.Rounded.DeleteOutline, contentDescription = null) },
+                    title = { Text(stringResource(R.string.chat_delete_title)) },
+                    text = { Text(stringResource(R.string.chat_delete_body, chat.name)) },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                vm.deleteConversation(chat.id)
+                                deleteTarget = null
+                            },
+                        ) { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.action_cancel)) }
+                    },
+                )
+            }
             tagTarget?.let { chat ->
                 AlertDialog(
                     onDismissRequest = { tagTarget = null },
@@ -373,7 +426,65 @@ fun ChatScreenContent(
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawer.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.chat_open_chats))
+                            Icon(Icons.Rounded.Menu, contentDescription = stringResource(R.string.chat_open_chats))
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = vm::newConversation) {
+                            Icon(Icons.Rounded.EditNote, contentDescription = stringResource(R.string.chat_new_chat))
+                        }
+                        if (state.messages.isNotEmpty()) {
+                            Box {
+                                IconButton(onClick = { chatMenuOpen = true }) {
+                                    Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.chat_more_options))
+                                }
+                                val active = state.conversations.find { it.id == state.activeConversationId }
+                                DropdownMenu(expanded = chatMenuOpen, onDismissRequest = { chatMenuOpen = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.chat_share_text)) },
+                                        leadingIcon = { Icon(Icons.Rounded.Share, null) },
+                                        onClick = {
+                                            chatMenuOpen = false
+                                            vm.shareChatText(state.activeConversationId)
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.chat_share_markdown)) },
+                                        leadingIcon = { Icon(Icons.Rounded.Description, null) },
+                                        onClick = {
+                                            chatMenuOpen = false
+                                            vm.shareChatMarkdown(state.activeConversationId)
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.chat_share_pdf)) },
+                                        leadingIcon = { Icon(Icons.Rounded.PictureAsPdf, null) },
+                                        onClick = {
+                                            chatMenuOpen = false
+                                            vm.shareChatPdf(state.activeConversationId)
+                                        },
+                                    )
+                                    if (active != null) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.action_rename)) },
+                                            leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
+                                            onClick = {
+                                                chatMenuOpen = false
+                                                renameTarget = active
+                                                renameDraft = active.name
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(if (active.pinned) R.string.chat_unpin else R.string.chat_pin)) },
+                                            leadingIcon = { Icon(Icons.Rounded.PushPin, null) },
+                                            onClick = {
+                                                chatMenuOpen = false
+                                                vm.pinConversation(active.id, !active.pinned)
+                                            },
+                                        )
+                                    }
+                                }
+                            }
                         }
                     },
                     colors =
@@ -394,7 +505,7 @@ fun ChatScreenContent(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                state.messageAllowance.message ?: "Message limit reached.",
+                                state.messageAllowance.message ?: stringResource(R.string.chat_limit_reached),
                                 modifier = Modifier.weight(1f).padding(vertical = 4.dp),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error,
@@ -441,9 +552,28 @@ fun ChatScreenContent(
                         }
                     }
                     val profile = state.activeLlmProfile
+                    val lastId = state.messages.lastOrNull()?.id
                     items(state.messages, key = { it.id }) { message ->
-                        if (message.content.isNotBlank()) {
-                            val isUser = message.role == "user"
+                        val isUser = message.role == "user"
+                        val regenerating = message.id == state.regeneratingMessageId
+                        if (regenerating) {
+                            // Regenerate streams into the same row (same key), replacing the reply in place.
+                            androidx.compose.animation.Crossfade(
+                                modifier = calmItemModifier(reduceMotion),
+                                targetState = state.streamPreview.isBlank(),
+                                animationSpec = CalmMotion.fastTween(reduceMotion),
+                                label = "regenerate",
+                            ) { thinking ->
+                                if (thinking) {
+                                    Column(Modifier.padding(top = 12.dp)) {
+                                        com.skillmcp.mentor.ui.components.chat.AssistantHeader(profile?.name)
+                                        ThinkingShimmerLine()
+                                    }
+                                } else {
+                                    ChatMessageContent(content = state.streamPreview, isUser = false, isStreaming = true, modelLabel = profile?.name)
+                                }
+                            }
+                        } else if (message.content.isNotBlank()) {
                             ChatMessageContent(
                                 modifier = calmItemModifier(reduceMotion),
                                 content = message.content,
@@ -451,7 +581,43 @@ fun ChatScreenContent(
                                 isStreaming = false,
                                 modelLabel = if (!isUser) profile?.name else null,
                                 onReply = { snippet -> vm.onDraftChange("> ${snippet.take(120)}\n\n") },
+                                onEdit = if (isUser && !state.isSending) ({ vm.startEdit(message.id) }) else null,
+                                isBeingEdited = message.id == state.editingMessageId,
+                                actions =
+                                    if (isUser) {
+                                        null
+                                    } else {
+                                        com.skillmcp.mentor.ui.components.chat.ReplyActions(
+                                            isSpeaking = state.speakingMessageId == message.id,
+                                            onToggleSpeak = {
+                                                if (state.speakingMessageId == message.id) vm.stopReadAloud() else vm.readAloud(message.id, message.content)
+                                            },
+                                            onRegenerate =
+                                                if (message.id == lastId && !state.isSending) ({ vm.regenerate(message.id) }) else null,
+                                            versionIndex = message.versionIndex,
+                                            versionCount = message.versionCount,
+                                            onSelectVersion = { vm.selectReplyVersion(message.id, it) },
+                                        )
+                                    },
                             )
+                        }
+                    }
+                    val lastMessage = state.messages.lastOrNull()
+                    if (lastMessage != null && lastMessage.role == "assistant" && !state.isSending &&
+                        state.pendingUserMessage == null && state.editingMessageId == null
+                    ) {
+                        val followUps = com.skillmcp.mentor.mentor.FollowUpSuggestions.forReply(lastMessage.content)
+                        if (followUps.isNotEmpty()) {
+                            item(key = "followups-${lastMessage.id}") {
+                                com.skillmcp.mentor.ui.components.chat.FollowUpChips(
+                                    kinds = followUps,
+                                    onSend = { prompt ->
+                                        hapticView.performSendHaptic()
+                                        vm.sendFollowUp(prompt)
+                                    },
+                                    modifier = calmItemModifier(reduceMotion).padding(top = 4.dp, bottom = 8.dp),
+                                )
+                            }
                         }
                     }
                     // Optimistic copy sits at the bottom and shares its key with the persisted row.
@@ -488,7 +654,10 @@ fun ChatScreenContent(
                                 label = "replySlot",
                             ) { thinking ->
                                 if (thinking) {
-                                    ThinkingShimmerLine()
+                                    Column(Modifier.padding(top = 12.dp)) {
+                                        com.skillmcp.mentor.ui.components.chat.AssistantHeader(profile?.name)
+                                        ThinkingShimmerLine()
+                                    }
                                 } else {
                                     ChatMessageContent(
                                         content = state.streamPreview,
@@ -510,7 +679,7 @@ fun ChatScreenContent(
                         modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     ) {
-                        Icon(Icons.Filled.ExpandMore, contentDescription = stringResource(R.string.chat_scroll_to_latest))
+                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = stringResource(R.string.chat_scroll_to_latest))
                     }
                 }
                 }
@@ -525,7 +694,7 @@ fun ChatScreenContent(
                         state.statusDetails?.let { details ->
                             var show by remember { mutableStateOf(false) }
                             androidx.compose.material3.TextButton(onClick = { show = !show }) {
-                                Text(if (show) "Hide details" else "Details")
+                                Text(stringResource(if (show) R.string.chat_details_hide else R.string.chat_details_show))
                             }
                             if (show) {
                                 Text(
@@ -548,20 +717,12 @@ fun ChatScreenContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            if (pendingImageUri != null) "Image attached" else "PDF text ready to send",
+                            stringResource(if (pendingImageUri != null) R.string.chat_attached_image else R.string.chat_attached_pdf),
                             style = MaterialTheme.typography.labelMedium,
                         )
                         IconButton(onClick = vm::clearAttachment) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.chat_remove_attachment))
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.chat_remove_attachment))
                         }
-                    }
-                }
-                if (state.isSending) {
-                    androidx.compose.material3.TextButton(
-                        onClick = vm::cancelSend,
-                        modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal),
-                    ) {
-                        Text(stringResource(R.string.chat_stop))
                     }
                 }
                 PremiumComposerBar(
@@ -578,6 +739,9 @@ fun ChatScreenContent(
                     isSending = state.isSending,
                     isListening = state.isListening,
                     modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal, vertical = 12.dp),
+                    onStop = vm::cancelSend,
+                    editing = state.editingMessageId != null,
+                    onCancelEdit = vm::cancelEdit,
                 )
             }
             if (state.isListening) {
@@ -613,13 +777,14 @@ private fun ConversationDrawerRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (chat.pinned) {
                         Icon(
-                            Icons.Default.PushPin,
+                            Icons.Rounded.PushPin,
                             contentDescription = stringResource(R.string.chat_pinned),
-                            modifier = Modifier.padding(top = 2.dp),
+                            modifier = Modifier.padding(top = 2.dp).size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Column {
-                        Text(chat.name, maxLines = 1)
+                        Text(chat.name, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                         if (chat.folderTag.isNotBlank()) {
                             Text(
                                 chat.folderTag,
@@ -636,11 +801,12 @@ private fun ConversationDrawerRow(
             shape = MaterialTheme.shapes.medium,
         )
         IconButton(onClick = { menuOpen = true }) {
-            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.chat_options))
+            Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.chat_options))
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.action_rename)) },
+                leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = null) },
                 onClick = {
                     menuOpen = false
                     onRename()
@@ -648,6 +814,7 @@ private fun ConversationDrawerRow(
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.chat_tag_title)) },
+                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.Label, contentDescription = null) },
                 onClick = {
                     menuOpen = false
                     onSetTag()
@@ -655,6 +822,7 @@ private fun ConversationDrawerRow(
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.chat_share_markdown)) },
+                leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
                 onClick = {
                     menuOpen = false
                     onShareMarkdown()
@@ -662,16 +830,17 @@ private fun ConversationDrawerRow(
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.chat_share_pdf)) },
+                leadingIcon = { Icon(Icons.Rounded.PictureAsPdf, contentDescription = null) },
                 onClick = {
                     menuOpen = false
                     onSharePdf()
                 },
             )
             DropdownMenuItem(
-                text = { Text(if (chat.pinned) "Unpin" else "Pin") },
+                text = { Text(stringResource(if (chat.pinned) R.string.chat_unpin else R.string.chat_pin)) },
                 leadingIcon = {
                     Icon(
-                        if (chat.pinned) Icons.Outlined.PushPin else Icons.Default.PushPin,
+                        if (chat.pinned) Icons.Outlined.PushPin else Icons.Rounded.PushPin,
                         contentDescription = null,
                     )
                 },
@@ -682,7 +851,8 @@ private fun ConversationDrawerRow(
             )
             if (chat.id != "default") {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.action_delete)) },
+                    text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
+                    leadingIcon = { Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                     onClick = {
                         menuOpen = false
                         onDelete()

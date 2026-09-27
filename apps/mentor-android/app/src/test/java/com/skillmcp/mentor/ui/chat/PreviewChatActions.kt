@@ -32,4 +32,12 @@ object PreviewChatActions : ChatScreenActions {
     override fun saveChatScroll(conversationId: String, position: ChatScrollPosition) = Unit
     override fun requestOpenTab(route: String) = Unit
     override fun dismissSpendBlockMessage() = Unit
+    override fun startEdit(messageId: String) = Unit
+    override fun cancelEdit() = Unit
+    override fun regenerate(messageId: String) = Unit
+    override fun selectReplyVersion(messageId: String, index: Int) = Unit
+    override fun readAloud(messageId: String, text: String) = Unit
+    override fun stopReadAloud() = Unit
+    override fun sendFollowUp(prompt: String) = Unit
+    override fun shareChatText(conversationId: String) = Unit
 }

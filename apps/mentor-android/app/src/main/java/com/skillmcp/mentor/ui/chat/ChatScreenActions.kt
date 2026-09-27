@@ -35,4 +35,12 @@ interface ChatScreenActions {
     fun saveChatScroll(conversationId: String, position: ChatScrollPosition)
     fun requestOpenTab(route: String)
     fun dismissSpendBlockMessage()
+    fun startEdit(messageId: String)
+    fun cancelEdit()
+    fun regenerate(messageId: String)
+    fun selectReplyVersion(messageId: String, index: Int)
+    fun readAloud(messageId: String, text: String)
+    fun stopReadAloud()
+    fun sendFollowUp(prompt: String)
+    fun shareChatText(conversationId: String)
 }
