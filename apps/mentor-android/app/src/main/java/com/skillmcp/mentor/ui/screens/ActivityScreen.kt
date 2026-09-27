@@ -42,7 +42,7 @@ fun ActivityScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
                 if (onBack != null) {
                     SecondaryScreenTopBar(
                         title = "Activity",
-                        subtitle = "Messages, chats, and workflows — no billing data.",
+                        subtitle = "Messages, chats, and workflows you have used.",
                         onBack = onBack,
                     )
                 }
