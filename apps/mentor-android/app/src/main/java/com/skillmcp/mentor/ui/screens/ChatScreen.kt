@@ -17,14 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -65,8 +57,6 @@ import com.skillmcp.mentor.ui.components.PromptLibrarySheet
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.Modifier
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.semantics.semantics
@@ -874,7 +864,7 @@ private fun ConversationDrawerRow(
                 text = { Text(stringResource(if (chat.pinned) R.string.chat_unpin else R.string.chat_pin)) },
                 leadingIcon = {
                     Icon(
-                        if (chat.pinned) Icons.Outlined.PushPin else Icons.Rounded.PushPin,
+                        Icons.Rounded.PushPin,
                         contentDescription = null,
                     )
                 },

@@ -291,4 +291,5 @@
     <string name="model_cap_context">%1$s సందర్భం</string>
     <string name="model_chip_cd">మోడల్: %1$s. మోడల్ మార్చడానికి నొక్కండి.</string>
     <string name="model_reply_by">%1$s రాసింది</string>
+    <string name="skills_remove">స్కిల్‌ను తీసివేయండి</string>
 </resources>

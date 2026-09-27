@@ -1,5 +1,7 @@
 package com.skillmcp.mentor.ui.screens
 
+import com.skillmcp.mentor.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,8 +13,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import com.skillmcp.mentor.skills.SkillCatalog
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -207,7 +209,7 @@ fun SkillsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
                             label = { Text("Skill source URL") },
                             placeholder = { Text("https://…/owner/repo") },
                             singleLine = true,
-                            leadingIcon = { Icon(Icons.Outlined.AutoAwesome, contentDescription = null) },
+                            leadingIcon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) },
                             shape = MaterialTheme.shapes.medium,
                             colors =
                                 OutlinedTextFieldDefaults.colors(
@@ -251,7 +253,7 @@ fun SkillsScreen(vm: MentorViewModel, onBack: (() -> Unit)? = null) {
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         IconButton(onClick = { vm.removeSkill(skill.id) }) {
-                            Icon(Icons.Outlined.DeleteOutline, contentDescription = "Remove skill")
+                            Icon(Icons.Rounded.DeleteOutline, contentDescription = stringResource(R.string.skills_remove))
                         }
                     }
                 }

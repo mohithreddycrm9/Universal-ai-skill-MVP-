@@ -295,4 +295,5 @@
     <string name="model_cap_context">%1$s context</string>
     <string name="model_chip_cd">Model: %1$s. Tap to switch models.</string>
     <string name="model_reply_by">Written by %1$s</string>
+    <string name="skills_remove">Remove skill</string>
 </resources>

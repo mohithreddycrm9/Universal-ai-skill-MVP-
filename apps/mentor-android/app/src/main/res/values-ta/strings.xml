@@ -291,4 +291,5 @@
     <string name="model_cap_context">%1$s சூழல்</string>
     <string name="model_chip_cd">மாதிரி: %1$s. மாதிரியை மாற்ற தட்டவும்.</string>
     <string name="model_reply_by">%1$s எழுதியது</string>
+    <string name="skills_remove">திறனை அகற்று</string>
 </resources>

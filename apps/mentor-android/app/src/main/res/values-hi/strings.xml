@@ -291,4 +291,5 @@
     <string name="model_cap_context">%1$s संदर्भ</string>
     <string name="model_chip_cd">मॉडल: %1$s। मॉडल बदलने के लिए टैप करें।</string>
     <string name="model_reply_by">%1$s द्वारा लिखा गया</string>
+    <string name="skills_remove">स्किल हटाएँ</string>
 </resources>

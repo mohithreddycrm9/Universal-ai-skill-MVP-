@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.outlined.Explore
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.automirrored.rounded.Chat
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -117,8 +117,8 @@ fun FloatingMentorNavBar(
 
 private fun tabNavIcon(tab: MentorTab): ImageVector =
     when (tab) {
-        MentorTab.Chat -> Icons.AutoMirrored.Filled.Chat
-        MentorTab.Discover -> Icons.Outlined.Explore
-        MentorTab.Settings -> Icons.Outlined.Settings
-        else -> Icons.Outlined.Explore
+        MentorTab.Chat -> Icons.AutoMirrored.Rounded.Chat
+        MentorTab.Discover -> Icons.Rounded.Explore
+        MentorTab.Settings -> Icons.Rounded.Settings
+        else -> Icons.Rounded.Explore
     }
