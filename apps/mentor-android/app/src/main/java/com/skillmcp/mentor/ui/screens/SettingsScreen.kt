@@ -53,6 +53,19 @@ import com.skillmcp.mentor.ui.theme.userLabel
 @Composable
 fun SettingsScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
+    val backupPrompt by vm.backupPassphrasePrompt.collectAsState()
+    val restorePrompt by vm.backupRestorePassphrasePrompt.collectAsState()
+    SettingsScreenContent(state = state, backupPrompt = backupPrompt, restorePrompt = restorePrompt, vm = vm)
+}
+
+/** Stateless settings UI; previews pass [com.skillmcp.mentor.ui.settings.PreviewSettingsActions]. */
+@Composable
+fun SettingsScreenContent(
+    state: com.skillmcp.mentor.ui.MentorUiState,
+    backupPrompt: Boolean,
+    restorePrompt: Boolean,
+    vm: com.skillmcp.mentor.ui.settings.SettingsScreenActions,
+) {
     val prefs = state.prefs
     val scroll = rememberScrollState()
     val context = LocalContext.current
@@ -74,8 +87,6 @@ fun SettingsScreen(vm: MentorViewModel) {
     var confirmErase by remember { mutableStateOf(false) }
     var backupPassphrase by remember { mutableStateOf("") }
     var restorePassphrase by remember { mutableStateOf("") }
-    val backupPrompt by vm.backupPassphrasePrompt.collectAsState()
-    val restorePrompt by vm.backupRestorePassphrasePrompt.collectAsState()
     if (showPrivacy) {
         LegalDocumentSheet(
             title = "Privacy policy",

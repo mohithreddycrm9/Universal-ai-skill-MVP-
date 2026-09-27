@@ -102,6 +102,28 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChatScreen(vm: MentorViewModel) {
     val state by vm.uiState.collectAsState()
+    val searchResults by vm.drawerSearchResults.collectAsState()
+    val pendingImageUri by vm.pendingImagePreviewUri.collectAsState()
+    val pendingPdf by vm.pendingPdfExtract.collectAsState()
+    ChatScreenContent(
+        state = state,
+        searchResults = searchResults,
+        pendingImageUri = pendingImageUri,
+        pendingPdf = pendingPdf,
+        vm = vm,
+    )
+}
+
+/** Stateless chat UI; previews pass [com.skillmcp.mentor.ui.chat.PreviewChatActions]. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
+@Composable
+fun ChatScreenContent(
+    state: com.skillmcp.mentor.ui.MentorUiState,
+    searchResults: List<UiConversation>?,
+    pendingImageUri: android.net.Uri?,
+    pendingPdf: String?,
+    vm: com.skillmcp.mentor.ui.chat.ChatScreenActions,
+) {
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showPrompts by remember { mutableStateOf(false) }
@@ -111,9 +133,6 @@ fun ChatScreen(vm: MentorViewModel) {
     var tagTarget by remember { mutableStateOf<UiConversation?>(null) }
     var tagDraft by remember { mutableStateOf("") }
     val context = LocalContext.current
-    val searchResults by vm.drawerSearchResults.collectAsState()
-    val pendingImageUri by vm.pendingImagePreviewUri.collectAsState()
-    val pendingPdf by vm.pendingPdfExtract.collectAsState()
     LaunchedEffect(drawerQuery) { vm.searchChats(drawerQuery) }
     val filteredChats =
         searchResults

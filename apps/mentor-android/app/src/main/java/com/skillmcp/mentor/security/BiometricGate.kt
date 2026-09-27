@@ -56,12 +56,16 @@ internal fun resolveAppLockAuthenticators(
 }
 
 fun appLockAuthenticators(context: Context): AppLockAuthenticators {
-    val manager = BiometricManager.from(context)
+    // Some environments (devices without a biometric HAL, layoutlib previews) have no biometric service;
+    // treat that as "no hardware" instead of crashing so app lock can fall back to the screen lock.
+    val manager = runCatching { BiometricManager.from(context) }.getOrNull()
+    fun can(authenticators: Int): Int =
+        manager?.let { runCatching { it.canAuthenticate(authenticators) }.getOrNull() }
+            ?: BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE
     return resolveAppLockAuthenticators(
-        biometricStrongResult =
-            manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG),
+        biometricStrongResult = can(BiometricManager.Authenticators.BIOMETRIC_STRONG),
         biometricOrCredentialResult =
-            manager.canAuthenticate(
+            can(
                 BiometricManager.Authenticators.BIOMETRIC_STRONG or
                     BiometricManager.Authenticators.DEVICE_CREDENTIAL,
             ),

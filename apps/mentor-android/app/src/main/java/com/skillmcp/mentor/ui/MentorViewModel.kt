@@ -129,7 +129,9 @@ data class MentorUiState(
 class MentorViewModel(
     private val container: AppContainer,
     private val appContext: Context,
-) : ViewModel() {
+) : ViewModel(),
+    com.skillmcp.mentor.ui.chat.ChatScreenActions,
+    com.skillmcp.mentor.ui.settings.SettingsScreenActions {
     private val repository = container.mentorRepository
     private val prefs = container.userPreferences
     private val voice = container.voiceMentor
@@ -437,10 +439,10 @@ class MentorViewModel(
     private var draftOwnerId: String? = null
 
     /** Saved scroll position for [conversationId], or null to follow the latest message. */
-    fun chatScrollFor(conversationId: String): com.skillmcp.mentor.data.ChatScrollPosition? =
+    override fun chatScrollFor(conversationId: String): com.skillmcp.mentor.data.ChatScrollPosition? =
         if (conversationId.isBlank()) null else chatUiStore.scroll(conversationId)
 
-    fun saveChatScroll(conversationId: String, position: com.skillmcp.mentor.data.ChatScrollPosition) {
+    override fun saveChatScroll(conversationId: String, position: com.skillmcp.mentor.data.ChatScrollPosition) {
         chatUiStore.setScroll(conversationId, position)
     }
 
@@ -519,15 +521,15 @@ class MentorViewModel(
         }
     }
 
-    fun onDraftChange(value: String) {
+    override fun onDraftChange(value: String) {
         draft.value = value
     }
 
-    fun applySuggestion(prompt: String) {
+    override fun applySuggestion(prompt: String) {
         draft.value = prompt
     }
 
-    fun openChatWithSuggestion(prompt: String) {
+    override fun openChatWithSuggestion(prompt: String) {
         draft.value = prompt
         status.value = null
         openChatRequestsInner.tryEmit(Unit)
@@ -544,7 +546,7 @@ class MentorViewModel(
         }
     }
 
-    fun acceptSharedContent() {
+    override fun acceptSharedContent() {
         val payload = pendingShareConsent.value ?: return
         draft.value = payload.text
         pendingShareConsent.value = null
@@ -552,7 +554,7 @@ class MentorViewModel(
         openChatRequestsInner.tryEmit(Unit)
     }
 
-    fun declineSharedContent() {
+    override fun declineSharedContent() {
         pendingShareConsent.value = null
     }
 
@@ -565,14 +567,14 @@ class MentorViewModel(
         }
     }
 
-    fun cancelSend() {
+    override fun cancelSend() {
         streamCancelled.set(true)
         isSending.value = false
         streamPreview.value = ""
         status.value = "Stopped"
     }
 
-    fun exportChatsMarkdown() {
+    override fun exportChatsMarkdown() {
         viewModelScope.launch {
             val md = container.chatExporter.exportAllMarkdown()
             lastExportMarkdown.value = md
@@ -580,15 +582,15 @@ class MentorViewModel(
         }
     }
 
-    fun clearExportMarkdown() {
+    override fun clearExportMarkdown() {
         lastExportMarkdown.value = null
     }
 
-    fun setAnalyticsOptIn(enabled: Boolean) {
+    override fun setAnalyticsOptIn(enabled: Boolean) {
         container.usageAnalytics.setOptIn(enabled)
     }
 
-    fun analyticsOptIn(): Boolean = container.usageAnalytics.isOptInCached()
+    override fun analyticsOptIn(): Boolean = container.usageAnalytics.isOptInCached()
 
     suspend fun loadAnalyticsOptIn(): Boolean = container.usageAnalytics.isOptIn()
 
@@ -599,7 +601,7 @@ class MentorViewModel(
                 appContext.getString(com.skillmcp.mentor.R.string.widget_title)
     }
 
-    fun setRequireBiometric(enabled: Boolean) {
+    override fun setRequireBiometric(enabled: Boolean) {
         viewModelScope.launch { prefs.update { it.copy(requireBiometricUnlock = enabled) } }
     }
 
@@ -628,7 +630,7 @@ class MentorViewModel(
         statusDetails.value = null
     }
 
-    fun setDailyBriefReminder(enabled: Boolean) {
+    override fun setDailyBriefReminder(enabled: Boolean) {
         viewModelScope.launch {
             prefs.update { it.copy(dailyBriefReminder = enabled) }
             if (enabled) {
@@ -639,7 +641,7 @@ class MentorViewModel(
         }
     }
 
-    fun startPopularUseCase(useCase: PopularUseCase) {
+    override fun startPopularUseCase(useCase: PopularUseCase) {
         container.usageAnalytics.record(UsageAnalytics.EVENT_USE_CASE, useCase.id)
         viewModelScope.launch {
             useCase.bundledSkillAsset?.let { asset ->
@@ -656,7 +658,7 @@ class MentorViewModel(
         usageWindow.value = window
     }
 
-    fun attachFromUri(uri: Uri, mimeType: String?) {
+    override fun attachFromUri(uri: Uri, mimeType: String?) {
         viewModelScope.launch {
             when {
                 mimeType?.startsWith("image/") == true -> {
@@ -690,24 +692,24 @@ class MentorViewModel(
         }
     }
 
-    fun clearAttachment() {
+    override fun clearAttachment() {
         pendingVision.value = null
         pendingImagePreviewUri.value = null
         pendingPdfExtract.value = null
     }
 
-    fun searchChats(query: String) {
+    override fun searchChats(query: String) {
         viewModelScope.launch {
             drawerSearchResults.value =
                 if (query.isBlank()) null else repository.searchConversations(query)
         }
     }
 
-    fun setConversationTag(id: String, tag: String) {
+    override fun setConversationTag(id: String, tag: String) {
         viewModelScope.launch { repository.setConversationFolderTag(id, tag) }
     }
 
-    fun shareChatMarkdown(conversationId: String) {
+    override fun shareChatMarkdown(conversationId: String) {
         viewModelScope.launch {
             val md = container.chatExporter.exportConversationMarkdown(conversationId)
             val intent =
@@ -721,7 +723,7 @@ class MentorViewModel(
         }
     }
 
-    fun shareChatPdf(conversationId: String) {
+    override fun shareChatPdf(conversationId: String) {
         viewModelScope.launch {
             val file = container.chatPdfExporter.exportConversationPdf(conversationId)
             val uri =
@@ -740,7 +742,7 @@ class MentorViewModel(
         }
     }
 
-    fun sendMessage() {
+    override fun sendMessage() {
         val text = draft.value.trim()
         if (text.isEmpty() || isSending.value) return
         val pending =
@@ -811,11 +813,11 @@ class MentorViewModel(
         }
     }
 
-    fun toggleListen() {
+    override fun toggleListen() {
         startHandsFreeTurn(autoSend = false)
     }
 
-    fun cancelListening() {
+    override fun cancelListening() {
         voice.cancelListening()
         isListening.value = false
     }
@@ -860,17 +862,17 @@ class MentorViewModel(
         }
     }
 
-    fun newConversation() {
+    override fun newConversation() {
         viewModelScope.launch {
             repository.createConversation("Chat ${System.currentTimeMillis() % 1000}")
         }
     }
 
-    fun selectConversation(id: String) {
+    override fun selectConversation(id: String) {
         viewModelScope.launch { repository.selectConversation(id) }
     }
 
-    fun deleteConversation(id: String) {
+    override fun deleteConversation(id: String) {
         chatUiStore.clear(id)
         viewModelScope.launch { repository.deleteConversation(id) }
     }
@@ -888,7 +890,7 @@ class MentorViewModel(
         showGuidedSetupIfNeeded()
     }
 
-    fun requestOpenTab(route: String) {
+    override fun requestOpenTab(route: String) {
         openTabInner.tryEmit(route)
     }
 
@@ -1036,14 +1038,14 @@ class MentorViewModel(
         viewModelScope.launch { repository.removeSkill(id) }
     }
 
-    fun updatePrefs(transform: (MentorPrefs) -> MentorPrefs) {
+    override fun updatePrefs(transform: (MentorPrefs) -> MentorPrefs) {
         viewModelScope.launch {
             prefs.update(transform)
             repository.startSyncIfConfigured()
         }
     }
 
-    fun updateBackupUploadUrl(url: String) {
+    override fun updateBackupUploadUrl(url: String) {
         viewModelScope.launch {
             UrlSecurityPolicy.httpsRequiredError(url, "Backup URL")?.let {
                 status.value = it
@@ -1054,7 +1056,7 @@ class MentorViewModel(
         }
     }
 
-    fun updateSyncWebSocketUrl(url: String) {
+    override fun updateSyncWebSocketUrl(url: String) {
         viewModelScope.launch {
             UrlSecurityPolicy.httpsRequiredError(url, "Sync WebSocket URL")?.let {
                 status.value = it
@@ -1064,15 +1066,15 @@ class MentorViewModel(
         }
     }
 
-    fun promptBackupPassphrase() {
+    override fun promptBackupPassphrase() {
         backupPassphrasePrompt.value = true
     }
 
-    fun dismissBackupPassphrase() {
+    override fun dismissBackupPassphrase() {
         backupPassphrasePrompt.value = false
     }
 
-    fun runBackupNow(passphrase: CharArray? = null) {
+    override fun runBackupNow(passphrase: CharArray?) {
         viewModelScope.launch {
             backupPassphrasePrompt.value = false
             container.backupRepository.uploadIfConfigured(passphrase).fold(
@@ -1082,15 +1084,15 @@ class MentorViewModel(
         }
     }
 
-    fun promptRestorePassphrase() {
+    override fun promptRestorePassphrase() {
         backupRestorePassphrasePrompt.value = true
     }
 
-    fun dismissRestorePassphrase() {
+    override fun dismissRestorePassphrase() {
         backupRestorePassphrasePrompt.value = false
     }
 
-    fun runRestoreNow(passphrase: CharArray? = null) {
+    override fun runRestoreNow(passphrase: CharArray?) {
         viewModelScope.launch {
             backupRestorePassphrasePrompt.value = false
             container.backupRepository.restoreFromConfiguredUrl(passphrase).fold(
@@ -1103,13 +1105,13 @@ class MentorViewModel(
         }
     }
 
-    fun setCrashReportingOptIn(enabled: Boolean) {
+    override fun setCrashReportingOptIn(enabled: Boolean) {
         viewModelScope.launch {
             prefs.update { it.copy(crashReportingOptIn = enabled) }
         }
     }
 
-    fun wipeAllLocalData() {
+    override fun wipeAllLocalData() {
         viewModelScope.launch {
             container.localDataWiper.wipeAllUserContent()
             repository.bootstrap()
@@ -1117,11 +1119,11 @@ class MentorViewModel(
         }
     }
 
-    fun updateFocusTopic(topic: String) {
+    override fun updateFocusTopic(topic: String) {
         viewModelScope.launch { repository.updateFocusTopic(topic) }
     }
 
-    fun setModelPreset(preset: ModelPreset) {
+    override fun setModelPreset(preset: ModelPreset) {
         viewModelScope.launch { prefs.update { it.copy(modelPreset = preset) } }
     }
 
@@ -1161,19 +1163,19 @@ class MentorViewModel(
         }
     }
 
-    fun renameConversation(id: String, name: String) {
+    override fun renameConversation(id: String, name: String) {
         viewModelScope.launch { repository.renameConversation(id, name) }
     }
 
-    fun pinConversation(id: String, pinned: Boolean) {
+    override fun pinConversation(id: String, pinned: Boolean) {
         viewModelScope.launch { repository.setConversationPinned(id, pinned) }
     }
 
-    fun savePrompt(title: String, body: String) {
+    override fun savePrompt(title: String, body: String) {
         viewModelScope.launch { repository.savePrompt(title, body) }
     }
 
-    fun deletePrompt(id: String) {
+    override fun deletePrompt(id: String) {
         viewModelScope.launch { repository.deletePrompt(id) }
     }
 

@@ -1,37 +1,21 @@
 package com.skillmcp.mentor.ui.preview
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.result.ActivityResultRegistry
+import androidx.activity.result.ActivityResultRegistryOwner
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.core.app.ActivityOptionsCompat
 import com.skillmcp.mentor.llm.defaultLlmProfiles
 import com.skillmcp.mentor.mentor.UiMessage
 import com.skillmcp.mentor.ui.MentorUiState
-import com.skillmcp.mentor.ui.components.AppBackground
-import com.skillmcp.mentor.ui.components.chat.ChatMessageContent
-import com.skillmcp.mentor.ui.components.chat.PremiumComposerBar
-import com.skillmcp.mentor.ui.components.ScreenHeader
-import com.skillmcp.mentor.ui.components.TabSuggestions
+import com.skillmcp.mentor.ui.chat.PreviewChatActions
+import com.skillmcp.mentor.ui.screens.ChatScreenContent
 import com.skillmcp.mentor.ui.screens.DiscoverScreenContent
+import com.skillmcp.mentor.ui.screens.SettingsScreenContent
+import com.skillmcp.mentor.ui.settings.PreviewSettingsActions
 import com.skillmcp.mentor.ui.theme.CodeMentorTheme
 
 object MainScreenPreviewSamples {
@@ -46,6 +30,8 @@ object MainScreenPreviewSamples {
                         "Here is a simple plan with vegetarian options and a grocery list.",
                     ),
                 ),
+            conversations = listOf(com.skillmcp.mentor.mentor.UiConversation("c1", "Meals this week", 0L)),
+            activeConversationId = "c1",
             activeLlmProfile = defaultLlmProfiles().first(),
             draft = "Add lunch ideas",
         )
@@ -64,6 +50,7 @@ object MainScreenPreviewSamples {
 
     fun settingsState(): MentorUiState =
         MentorUiState(
+            activeLlmProfile = defaultLlmProfiles().first(),
             prefs =
                 com.skillmcp.mentor.data.MentorPrefs(
                     requireBiometricUnlock = false,
@@ -80,54 +67,17 @@ fun ChatScreenPreview(darkTheme: Boolean) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** Renders the real chat screen (drawer, top bar, bubbles, composer) with no-op actions. */
 @Composable
 internal fun ChatScreenPreviewContent(state: MentorUiState) {
-    val profile = state.activeLlmProfile
-    AppBackground {
-        Column(Modifier.fillMaxSize()) {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Meals this week",
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Default.Menu, contentDescription = "Chats")
-                    }
-                },
-                colors =
-                    TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                    ),
-            )
-            LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.messages, key = { it.id }) { msg ->
-                    ChatMessageContent(
-                        content = msg.content,
-                        isUser = msg.role == "user",
-                        isStreaming = false,
-                        modelLabel = if (msg.role != "user") "OpenAI" else null,
-                    )
-                }
-            }
-            PremiumComposerBar(
-                draft = state.draft,
-                onDraftChange = {},
-                onSend = {},
-                onMic = {},
-                onAttach = null,
-                isListening = false,
-                isSending = false,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+    PreviewHost {
+        ChatScreenContent(
+            state = state,
+            searchResults = null,
+            pendingImageUri = null,
+            pendingPdf = null,
+            vm = PreviewChatActions,
+        )
     }
 }
 
@@ -144,43 +94,44 @@ fun DiscoverScreenPreview(darkTheme: Boolean) {
     }
 }
 
+/** Renders the real settings screen with no-op actions. */
 @Composable
 fun SettingsScreenPreview(darkTheme: Boolean) {
     CodeMentorTheme(darkTheme = darkTheme) {
-        val prefs = MainScreenPreviewSamples.settingsState().prefs
-        AppBackground {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                ScreenHeader(
-                    title = "Settings",
-                    subtitle = "Personalize your assistant, voice, and sync.",
-                )
-                TabSuggestions(
-                    title = "Ask about settings",
-                    suggestions = emptyList(),
-                    onSelect = {},
-                )
-                Text("Privacy & convenience", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                PreviewRowSwitch(label = "Require biometric unlock", checked = prefs.requireBiometricUnlock)
-                PreviewRowSwitch(label = "Daily morning brief reminder", checked = prefs.dailyBriefReminder)
-                PreviewRowSwitch(label = "Calendar (events shared with AI provider)", checked = prefs.morningBriefCalendar)
-            }
+        PreviewHost {
+            SettingsScreenContent(
+                state = MainScreenPreviewSamples.settingsState(),
+                backupPrompt = false,
+                restorePrompt = false,
+                vm = PreviewSettingsActions,
+            )
         }
     }
 }
 
+/**
+ * Previews have no Activity: provide a no-op ActivityResultRegistry so screens that register
+ * permission/document launchers can compose.
+ */
 @Composable
-private fun PreviewRowSwitch(label: String, checked: Boolean) {
-    androidx.compose.foundation.layout.Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            label,
-            modifier = Modifier.weight(1f).padding(end = 8.dp),
-        )
-        Switch(checked = checked, onCheckedChange = {})
+private fun PreviewHost(content: @Composable () -> Unit) {
+    if (LocalActivityResultRegistryOwner.current != null) {
+        content()
+        return
     }
+    val owner =
+        remember {
+            object : ActivityResultRegistryOwner {
+                override val activityResultRegistry =
+                    object : ActivityResultRegistry() {
+                        override fun <I, O> onLaunch(
+                            requestCode: Int,
+                            contract: ActivityResultContract<I, O>,
+                            input: I,
+                            options: ActivityOptionsCompat?,
+                        ) = Unit
+                    }
+            }
+        }
+    CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner, content = content)
 }
