@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.ui.util
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.view.View
@@ -14,6 +15,8 @@ fun View.performSendHaptic() {
     performHapticFeedback(sendHapticConstant(Build.VERSION.SDK_INT))
 }
 
+// CONFIRM is only returned when sdkInt >= R (lint cannot see through the parameter).
+@SuppressLint("InlinedApi")
 internal fun sendHapticConstant(sdkInt: Int): Int =
     if (sdkInt >= Build.VERSION_CODES.R) {
         HapticFeedbackConstants.CONFIRM
