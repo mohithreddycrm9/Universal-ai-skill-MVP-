@@ -30,4 +30,8 @@
     <string name="action_back">వెనక్కి</string>
     <string name="settings_models_keys">మోడల్స్ &amp; API కీలు</string>
     <string name="settings_restore_backup">బ్యాకప్ URL నుండి పునరుద్ధరించు</string>
+    <string name="chat_thinking">ఆలోచిస్తోంది…</string>
+    <string name="chat_scroll_to_latest">తాజాదానికి వెళ్ళండి</string>
+    <string name="chat_open_chats">చాట్‌లు</string>
+    <string name="chat_stop">ఆపు</string>
 </resources>

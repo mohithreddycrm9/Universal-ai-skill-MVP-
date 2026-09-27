@@ -34,4 +34,8 @@
     <string name="action_back">Back</string>
     <string name="settings_models_keys">Models &amp; API keys</string>
     <string name="settings_restore_backup">Restore from backup URL</string>
+    <string name="chat_thinking">Thinking…</string>
+    <string name="chat_scroll_to_latest">Scroll to latest</string>
+    <string name="chat_open_chats">Chats</string>
+    <string name="chat_stop">Stop</string>
 </resources>

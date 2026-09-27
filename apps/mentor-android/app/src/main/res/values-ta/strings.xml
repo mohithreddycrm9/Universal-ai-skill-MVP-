@@ -30,4 +30,8 @@
     <string name="action_back">பின்செல்</string>
     <string name="settings_models_keys">மாடல்கள் மற்றும் API விசைகள்</string>
     <string name="settings_restore_backup">காப்பு URL இலிருந்து மீட்டமை</string>
+    <string name="chat_thinking">யோசிக்கிறது…</string>
+    <string name="chat_scroll_to_latest">சமீபத்தியதற்குச் செல்</string>
+    <string name="chat_open_chats">அரட்டைகள்</string>
+    <string name="chat_stop">நிறுத்து</string>
 </resources>

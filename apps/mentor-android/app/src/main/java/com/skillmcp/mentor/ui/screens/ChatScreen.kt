@@ -290,7 +290,7 @@ fun ChatScreen(vm: MentorViewModel) {
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawer.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Chats")
+                            Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.chat_open_chats))
                         }
                     },
                     colors =
@@ -357,16 +357,23 @@ fun ChatScreen(vm: MentorViewModel) {
                         }
                     }
                     if (state.showReplySlot) {
+                        // Same key from Thinking… through streaming to the persisted reply; content swaps in place.
                         item(key = state.replyKey ?: "reply-slot") {
-                            if (state.streamPreview.isNotBlank()) {
-                                ChatMessageContent(
-                                    content = state.streamPreview,
-                                    isUser = false,
-                                    isStreaming = true,
-                                    modelLabel = profile?.name,
-                                )
-                            } else {
-                                ThinkingShimmerLine()
+                            androidx.compose.animation.Crossfade(
+                                targetState = state.streamPreview.isBlank(),
+                                animationSpec = CalmMotion.fastTween(reduceMotion),
+                                label = "replySlot",
+                            ) { thinking ->
+                                if (thinking) {
+                                    ThinkingShimmerLine()
+                                } else {
+                                    ChatMessageContent(
+                                        content = state.streamPreview,
+                                        isUser = false,
+                                        isStreaming = true,
+                                        modelLabel = profile?.name,
+                                    )
+                                }
                             }
                         }
                     }
@@ -380,7 +387,7 @@ fun ChatScreen(vm: MentorViewModel) {
                         modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     ) {
-                        Icon(Icons.Filled.ExpandMore, contentDescription = "Scroll to latest")
+                        Icon(Icons.Filled.ExpandMore, contentDescription = stringResource(R.string.chat_scroll_to_latest))
                     }
                 }
                 }
@@ -431,7 +438,7 @@ fun ChatScreen(vm: MentorViewModel) {
                         onClick = vm::cancelSend,
                         modifier = Modifier.padding(horizontal = MentorDimens.ScreenHorizontal),
                     ) {
-                        Text("Stop")
+                        Text(stringResource(R.string.chat_stop))
                     }
                 }
                 PremiumComposerBar(
