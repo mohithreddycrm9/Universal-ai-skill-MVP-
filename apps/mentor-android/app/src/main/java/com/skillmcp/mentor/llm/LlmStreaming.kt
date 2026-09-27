@@ -116,12 +116,7 @@ class LlmStreaming(
             } else {
                 "${base}chat/completions"
             }
-        val messages =
-            JSONArray().apply {
-                put(JSONObject().put("role", "system").put("content", system))
-                history.takeLast(20).forEach { put(JSONObject().put("role", it.role).put("content", it.content)) }
-                put(VisionJson.openAiUserMessage(userMessage, vision))
-            }
+        val messages = ProviderMessages.openAi(system, history, userMessage, vision)
         val body =
             JSONObject()
                 .put("model", profile.model)

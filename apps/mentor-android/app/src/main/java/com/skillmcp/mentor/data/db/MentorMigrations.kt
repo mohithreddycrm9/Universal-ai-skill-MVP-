@@ -26,7 +26,17 @@ object MentorMigrations {
             }
         }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_5_6, MIGRATION_6_7)
+    /** Model switching: reply captions, attachment context in history, and a per-chat model. */
+    val MIGRATION_7_8 =
+        object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE chat_messages ADD COLUMN modelLabel TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE chat_messages ADD COLUMN attachmentText TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE projects ADD COLUMN llmProfileId TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
 
     internal fun assertV5Schema(db: SupportSQLiteDatabase) {
         db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages'").use { cursor ->

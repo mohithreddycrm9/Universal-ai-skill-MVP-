@@ -57,9 +57,35 @@ class MentorMigrationsTest {
     }
 
     @Test
+    fun migration7to8AddsModelColumnsMatchingTheV8Export() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = openDatabaseAtVersion(context, version = 7)
+        createV5SchemaFromExport(db, version = 7)
+        db.execSQL("INSERT INTO chat_messages (id, projectId, role, content, createdAt) VALUES ('m1', 'p1', 'assistant', 'hi', 1)")
+        MentorMigrations.MIGRATION_7_8.migrate(db)
+        fun columns(table: String): List<String> {
+            val out = mutableListOf<String>()
+            db.query("PRAGMA table_info($table)").use { c -> while (c.moveToNext()) out += c.getString(c.getColumnIndexOrThrow("name")) }
+            return out
+        }
+        assertTrue(columns("chat_messages").containsAll(listOf("modelLabel", "attachmentText")))
+        assertTrue(columns("projects").contains("llmProfileId"))
+        db.query("SELECT modelLabel, attachmentText FROM chat_messages WHERE id = 'm1'").use {
+            assertTrue(it.moveToFirst())
+            assertEquals("", it.getString(0))
+            assertEquals("", it.getString(1))
+        }
+        val v8 = JSONObject(File("schemas/com.skillmcp.mentor.data.db.MentorDatabase/8.json").readText())
+        val entities = v8.getJSONObject("database").getJSONArray("entities")
+        val messages = (0 until entities.length()).map { entities.getJSONObject(it) }.first { it.getString("tableName") == "chat_messages" }
+        assertTrue(messages.getString("createSql").contains("`modelLabel` TEXT NOT NULL DEFAULT ''"))
+        db.close()
+    }
+
+    @Test
     fun allMigrationsRegistered() {
-        assertEquals(2, MentorMigrations.ALL.size)
-        assertEquals(listOf(5 to 6, 6 to 7), MentorMigrations.ALL.map { it.startVersion to it.endVersion })
+        assertEquals(3, MentorMigrations.ALL.size)
+        assertEquals(listOf(5 to 6, 6 to 7, 7 to 8), MentorMigrations.ALL.map { it.startVersion to it.endVersion })
     }
 
     private fun createV5SchemaFromExport(db: SupportSQLiteDatabase, version: Int = 5) {

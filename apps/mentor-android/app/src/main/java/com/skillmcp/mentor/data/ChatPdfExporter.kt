@@ -18,7 +18,9 @@ class ChatPdfExporter(
             val project = dao.allProjects().find { it.id == conversationId }
             val title = project?.name ?: "Chat"
             val messages =
-                dao.allMessages().filter { it.projectId == conversationId }.sortedBy { it.createdAt }
+                dao.allMessages()
+                    .filter { it.projectId == conversationId && (it.role == "user" || it.role == "assistant") }
+                    .sortedBy { it.createdAt }
             val lines = mutableListOf<String>()
             lines += title
             lines += ""

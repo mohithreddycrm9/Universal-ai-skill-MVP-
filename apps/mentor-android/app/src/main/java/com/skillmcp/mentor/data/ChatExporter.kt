@@ -52,7 +52,9 @@ class ChatExporter(
                 appendLine()
                 projects.forEach { project ->
                     val messages =
-                        dao.allMessages().filter { it.projectId == project.id }.sortedBy { it.createdAt }
+                        dao.allMessages()
+                            .filter { it.projectId == project.id && (it.role == "user" || it.role == "assistant") }
+                            .sortedBy { it.createdAt }
                     appendLine("## ${project.name}")
                     appendLine()
                     messages.forEach { msg ->

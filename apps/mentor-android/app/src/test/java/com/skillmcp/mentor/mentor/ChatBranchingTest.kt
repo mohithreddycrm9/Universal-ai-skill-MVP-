@@ -54,4 +54,12 @@ class ChatBranchingTest {
         assertEquals(2, ChatBranching.visibleVersionIndex(versions, "edited elsewhere"))
         assertEquals(0, ChatBranching.visibleVersionIndex(emptyList(), "x"))
     }
+
+    @Test
+    fun switchingModelThenRegeneratingRetriesTheLastReply() {
+        val withSwitch = thread + UiMessage("s1", com.skillmcp.mentor.llm.ROLE_MODEL_SWITCH, "llama3.2")
+        val ctx = ChatBranching.regenerateContext(withSwitch, thread.last().id)
+        org.junit.Assert.assertNotNull(ctx)
+        org.junit.Assert.assertEquals(thread.last().id, ctx!!.reply.id)
+    }
 }

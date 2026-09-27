@@ -119,12 +119,7 @@ class MultiLlmClient(
     ): LlmChatResult {
         val base = profile.baseUrl.trimEnd('/') + "/"
         val url = "${base}chat/completions"
-        val messages =
-            JSONArray().apply {
-                put(jsonMessage("system", system))
-                history.takeLast(20).forEach { put(jsonMessage(it.role, it.content)) }
-                put(VisionJson.openAiUserMessage(userMessage, vision))
-            }
+        val messages = ProviderMessages.openAi(system, history, userMessage, vision)
         val body =
             JSONObject()
                 .put("model", profile.model)
@@ -164,24 +159,7 @@ class MultiLlmClient(
         vision: ChatVisionAttachment?,
     ): LlmChatResult {
         val url = profile.baseUrl.trimEnd('/') + "/messages"
-        val messages =
-            JSONArray().apply {
-                history.takeLast(20).filter { it.role == "user" || it.role == "assistant" }.forEach {
-                    put(
-                        JSONObject()
-                            .put("role", if (it.role == "assistant") "assistant" else "user")
-                            .put(
-                                "content",
-                                JSONArray().put(JSONObject().put("type", "text").put("text", it.content)),
-                            ),
-                    )
-                }
-                put(
-                    JSONObject()
-                        .put("role", "user")
-                        .put("content", VisionJson.anthropicUserContent(userMessage, vision)),
-                )
-            }
+        val messages = ProviderMessages.anthropic(history, userMessage, vision)
         val body =
             JSONObject()
                 .put("model", profile.model)
@@ -221,23 +199,7 @@ class MultiLlmClient(
         val base = profile.baseUrl.trimEnd('/') + "/"
         val modelPath = "models/${profile.model}:generateContent"
         val url = "${base}$modelPath?key=${profile.apiKey}"
-        val contents = JSONArray()
-        history.takeLast(20).forEach { msg ->
-            val role = if (msg.role == "assistant") "model" else "user"
-            contents.put(
-                JSONObject()
-                    .put("role", role)
-                    .put(
-                        "parts",
-                        JSONArray().put(JSONObject().put("text", msg.content)),
-                    ),
-            )
-        }
-        contents.put(
-            JSONObject()
-                .put("role", "user")
-                .put("parts", VisionJson.geminiUserParts(userMessage, vision)),
-        )
+        val contents = ProviderMessages.gemini(history, userMessage, vision)
         val body =
             JSONObject()
                 .put(
@@ -278,12 +240,7 @@ class MultiLlmClient(
             return openAiCompat(profile, system, history, userMessage, null)
         }
         val url = "${base}api/chat"
-        val messages =
-            JSONArray().apply {
-                put(jsonMessage("system", system))
-                history.takeLast(20).forEach { put(jsonMessage(it.role, it.content)) }
-                put(jsonMessage("user", userMessage))
-            }
+        val messages = ProviderMessages.openAi(system, history, userMessage, null)
         val body =
             JSONObject()
                 .put("model", profile.model)
@@ -295,9 +252,6 @@ class MultiLlmClient(
         val content = json.optJSONObject("message")?.optString("content")?.trim() ?: error("Empty Ollama response")
         return LlmChatResult(content, null, profile.model, 0)
     }
-
-    private fun jsonMessage(role: String, content: String): JSONObject =
-        JSONObject().put("role", role).put("content", content)
 
     private fun postJson(
         url: String,

@@ -14,7 +14,7 @@ object HuggingFacePrompt {
                 append(system.trim())
                 append("\n<</SYS>>\n\n")
             }
-            history.takeLast(16).forEach { msg ->
+            history.forEach { msg ->
                 when (msg.role) {
                     "assistant" -> {
                         append("Assistant: ")

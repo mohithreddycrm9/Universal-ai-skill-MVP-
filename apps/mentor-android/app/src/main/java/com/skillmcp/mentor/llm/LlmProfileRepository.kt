@@ -119,6 +119,12 @@ class LlmProfileRepository(
         )
     }
 
+    /** A saved profile by id (with its key), or null if it was deleted. */
+    suspend fun profileById(id: String): LlmProfile? =
+        dao.getLlmProfile(id)?.let {
+            it.toProfile(apiKey = secureStore.getKey(it.id), linkedAccount = secureStore.getLinkedAccount(it.id))
+        }
+
     suspend fun setActiveProfile(id: String) {
         userPreferences.update { it.copy(activeLlmProfileId = id) }
     }

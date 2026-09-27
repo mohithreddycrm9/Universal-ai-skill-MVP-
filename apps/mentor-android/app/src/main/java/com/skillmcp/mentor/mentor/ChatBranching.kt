@@ -19,8 +19,12 @@ object ChatBranching {
         val reply: UiMessage,
     )
 
-    /** Only the latest reply can be regenerated; it needs the user turn right before it. */
-    fun regenerateContext(messages: List<UiMessage>, assistantMessageId: String): RegenerateContext? {
+    /**
+     * Only the latest reply can be regenerated; it needs the user turn right before it. Model-switch
+     * divider rows are ignored, so "switch model, then regenerate" retries the reply with the new model.
+     */
+    fun regenerateContext(all: List<UiMessage>, assistantMessageId: String): RegenerateContext? {
+        val messages = all.filter { it.role == "user" || it.role == "assistant" }
         val reply = messages.lastOrNull() ?: return null
         if (reply.id != assistantMessageId || reply.role != "assistant") return null
         val userIndex = messages.indexOfLast { it.role == "user" }

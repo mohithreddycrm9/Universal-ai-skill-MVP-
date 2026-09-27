@@ -1,5 +1,6 @@
 package com.skillmcp.mentor.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -22,6 +23,10 @@ data class ChatMessageEntity(
     val role: String,
     val content: String,
     val createdAt: Long,
+    /** Model that wrote an assistant reply (caption under the reply); for switch rows, the new model. */
+    @ColumnInfo(defaultValue = "") val modelLabel: String = "",
+    /** Extracted PDF text or an image note, so later turns (and other models) keep the attachment context. */
+    @ColumnInfo(defaultValue = "") val attachmentText: String = "",
 )
 
 /**
@@ -47,6 +52,8 @@ data class ProjectEntity(
     val updatedAt: Long,
     val pinned: Boolean = false,
     val folderTag: String = "",
+    /** Model chosen for this chat ("" = follow the app-wide active model). */
+    @ColumnInfo(defaultValue = "") val llmProfileId: String = "",
 )
 
 @Entity(
@@ -202,7 +209,7 @@ interface MentorDao {
     @Query(
         """
         SELECT * FROM chat_messages
-        WHERE content LIKE '%' || :query || '%'
+        WHERE content LIKE '%' || :query || '%' AND role IN ('user', 'assistant')
         ORDER BY createdAt DESC
         LIMIT :limit
         """,
@@ -375,7 +382,7 @@ interface MentorDao {
         SavedPromptEntity::class,
         ReplyVersionEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class MentorDatabase : RoomDatabase() {

@@ -44,11 +44,16 @@ data class UiMessage(
     val versionCount: Int = 1,
     /** 0-based index of the version currently shown. */
     val versionIndex: Int = 0,
+    /** Model that wrote this reply (assistant) or the model switched to (model_switch rows). */
+    val modelLabel: String = "",
 )
 
 data class SendMessageResult(
     val content: String,
     val assistantMessageId: String,
+    /** True when an image was attached but the chat's model can't read images, so only text was sent. */
+    val imageDropped: Boolean = false,
+    val modelLabel: String = "",
 )
 
 data class UiConversation(
@@ -57,7 +62,13 @@ data class UiConversation(
     val updatedAt: Long,
     val pinned: Boolean = false,
     val folderTag: String = "",
+    /** Model remembered for this chat ("" = the app-wide active model). */
+    val llmProfileId: String = "",
 )
+
+private fun ProjectEntity.toUi() = UiConversation(id, name, updatedAt, pinned, folderTag, llmProfileId)
+
+private fun ChatMessageEntity.toTurn() = com.skillmcp.mentor.llm.StoredTurn(role, content, attachmentText)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MentorRepository(
@@ -127,7 +138,7 @@ class MentorRepository(
         dao.observeProjects().map { list ->
             list
                 .sortedWith(compareByDescending<ProjectEntity> { it.pinned }.thenByDescending { it.updatedAt })
-                .map { UiConversation(it.id, it.name, it.updatedAt, it.pinned, it.folderTag) }
+                .map { it.toUi() }
         }
 
     fun observeSavedPrompts() = dao.observeSavedPrompts()
@@ -144,13 +155,56 @@ class MentorRepository(
                         content = entity.content,
                         versionCount = v.size.coerceAtLeast(1),
                         versionIndex = ChatBranching.visibleVersionIndex(v, entity.content),
+                        modelLabel = entity.modelLabel,
                     )
                 }
             }
         }
 
     private suspend fun uiMessagesFor(projectId: String): List<UiMessage> =
-        dao.messagesFor(projectId).map { UiMessage(it.id, it.role, it.content) }
+        dao.messagesFor(projectId).map { UiMessage(it.id, it.role, it.content, modelLabel = it.modelLabel) }
+
+    /** The chat's remembered model if it still exists, otherwise the app-wide active model. */
+    private suspend fun profileForChat(projectId: String): LlmProfile {
+        val chosen = dao.allProjects().find { it.id == projectId }?.llmProfileId.orEmpty()
+        return chosen.takeIf { it.isNotBlank() }?.let { llmProfileRepository.profileById(it) }
+            ?: llmProfileRepository.activeProfile()
+    }
+
+    /**
+     * Switches the active chat to another model and remembers it for this chat (and as the default for new
+     * chats). The conversation is kept; a "Switched to …" divider row records the change. Switching again
+     * before sending replaces that divider, and switching back to the model of the last reply removes it.
+     */
+    suspend fun switchChatModel(profileId: String) =
+        withContext(Dispatchers.IO) {
+            val projectId = userPreferences.current().activeConversationId.ifBlank { defaultProjectId }
+            val profile = llmProfileRepository.profileById(profileId) ?: return@withContext
+            val previous = profileForChat(projectId)
+            dao.allProjects().find { it.id == projectId }?.let { dao.upsertProject(it.copy(llmProfileId = profileId)) }
+            llmProfileRepository.setActiveProfile(profileId)
+            if (previous.id == profileId) return@withContext
+            val messages = dao.messagesFor(projectId)
+            if (messages.none { it.role == "assistant" || it.role == "user" }) return@withContext
+            val label = com.skillmcp.mentor.llm.ConversationContext.modelLabel(profile)
+            val trailingSwitch = messages.lastOrNull()?.takeIf { it.role == com.skillmcp.mentor.llm.ROLE_MODEL_SWITCH }
+            val lastReplyModel = messages.lastOrNull { it.role == "assistant" }?.modelLabel.orEmpty()
+            when {
+                trailingSwitch != null && label == lastReplyModel -> dao.deleteMessages(listOf(trailingSwitch.id))
+                trailingSwitch != null -> dao.updateMessage(trailingSwitch.copy(content = label, modelLabel = label))
+                label != lastReplyModel ->
+                    dao.insertMessage(
+                        ChatMessageEntity(
+                            UUID.randomUUID().toString(),
+                            projectId,
+                            com.skillmcp.mentor.llm.ROLE_MODEL_SWITCH,
+                            label,
+                            System.currentTimeMillis(),
+                            modelLabel = label,
+                        ),
+                    )
+            }
+        }
 
     /**
      * Edit & resend: removes [messageId] (a user message in the active chat) and everything after it.
@@ -184,15 +238,20 @@ class MentorRepository(
             val context =
                 ChatBranching.regenerateContext(uiMessagesFor(projectId), assistantMessageId)
                     ?: return@withContext Result.failure(IllegalStateException("Only the latest reply can be regenerated"))
-            val profile = llmProfileRepository.activeProfile()
+            val profile = profileForChat(projectId)
+            val entities = dao.messagesFor(projectId).associateBy { it.id }
+            val userEntity = entities[context.userMessage.id]
             val result =
                 streamReply(
                     prefs = prefs,
                     profile = profile,
                     projectId = projectId,
-                    history = context.history.map { ChatMessageDto(it.role, it.content) },
+                    turns = context.history.mapNotNull { entities[it.id]?.toTurn() },
                     userText = context.userMessage.content,
-                    userPayload = context.userMessage.content,
+                    userPayload =
+                        listOf(context.userMessage.content, userEntity?.attachmentText.orEmpty())
+                            .filter { it.isNotBlank() }
+                            .joinToString("\n\n"),
                     vision = null,
                     onStreamUpdate = onStreamUpdate,
                     isCancelled = isCancelled,
@@ -207,7 +266,11 @@ class MentorRepository(
                     ReplyVersionEntity(UUID.randomUUID().toString(), assistantMessageId, projectId, content, i, now + i)
                 },
             )
-            dao.getMessage(assistantMessageId)?.let { dao.updateMessage(it.copy(content = chat.content)) }
+            dao.getMessage(assistantMessageId)?.let {
+                dao.updateMessage(
+                    it.copy(content = chat.content, modelLabel = com.skillmcp.mentor.llm.ConversationContext.modelLabel(profile)),
+                )
+            }
             onSuccessChat(projectId, profile, chat, prefs)
             Result.success(chat.content)
         }
@@ -297,11 +360,9 @@ class MentorRepository(
 
     suspend fun searchConversations(query: String): List<UiConversation> {
         if (query.isBlank()) {
-            return dao.allProjects().map { UiConversation(it.id, it.name, it.updatedAt, it.pinned, it.folderTag) }
+            return dao.allProjects().map { it.toUi() }
         }
-        return dao.searchProjects(query.trim()).map {
-            UiConversation(it.id, it.name, it.updatedAt, it.pinned, it.folderTag)
-        }
+        return dao.searchProjects(query.trim()).map { it.toUi() }
     }
 
     suspend fun deleteConversation(id: String) {
@@ -353,9 +414,17 @@ class MentorRepository(
                 return@withContext Result.failure(SpendLimitException(allowance))
             }
             val projectId = prefs.activeConversationId.ifBlank { defaultProjectId }
-            val profile = llmProfileRepository.activeProfile()
-            val historyList =
-                dao.observeMessages(projectId).first().map { ChatMessageDto(it.role, it.content) }
+            val profile = profileForChat(projectId)
+            val turns = dao.messagesFor(projectId).map { it.toTurn() }
+            // A model without image input still gets the text (and the user is told); nothing is silently lost.
+            val imageDropped = vision != null && !com.skillmcp.mentor.llm.VisionCapabilities.supportsVision(profile)
+            val sentVision = if (imageDropped) null else vision
+            val attachmentText =
+                when {
+                    !pdfExtract.isNullOrBlank() -> "--- PDF text ---\n" + pdfExtract.trim().take(MAX_STORED_ATTACHMENT_CHARS)
+                    vision != null -> com.skillmcp.mentor.llm.ConversationContext.imageNote(vision.mimeType)
+                    else -> ""
+                }
 
             dao.insertMessage(
                 ChatMessageEntity(
@@ -364,10 +433,11 @@ class MentorRepository(
                     "user",
                     text,
                     System.currentTimeMillis(),
+                    attachmentText = attachmentText,
                 ),
             )
             onUserMessageSaved()
-            autoTitleIfNeeded(projectId, text, isFirstUserMessage = historyList.none { it.role == "user" })
+            autoTitleIfNeeded(projectId, text, isFirstUserMessage = turns.none { it.role == "user" })
 
             val userPayload =
                 buildString {
@@ -376,16 +446,21 @@ class MentorRepository(
                         append("\n\n--- PDF text ---\n")
                         append(pdfExtract.trim())
                     }
+                    if (imageDropped) {
+                        append("\n\n")
+                        append(com.skillmcp.mentor.llm.ConversationContext.imageNote(vision?.mimeType))
+                        append(" It can't be shown to this model, so answer from the text.")
+                    }
                 }
             val result =
                 streamReply(
                     prefs = prefs,
                     profile = profile,
                     projectId = projectId,
-                    history = historyList,
+                    turns = turns,
                     userText = text,
                     userPayload = userPayload,
-                    vision = vision,
+                    vision = sentVision,
                     onStreamUpdate = onStreamUpdate,
                     isCancelled = isCancelled,
                 )
@@ -401,6 +476,7 @@ class MentorRepository(
             }
             val chat = result.getOrThrow()
             val assistantId = assistantMessageId
+            val label = com.skillmcp.mentor.llm.ConversationContext.modelLabel(profile)
             dao.insertMessage(
                 ChatMessageEntity(
                     assistantId,
@@ -408,17 +484,18 @@ class MentorRepository(
                     "assistant",
                     chat.content,
                     System.currentTimeMillis(),
+                    modelLabel = label,
                 ),
             )
             onSuccessChat(projectId, profile, chat, prefs)
-            Result.success(SendMessageResult(chat.content, assistantId))
+            Result.success(SendMessageResult(chat.content, assistantId, imageDropped = imageDropped, modelLabel = label))
         }
 
     private suspend fun streamReply(
         prefs: com.skillmcp.mentor.data.MentorPrefs,
         profile: LlmProfile,
         projectId: String,
-        history: List<ChatMessageDto>,
+        turns: List<com.skillmcp.mentor.llm.StoredTurn>,
         userText: String,
         userPayload: String,
         vision: com.skillmcp.mentor.llm.ChatVisionAttachment?,
@@ -432,11 +509,20 @@ class MentorRepository(
                 skillContext = skillContext,
                 enabledPluginIds = prefs.enabledPluginIds,
             )
+        val systemPrompt = PersonalizationPrompt.compose(prefs)
+        // Full history from every model in this chat, trimmed (oldest first) to fit this model's window.
+        val fitted =
+            com.skillmcp.mentor.llm.ConversationContext.forModel(
+                profile = profile,
+                systemPrompt = systemPrompt + "\n\n" + extraContext.take(12_000),
+                turns = turns,
+                userMessage = userPayload,
+            )
         return llmStreaming.streamChat(
             profile = profile,
-            systemPrompt = PersonalizationPrompt.compose(prefs),
-            history = history.filter { it.role == "user" || it.role == "assistant" },
-            userMessage = userPayload,
+            systemPrompt = systemPrompt,
+            history = fitted.history,
+            userMessage = fitted.userMessage,
             extraContext = extraContext,
             vision = vision,
             onChunk = onStreamUpdate,
@@ -462,15 +548,10 @@ class MentorRepository(
     ) {
         llmProfileRepository.recordUsage(profile, chat, success = true)
         val project = dao.allProjects().find { it.id == projectId }
+        val now = System.currentTimeMillis()
         dao.upsertProject(
-            ProjectEntity(
-                id = projectId,
-                name = project?.name ?: "Chat",
-                goal = prefs.focusTopic,
-                updatedAt = System.currentTimeMillis(),
-                pinned = project?.pinned ?: false,
-                folderTag = project?.folderTag ?: "",
-            ),
+            project?.copy(goal = prefs.focusTopic, updatedAt = now)
+                ?: ProjectEntity(id = projectId, name = "New chat", goal = prefs.focusTopic, updatedAt = now),
         )
         syncCoordinator.publishStateSnapshot()
     }
@@ -490,6 +571,7 @@ class MentorRepository(
                 "assistant",
                 "⚠️ $userMessage",
                 System.currentTimeMillis(),
+                modelLabel = com.skillmcp.mentor.llm.ConversationContext.modelLabel(profile),
             ),
         )
         llmProfileRepository.recordUsage(
@@ -590,3 +672,6 @@ class MentorRepository(
         syncCoordinator.startFromPrefs()
     }
 }
+
+/** Cap on PDF text kept with a message for later turns (the model window trims further). */
+private const val MAX_STORED_ATTACHMENT_CHARS = 60_000
