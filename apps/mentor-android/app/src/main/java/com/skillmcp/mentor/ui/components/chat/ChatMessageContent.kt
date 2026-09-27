@@ -101,6 +101,12 @@ fun ChatMessageContent(
                     modifier = Modifier.widthIn(max = bubbleMax).clip(UserBubbleShape).then(longPress),
                     shape = UserBubbleShape,
                     color = if (isBeingEdited) MaterialTheme.colorScheme.primaryContainer else userBubbleColor(),
+                    border =
+                        if (isBeingEdited) {
+                            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                        } else {
+                            null
+                        },
                 ) {
                     Text(
                         text = content,

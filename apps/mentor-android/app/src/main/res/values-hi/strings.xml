@@ -93,7 +93,6 @@
     <string name="settings_response_style">जवाब की शैली</string>
     <string name="settings_assistant">असिस्टेंट</string>
     <string name="settings_appearance">दिखावट</string>
-    <string name="settings_accent_hue">एक्सेंट रंग</string>
     <string name="settings_font_scale">फ़ॉन्ट आकार</string>
     <string name="settings_voice">आवाज़</string>
     <string name="settings_sync_backup">सिंक और बैकअप</string>

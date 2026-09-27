@@ -780,7 +780,7 @@ fun ChatScreenContent(
 }
 
 @Composable
-private fun ConversationDrawerRow(
+internal fun ConversationDrawerRow(
     chat: UiConversation,
     selected: Boolean,
     onOpen: () -> Unit,
@@ -828,62 +828,77 @@ private fun ConversationDrawerRow(
             Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.chat_options))
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_rename)) },
-                leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = null) },
-                onClick = {
-                    menuOpen = false
-                    onRename()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.chat_tag_title)) },
-                leadingIcon = { Icon(Icons.AutoMirrored.Rounded.Label, contentDescription = null) },
-                onClick = {
-                    menuOpen = false
-                    onSetTag()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.chat_share_markdown)) },
-                leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
-                onClick = {
-                    menuOpen = false
-                    onShareMarkdown()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.chat_share_pdf)) },
-                leadingIcon = { Icon(Icons.Rounded.PictureAsPdf, contentDescription = null) },
-                onClick = {
-                    menuOpen = false
-                    onSharePdf()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(if (chat.pinned) R.string.chat_unpin else R.string.chat_pin)) },
-                leadingIcon = {
-                    Icon(
-                        Icons.Rounded.PushPin,
-                        contentDescription = null,
-                    )
-                },
-                onClick = {
-                    menuOpen = false
-                    onTogglePin()
-                },
-            )
-            if (chat.id != "default") {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
-                    leadingIcon = { Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                    onClick = {
-                        menuOpen = false
-                        onDelete()
-                    },
-                )
-            }
+            ConversationMenuItems(chat, { menuOpen = false }, onRename, onTogglePin, onDelete, onSetTag, onShareMarkdown, onSharePdf)
         }
+    }
+}
+
+/** Row menu actions (rename, tag, share, pin, delete); internal so snapshot tests can show them inline. */
+@Composable
+internal fun ConversationMenuItems(
+    chat: UiConversation,
+    close: () -> Unit,
+    onRename: () -> Unit,
+    onTogglePin: () -> Unit,
+    onDelete: () -> Unit,
+    onSetTag: () -> Unit,
+    onShareMarkdown: () -> Unit,
+    onSharePdf: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(stringResource(R.string.action_rename)) },
+        leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = null) },
+        onClick = {
+            close()
+            onRename()
+        },
+    )
+    DropdownMenuItem(
+        text = { Text(stringResource(R.string.chat_tag_title)) },
+        leadingIcon = { Icon(Icons.AutoMirrored.Rounded.Label, contentDescription = null) },
+        onClick = {
+            close()
+            onSetTag()
+        },
+    )
+    DropdownMenuItem(
+        text = { Text(stringResource(R.string.chat_share_markdown)) },
+        leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
+        onClick = {
+            close()
+            onShareMarkdown()
+        },
+    )
+    DropdownMenuItem(
+        text = { Text(stringResource(R.string.chat_share_pdf)) },
+        leadingIcon = { Icon(Icons.Rounded.PictureAsPdf, contentDescription = null) },
+        onClick = {
+            close()
+            onSharePdf()
+        },
+    )
+    DropdownMenuItem(
+        text = { Text(stringResource(if (chat.pinned) R.string.chat_unpin else R.string.chat_pin)) },
+        leadingIcon = {
+            Icon(
+                Icons.Rounded.PushPin,
+                contentDescription = null,
+            )
+        },
+        onClick = {
+            close()
+            onTogglePin()
+        },
+    )
+    if (chat.id != "default") {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
+            leadingIcon = { Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            onClick = {
+                close()
+                onDelete()
+            },
+        )
     }
 }
 

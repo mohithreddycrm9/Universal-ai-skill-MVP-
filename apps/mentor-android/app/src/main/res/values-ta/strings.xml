@@ -93,7 +93,6 @@
     <string name="settings_response_style">பதில் பாணி</string>
     <string name="settings_assistant">உதவியாளர்</string>
     <string name="settings_appearance">தோற்றம்</string>
-    <string name="settings_accent_hue">முதன்மை நிறம்</string>
     <string name="settings_font_scale">எழுத்து அளவு</string>
     <string name="settings_voice">குரல்</string>
     <string name="settings_sync_backup">ஒத்திசைவு &amp; காப்புப்பிரதி</string>

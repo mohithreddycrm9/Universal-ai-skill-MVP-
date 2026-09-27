@@ -184,6 +184,12 @@ fun PremiumComposerBar(
                                 enabled = !isListening,
                                 modifier = Modifier.size(48.dp).pressableScale(),
                                 shape = SendButtonShape,
+                                // Coral accent for voice, the brand's secondary highlight.
+                                colors =
+                                    androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    ),
                             ) {
                                 if (isListening) {
                                     CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(22.dp))

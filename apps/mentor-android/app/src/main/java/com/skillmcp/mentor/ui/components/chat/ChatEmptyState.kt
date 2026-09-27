@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,6 +65,9 @@ data class ChatStarterCard(
 
 enum class DayPart { MORNING, AFTERNOON, EVENING }
 
+/** Hour override for the greeting (snapshot tests pin it so renders don't depend on the clock). */
+val LocalGreetingHour = staticCompositionLocalOf<Int?> { null }
+
 /** 05:00–11:59 morning, 12:00–16:59 afternoon, otherwise evening (late night reads as evening). */
 fun dayPartFor(hourOfDay: Int): DayPart =
     when (hourOfDay) {
@@ -89,7 +93,7 @@ fun ChatEmptyState(
     displayName: String,
     starters: List<ChatStarterCard>,
     modifier: Modifier = Modifier,
-    hourOfDay: Int = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) },
+    hourOfDay: Int = LocalGreetingHour.current ?: remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) },
 ) {
     val name = greetingName(displayName)
     val res = greetingRes(dayPartFor(hourOfDay), name != null)

@@ -93,7 +93,6 @@
     <string name="settings_response_style">సమాధాన శైలి</string>
     <string name="settings_assistant">అసిస్టెంట్</string>
     <string name="settings_appearance">రూపం</string>
-    <string name="settings_accent_hue">యాక్సెంట్ రంగు</string>
     <string name="settings_font_scale">ఫాంట్ పరిమాణం</string>
     <string name="settings_voice">వాయిస్</string>
     <string name="settings_sync_backup">సింక్ &amp; బ్యాకప్</string>

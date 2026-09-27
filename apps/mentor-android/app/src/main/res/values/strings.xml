@@ -97,7 +97,6 @@
     <string name="settings_response_style">Response style</string>
     <string name="settings_assistant">Assistant</string>
     <string name="settings_appearance">Appearance</string>
-    <string name="settings_accent_hue">Accent hue</string>
     <string name="settings_font_scale">Font scale</string>
     <string name="settings_voice">Voice</string>
     <string name="settings_sync_backup">Sync &amp; backup</string>

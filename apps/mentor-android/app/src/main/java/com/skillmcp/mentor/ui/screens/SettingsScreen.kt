@@ -336,14 +336,6 @@ fun SettingsScreenContent(
                         onValueChange = { vm.updatePrefs { p -> p.copy(fontScale = it) } },
                         valueRange = 0.85f..1.35f,
                     )
-                    if (!prefs.useDynamicColor) {
-                        Text(stringResource(R.string.settings_accent_hue), style = MaterialTheme.typography.labelLarge)
-                        Slider(
-                            value = prefs.accentHue,
-                            onValueChange = { vm.updatePrefs { p -> p.copy(accentHue = it) } },
-                            valueRange = 0f..360f,
-                        )
-                    }
                 }
                 SettingsDivider()
                 SettingsBlock {
