@@ -24,8 +24,10 @@ class OfficialSkillFinder(
     private val context: Context,
     http: SkillFinderHttp = OkHttpSkillFinderHttp(),
     cacheFile: File = File(context.filesDir, "skill_finder/cache.json"),
+    liveFile: File = File(context.filesDir, "skill_finder/live.json"),
 ) {
     private val refresher = OfficialSkillRefresher(http, SkillFinderCache(cacheFile))
+    private val live = LiveOfficialSkillSearch(http, liveFile)
 
     @Volatile private var bundledIndex: SkillIndexFile? = null
 
@@ -41,9 +43,16 @@ class OfficialSkillFinder(
     suspend fun refresh(force: Boolean = false): SkillFinderSnapshot =
         withContext(Dispatchers.IO) { refresher.refresh(bundled(), force).toSnapshot() }
 
+    /** Live GitHub lookup for a build request (policy-checked; results join the local list). */
+    suspend fun searchLive(intent: BuildIntent): LiveSearchResult =
+        withContext(Dispatchers.IO) {
+            val known = cached().skills.map { it.orgLogin }.distinct()
+            live.search(intent, known)
+        }
+
     private fun RefreshOutcome.toSnapshot() =
         SkillFinderSnapshot(
-            skills = SkillIndexCodec.toOfficialSkills(index),
+            skills = (SkillIndexCodec.toOfficialSkills(index) + live.cachedSkills()).distinctBy { it.id },
             source = source,
             indexGeneratedAt = index.generatedAt,
             lastRefreshAt = lastRefreshAt,
