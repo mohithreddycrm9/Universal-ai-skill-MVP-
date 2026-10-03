@@ -1,0 +1,15 @@
+{
+  "name": "universal-skill-trust",
+  "version": "0.1.0",
+  "description": "Discover, verify, and progressively load third-party agent skills through the Universal Skill Trust MCP gateway.",
+  "author": { "name": "Universal Skills MCP" },
+  "repository": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+  "license": "Apache-2.0",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Universal Skill Trust Gateway",
+    "shortDescription": "Discover and verify skills for Codex",
+    "defaultPrompt": ["Find a skill for my task and show its trust evidence and effective permissions before loading it."]
+  }
+}
