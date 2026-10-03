@@ -96,6 +96,21 @@ Install as a Cursor Plugin (MCP + skill bundled):
 - MCP: `mcp.json` (uses `${CURSOR_PLUGIN_ROOT}` and auto-build via `scripts/plugin-mcp-serve.mjs`)
 - Local test and publish steps: [docs/cursor-plugin.md](./docs/cursor-plugin.md)
 
+## Codex plugin
+
+Install **Universal Skill Trust Gateway** through the repo marketplace:
+
+```bash
+codex plugin marketplace add mohithreddycrm9/Universal-ai-skill-MVP-
+```
+
+Then install from the **Universal AI Skills** source in the ChatGPT desktop
+Plugins Directory. Local development, manual MCP configuration, and verification:
+[docs/codex-plugin.md](./docs/codex-plugin.md).
+
+The compatibility manifest reuses the existing gateway and bundled skill;
+there is no separate Codex backend. Public-directory publication is a separate step.
+
 ## Connect a client
 
 Examples: `examples/mcp-clients/cursor.json`, `claude-desktop.json`, `codex.toml`.
