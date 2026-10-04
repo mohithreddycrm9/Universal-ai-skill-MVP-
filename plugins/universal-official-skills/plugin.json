@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "universal-official-skills",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Official software guidance, existing-code inspection, reuse and upgrade proposals, and edits only after explicit approval. Portable skills-only workflow.",
   "author": {
     "name": "Universal AI Skills"
@@ -19,10 +19,28 @@
     "com.openai": {
       "interface": {
         "displayName": "Universal AI Skills",
-        "shortDescription": "Official guidance and approved code changes",
+        "shortDescription": "Official guidance, code reuse",
         "defaultPrompt": [
-          "Check official guidance and my existing code for this functionality. Show what can be reused and propose exact changes before asking me to approve edits."
-        ]
+          "Check official guidance and existing code. Propose reuse or exact changes, then wait for my approval before editing."
+        ],
+        "logo": "./assets/logo.png",
+        "composerIcon": "./assets/logo.png",
+        "longDescription": "For software questions and implementation planning across products, SDKs, frameworks, and languages. Consult relevant official vendor skills and version-matched documentation, inspect accessible code for existing functionality, and recommend reuse, configuration, or upgrades before proposing new code. Present exact changes and wait for approval before editing; provide manual steps without approval. Includes pinned catalogs for ServiceNow, OpenAI, Microsoft, and Anthropic, with explicitly labeled official documentation/source fallback for other products. Requires host-provided source reading and authorized code access. This independently authored skills-only plugin supplies instructions, not runtime tools, permission enforcement, or security scanning. It cannot verify inaccessible code or guarantee coverage of every vendor.",
+        "developerName": "Universal AI Skills",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Official software guidance",
+          "Existing code inspection",
+          "Code reuse and upgrade proposals",
+          "Approval before edits"
+        ],
+        "websiteURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+        "supportURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/issues",
+        "brandColor": "#1267EE"
+      },
+      "publication": {
+        "countries": [],
+        "release_notes": "Adds the Universal AI Skills logo, composer icon, and public listing metadata."
       }
     }
   }

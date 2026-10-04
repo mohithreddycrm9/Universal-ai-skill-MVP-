@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKAGE = ROOT / "plugins" / "universal-official-skills"
 FILES = (
     "plugin.json",
+    "assets/logo.png",
     "skills/find-official-skills/SKILL.md",
     "skills/find-official-skills/references/sources.json",
     "skills/find-official-skills/references/response-guide.md",

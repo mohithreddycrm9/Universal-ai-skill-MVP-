@@ -51,7 +51,7 @@ python3 -m unittest discover -s tests/plugin -v
 python3 scripts/package-official-skills.py
 ```
 
-`dist/universal-official-skills.zip` contains five files: plugin manifest,
+`dist/universal-official-skills.zip` contains six files: plugin logo, plugin manifest,
 routing skill, source catalog, response guide, and this project's license.
 Packaging is deterministic and uses only the Python standard library.
 It excludes MCP configuration, scanners, Node dependencies, database/config,
