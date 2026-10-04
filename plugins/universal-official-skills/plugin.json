@@ -1,18 +1,28 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "universal-official-skills",
-  "version": "0.1.0",
-  "description": "Find and read agent skills from an explicit catalog of official GitHub repositories. No bundled MCP server or security scanning.",
-  "author": { "name": "Universal AI Skills" },
+  "version": "0.2.0",
+  "description": "Official software guidance, existing-code inspection, reuse and upgrade proposals, and edits only after explicit approval. Portable skills-only workflow.",
+  "author": {
+    "name": "Universal AI Skills"
+  },
   "repository": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
   "license": "Apache-2.0",
-  "keywords": ["skills", "github", "official-sources"],
+  "keywords": [
+    "skills",
+    "official-sources",
+    "software",
+    "code-reuse",
+    "approval"
+  ],
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Universal Official Skills",
-        "shortDescription": "Find skills from official GitHub sources",
-        "defaultPrompt": ["Find an official skill for my task and show its source and requirements before using it."]
+        "displayName": "Universal AI Skills",
+        "shortDescription": "Official guidance and approved code changes",
+        "defaultPrompt": [
+          "Check official guidance and my existing code for this functionality. Show what can be reused and propose exact changes before asking me to approve edits."
+        ]
       }
     }
   }

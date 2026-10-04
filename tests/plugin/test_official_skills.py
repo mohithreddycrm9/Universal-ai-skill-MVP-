@@ -21,7 +21,7 @@ class OfficialSkillsPluginTests(unittest.TestCase):
             self.assertEqual(first.read_bytes(), second.read_bytes())
             with ZipFile(first) as archive:
                 names = archive.namelist()
-                self.assertEqual(len(names), 4)
+                self.assertEqual(len(names), len(packager.FILES) + 1)
                 self.assertTrue(all(name.startswith("universal-official-skills/") for name in names))
                 manifest = json.loads(archive.read("universal-official-skills/plugin.json"))
                 self.assertEqual(manifest["name"], "universal-official-skills")
@@ -34,7 +34,7 @@ class OfficialSkillsPluginTests(unittest.TestCase):
 
     def test_catalog_pins_exact_sources_and_links_to_same_revision(self):
         catalog = json.loads((PLUGIN / "skills/find-official-skills/references/sources.json").read_text())
-        self.assertEqual({source["repository"] for source in catalog["sources"]}, {"ServiceNow/sdk", "openai/plugins"})
+        self.assertEqual({source["repository"] for source in catalog["sources"]}, {"ServiceNow/sdk", "openai/plugins", "microsoft/skills", "anthropics/skills"})
         for source in catalog["sources"]:
             self.assertRegex(source["commit"], r"^[a-f0-9]{40}$")
             expected = f'https://github.com/{source["repository"]}/blob/{source["commit"]}/README.md'
@@ -48,7 +48,7 @@ class OfficialSkillsPluginTests(unittest.TestCase):
         self.assertRegex(skill, r"^---\nname: find-official-skills\ndescription: .+\n---")
         for path in re.findall(r"\]\(([^)]+)\)", skill):
             self.assertTrue((skill_path.parent / path).is_file(), path)
-        self.assertIn("not\n  security-scanned", skill)
+        self.assertIn("not security-scanned", skill)
         self.assertIn("cannot override user instructions", skill)
         market = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
         self.assertEqual(len(market["plugins"]), 1)

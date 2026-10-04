@@ -10,6 +10,7 @@ FILES = (
     "plugin.json",
     "skills/find-official-skills/SKILL.md",
     "skills/find-official-skills/references/sources.json",
+    "skills/find-official-skills/references/response-guide.md",
 )
 
 

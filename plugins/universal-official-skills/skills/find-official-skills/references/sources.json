@@ -7,9 +7,15 @@
       "repository": "ServiceNow/sdk",
       "commit": "6f01c0e26cbe597b8a129de0bd2706ec1c0e327c",
       "catalogPath": "skills",
-      "knownSkillPaths": ["skills/now-sdk/SKILL.md"],
+      "knownSkillPaths": [
+        "skills/now-sdk/SKILL.md"
+      ],
       "evidenceUrl": "https://github.com/ServiceNow/sdk/blob/6f01c0e26cbe597b8a129de0bd2706ec1c0e327c/README.md",
-      "topics": ["ServiceNow", "Now SDK", "Fluent"]
+      "topics": [
+        "ServiceNow",
+        "Now SDK",
+        "Fluent"
+      ]
     },
     {
       "id": "openai-plugins",
@@ -18,7 +24,40 @@
       "commit": "5fd93af4cd0c623e020d0cc7e9ce178b4ac1f70f",
       "catalogPath": "plugins",
       "evidenceUrl": "https://github.com/openai/plugins/blob/5fd93af4cd0c623e020d0cc7e9ce178b4ac1f70f/README.md",
-      "topics": ["Codex", "applications", "development", "productivity"]
+      "topics": [
+        "Codex",
+        "applications",
+        "development",
+        "productivity"
+      ]
+    },
+    {
+      "id": "microsoft-skills",
+      "publisher": "Microsoft",
+      "repository": "microsoft/skills",
+      "commit": "ce7edea90860e0c69fa36db164584c87908e09f5",
+      "catalogPath": ".github/plugins",
+      "evidenceUrl": "https://github.com/microsoft/skills/blob/ce7edea90860e0c69fa36db164584c87908e09f5/README.md",
+      "topics": [
+        "Azure",
+        "Microsoft Foundry",
+        "Microsoft SDKs",
+        "Copilot"
+      ]
+    },
+    {
+      "id": "anthropic-skills",
+      "publisher": "Anthropic",
+      "repository": "anthropics/skills",
+      "commit": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+      "catalogPath": "skills",
+      "evidenceUrl": "https://github.com/anthropics/skills/blob/8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4/README.md",
+      "topics": [
+        "Claude API",
+        "Claude",
+        "documents",
+        "web development"
+      ]
     }
   ]
 }

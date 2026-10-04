@@ -98,13 +98,17 @@ Install as a Cursor Plugin (MCP + skill bundled):
 
 ## ChatGPT / Codex skills-only plugin
 
-**Universal Official Skills** reads skills from pinned official GitHub sources
-using the tools already available in your chat. Its initial catalog contains
-`ServiceNow/sdk` and `openai/plugins`. It bundles no MCP server or scanner engine
-and requires no hosting, Node.js, SQLite, or Docker to load its instructions.
-Retrieved vendor skills can require their own tools/runtimes. Sources are
-**officially sourced, not security-scanned**.
+**Universal AI Skills** answers software questions from official skills/docs,
+searches accessible code for existing functionality, and proposes reuse or
+upgrades before creating new code. It applies changes only after approval of
+a concrete plan; otherwise it provides file-specific manual steps.
 
+The pinned skill catalog includes ServiceNow, OpenAI, Microsoft, and Anthropic.
+Other software uses clearly identified official documentation/source fallback.
+It bundles no MCP server or scanner and needs no hosting or runtime to load its
+instructions. Vendor skills may need their own tools. Sources are **officially
+sourced, not security-scanned**. These are LLM instructions; host permissions
+remain responsible for enforcing access.
 Package: `plugins/universal-official-skills/`. Build an uploadable archive with:
 
 ```bash
