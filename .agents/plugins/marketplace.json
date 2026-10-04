@@ -3,8 +3,8 @@
   "interface": { "displayName": "Universal AI Skills" },
   "plugins": [
     {
-      "name": "universal-skill-trust",
-      "source": { "source": "local", "path": "./" },
+      "name": "universal-official-skills",
+      "source": { "source": "local", "path": "./plugins/universal-official-skills" },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
     }

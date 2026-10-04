@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "servicenow-sdk",
+      "publisher": "ServiceNow",
+      "repository": "ServiceNow/sdk",
+      "commit": "6f01c0e26cbe597b8a129de0bd2706ec1c0e327c",
+      "catalogPath": "skills",
+      "knownSkillPaths": ["skills/now-sdk/SKILL.md"],
+      "evidenceUrl": "https://github.com/ServiceNow/sdk/blob/6f01c0e26cbe597b8a129de0bd2706ec1c0e327c/README.md",
+      "topics": ["ServiceNow", "Now SDK", "Fluent"]
+    },
+    {
+      "id": "openai-plugins",
+      "publisher": "OpenAI",
+      "repository": "openai/plugins",
+      "commit": "5fd93af4cd0c623e020d0cc7e9ce178b4ac1f70f",
+      "catalogPath": "plugins",
+      "evidenceUrl": "https://github.com/openai/plugins/blob/5fd93af4cd0c623e020d0cc7e9ce178b4ac1f70f/README.md",
+      "topics": ["Codex", "applications", "development", "productivity"]
+    }
+  ]
+}

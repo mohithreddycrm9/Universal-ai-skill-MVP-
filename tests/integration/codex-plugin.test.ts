@@ -22,8 +22,8 @@ describe("Codex plugin", () => {
       expect(existsSync(join(root, path))).toBe(true);
     }
     const market = readJson(".agents/plugins/marketplace.json");
-    const plugin = market.plugins.find((entry: { name: string }) => entry.name === manifest.name);
-    expect(resolve(root, plugin.source.path)).toBe(root);
+    const plugin = market.plugins.find((entry: { name: string }) => entry.name === "universal-official-skills");
+    expect(resolve(root, plugin.source.path)).toBe(join(root, "plugins", "universal-official-skills"));
     expect(plugin.policy.installation).toBe("AVAILABLE");
     expect(plugin.policy.authentication).toBe("ON_INSTALL");
     expect(plugin.category).toBeTruthy();

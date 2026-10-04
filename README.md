@@ -96,15 +96,36 @@ Install as a Cursor Plugin (MCP + skill bundled):
 - MCP: `mcp.json` (uses `${CURSOR_PLUGIN_ROOT}` and auto-build via `scripts/plugin-mcp-serve.mjs`)
 - Local test and publish steps: [docs/cursor-plugin.md](./docs/cursor-plugin.md)
 
-## Codex plugin
+## ChatGPT / Codex skills-only plugin
 
-Install **Universal Skill Trust Gateway** through the repo marketplace:
+**Universal Official Skills** reads skills from pinned official GitHub sources
+using the tools already available in your chat. Its initial catalog contains
+`ServiceNow/sdk` and `openai/plugins`. It bundles no MCP server or scanner engine
+and requires no hosting, Node.js, SQLite, or Docker to load its instructions.
+Retrieved vendor skills can require their own tools/runtimes. Sources are
+**officially sourced, not security-scanned**.
+
+Package: `plugins/universal-official-skills/`. Build an uploadable archive with:
+
+```bash
+python3 scripts/package-official-skills.py
+python3 -m unittest discover -s tests/plugin -v
+```
+
+Setup and distribution: [docs/official-skills-plugin.md](./docs/official-skills-plugin.md).
+The repo marketplace exposes this skills-only package. GitHub publication does
+not automatically install it in your ChatGPT account.
+
+## Optional Codex MCP gateway
+
+The existing **Universal Skill Trust Gateway** package remains at the repo root.
+For the skills-only package, add the repo marketplace:
 
 ```bash
 codex plugin marketplace add mohithreddycrm9/Universal-ai-skill-MVP-
 ```
 
-Then install from the **Universal AI Skills** source in the ChatGPT desktop
+Then select **Universal Official Skills** from the **Universal AI Skills** source in the ChatGPT desktop
 Plugins Directory. Local development, manual MCP configuration, and verification:
 [docs/codex-plugin.md](./docs/codex-plugin.md).
 

@@ -1,5 +1,9 @@
 # Codex plugin
 
+This page describes the optional MCP gateway at the repository root. The repo
+marketplace now exposes the standalone **Universal Official Skills** package;
+see [the skills-only setup](official-skills-plugin.md) for that version.
+
 Universal Skill Trust Gateway bundles the existing skill and local stdio MCP
 server. It discovers and supplies skill knowledge; other authorized tools perform
 product operations. No new backend, paid model, or cloud deployment is required.
@@ -24,11 +28,10 @@ codex plugin marketplace add .
 codex plugin marketplace list
 ```
 
-Open the ChatGPT desktop Plugins Directory, choose **Universal AI Skills**, and
-install **Universal Skill Trust Gateway**. After changing a local plugin, refresh
-the marketplace and restart the desktop app so its installed copy picks up changes.
-The root `.agents/plugins/marketplace.json` resolves `source.path: "./"` from
-the repository root, not from the catalog directory.
+Open the ChatGPT desktop Plugins Directory and choose **Universal AI Skills** to
+install the separate **Universal Official Skills** package. It does not connect
+this gateway. Use the manual MCP alternative below to test the optional gateway.
+The catalog resolves its source path from the repo root, not the catalog directory.
 
 Once these changes are merged, the remote marketplace can be added with:
 

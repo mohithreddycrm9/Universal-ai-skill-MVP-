@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "universal-official-skills",
+  "version": "0.1.0",
+  "description": "Find and read agent skills from an explicit catalog of official GitHub repositories. No bundled MCP server or security scanning.",
+  "author": { "name": "Universal AI Skills" },
+  "repository": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+  "license": "Apache-2.0",
+  "keywords": ["skills", "github", "official-sources"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Universal Official Skills",
+        "shortDescription": "Find skills from official GitHub sources",
+        "defaultPrompt": ["Find an official skill for my task and show its source and requirements before using it."]
+      }
+    }
+  }
+}
