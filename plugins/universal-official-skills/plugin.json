@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "universal-official-skills",
-  "version": "0.3.0",
-  "description": "Default software governance: official skills, existing-code reuse, explicit approval, secure implementation, validation, and truthful reporting across compatible agents.",
+  "version": "0.3.1",
+  "description": "Read-only software guidance within explicitly authorized codebases, with official sources, reuse proposals, no code/data overwrites, and no external codebase-data sharing.",
   "author": {
     "name": "Universal AI Skills"
   },
@@ -19,20 +19,20 @@
     "com.openai": {
       "interface": {
         "displayName": "Universal AI Skills",
-        "shortDescription": "Official guidance, code reuse",
+        "shortDescription": "Read-only software guidance",
         "defaultPrompt": [
-          "Check official guidance and existing code. Propose reuse or exact changes, then wait for my approval before editing."
+          "Inspect only my authorized codebase. Use official guidance; suggest fixes without changing code or sharing codebase data."
         ],
         "logo": "./assets/logo.png",
         "composerIcon": "./assets/logo.png",
-        "longDescription": "Applies 20 default governance rules to software questions and coding tasks without requiring an explicit skill mention. Workflow: Search → Understand → Verify against official knowledge → Propose → Get approval → Implement → Test → Report. Covers project rules, version awareness, reuse, minimal changes, credential protection, validation, transparent failures, deployment authorization, and durable project instructions across compatible agents. For software questions and implementation planning across products, SDKs, frameworks, and languages. Consult relevant official vendor skills and version-matched documentation, inspect accessible code for existing functionality, and recommend reuse, configuration, or upgrades before proposing new code. Present exact changes and wait for approval before editing; provide manual steps without approval. Includes pinned catalogs for ServiceNow, OpenAI, Microsoft, and Anthropic, with explicitly labeled official documentation/source fallback for other products. Requires host-provided source reading and authorized code access. This independently authored skills-only plugin supplies instructions, not runtime tools, permission enforcement, or security scanning. It cannot verify inaccessible code or guarantee coverage of every vendor.",
+        "longDescription": "Inspect only explicitly authorized codebases and propose reuse or fixes without applying them. Never modify or overwrite project code or data, even after proposal approval. Never send codebase content or derived private data to external tools, services, search engines, remote agents, uploads, or storage. Consult official vendor skills and documentation using generic product/API/version queries. Report inspected scope, evidence, proposed diffs, and unperformed checks. This independent skills-only plugin provides instructions, not runtime permissions, an execution sandbox, or network enforcement. The host processes supplied content under its own policies; strictly local processing requires a verified local/offline host. Includes pinned official catalogs for ServiceNow, OpenAI, Microsoft, and Anthropic.",
         "developerName": "Universal AI Skills",
         "category": "Developer Tools",
         "capabilities": [
+          "Read-only code inspection",
           "Official software guidance",
-          "Existing code inspection",
-          "Code reuse and upgrade proposals",
-          "Approval before edits"
+          "Unapplied reuse and fix proposals",
+          "No project writes or data exports"
         ],
         "websiteURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
         "supportURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/issues",
@@ -40,7 +40,7 @@
       },
       "publication": {
         "countries": [],
-        "release_notes": "Makes the 20 approved software governance rules the default workflow; strengthens automatic skill selection and preserves existing official-source catalogs, approval safeguards, and branding."
+        "release_notes": "Restricts the default workflow to explicitly authorized read-only code inspection. Prohibits project writes and external transmission of inspected data; documents host processing limits."
       }
     }
   }

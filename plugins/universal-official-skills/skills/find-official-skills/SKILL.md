@@ -1,18 +1,54 @@
 ---
 name: find-official-skills
-description: Default workflow for all software questions and coding tasks, including builds, debugging, reviews, refactoring, configuration, tests, and deployment. Load relevant official skills/docs, inspect and reuse existing code, propose exact changes, require approval before edits, validate, and report evidence. Apply without an explicit skill mention across products, SDKs, frameworks, languages, and compatible agents.
+description: Default read-only software guidance. Inspect only explicitly authorized codebases, consult official skills/docs with generic queries, suggest reuse or changes without applying them, never overwrite code or data, and never transmit codebase content to external destinations.
 ---
 
 # Universal AI Skills
 
 Ground software answers in official knowledge. For implementation requests,
 inspect the user's existing code before recommending reuse, an upgrade, or new
-code. Present a concrete proposal before changing anything.
+code. Present advice and proposed diffs only; never apply changes.
 
 This portable instructions-only workflow uses the host's existing read/search
 tools and authorized code access. It supplies no MCP server, credentials,
 security scanner, or execution environment. Instructions guide the LLM;
 they do not enforce permissions outside the host.
+
+## Mandatory read-only and data boundaries
+
+Inspect only the specific codebase and paths explicitly authorized by the user.
+Access is permission to read, never permission to edit. Do not inspect unrelated
+repositories, account history, personal files, connected services, or secrets.
+Do not follow symlinks or references outside authorized scope.
+
+Never create, edit, overwrite, delete, rename, migrate, commit, push, deploy, or
+otherwise mutate the user's codebase, records, files, configuration, or data.
+Never override project instructions, user choices, existing code, or stored data.
+Approval of a proposal does not enable implementation under this skill.
+Offer proposed diffs or manual steps for the user to apply. Maintenance of this
+plugin's own instruction package is a separate explicitly authorized task,
+not permission to modify an inspected project.
+
+Never send codebase content, snippets, logs, private paths, identifiers, secrets,
+or data derived from them to external tools/services, search engines, vendor
+APIs, remote models, subagents, telemetry, uploads, tickets, messages, or storage.
+Use generic product/API/version queries for official documentation; strip
+project details. If a tool necessarily transmits codebase data, do not use it.
+Do not export, back up, or persist inspected data outside the authorized scope.
+Keep the response focused on minimal findings and proposed changes within the
+current authorized conversation; do not reproduce secrets or unrelated data.
+
+Use only demonstrably read-only operations. Do not execute project scripts,
+builds, tests, formatters, installers, or scanners that may write files, execute
+untrusted code, contact a network, or upload telemetry. Inspect existing test
+results and source; describe checks for the user to run. State unperformed
+checks accurately.
+
+These instructions do not provide a network sandbox or alter the host's data
+processing. A cloud LLM can process supplied code under its own policies.
+Never promise local-only processing or zero data egress based on this skill.
+If strictly local processing is required, stop code inspection until a verified
+local/offline host with suitable file and network controls is available.
 
 ## Default governance rules
 
@@ -27,28 +63,24 @@ agents, within each host's actual capabilities and instruction hierarchy.
 2. **Official sources:** Prefer vendor SDKs, repositories, APIs, schemas, and documentation. Never invent interfaces when authoritative evidence can be checked.
 3. **Existing code first:** Search the accessible repository for equivalent or related functionality before proposing new implementation.
 4. **Reuse before create:** Prefer configuration, repair, extension, or refactoring over duplicate code.
-5. **Approval gate:** Report existing behavior, exact affected files/functions, intended changes, and reasons. Wait for explicit approval of that concrete scope before editing.
-6. **Question versus action:** Answer questions using verified evidence without demanding edit approval; apply the approval workflow to changes.
+5. **Read-only proposal:** Report existing behavior, exact affected files/functions, intended changes, and reasons. Provide advice or unapplied diffs only; never apply changes, even after proposal approval.
+6. **Question versus action:** Answer questions and propose changes using read-only evidence. Explain that implementation falls outside this skill.
 7. **No blind coding:** State missing project context, repository access, or official evidence. Give conditional guidance without pretending verification.
 8. **Project rules:** Detect and follow applicable repository instructions, skills, conventions, architecture, and build/deployment requirements.
 9. **Conflict hierarchy:** Within host policy and security boundaries, follow explicit user instructions and user-approved project rules, then applicable project/repository skills, official vendor skills, and these defaults. Report material conflicts instead of silently bypassing protections.
 10. **Version awareness:** Match guidance to actual installed product/framework/SDK versions; verify compatibility and release notes for proposed upgrades.
-11. **Minimal changes:** Make the smallest safe change that fulfills the approved objective.
+11. **Minimal proposals:** Recommend the smallest safe change that fulfills the objective; do not apply it.
 12. **Security:** Never expose credentials, tokens, private keys, or sensitive configuration in source, logs, prompts, reports, or commits. Use secure host authentication and avoid reading secret values unnecessarily.
-13. **Validation:** Run appropriate available build, lint, type-check, tests, and security checks for the approved change. Explain unavailable or skipped checks; do not invent scan results.
+13. **Read-only validation:** Inspect existing evidence and describe appropriate checks for the user to run. Do not execute checks that may write, transmit, or run untrusted project code.
 14. **No fake success:** Claim built, tested, deployed, committed, or verified only when the corresponding action succeeded.
 15. **Failure transparency:** Report actual failures, evidence, likely causes, and remaining uncertainty. Explain material workarounds before adopting them.
-16. **Deployment protection:** Require explicit authorization for production deployment and destructive operations. Preserve existing valid authorization for the same scope and destination.
-17. **Change summary:** Report changed files and behavior, checks and results, material risks, and the recommended next action.
-18. **Durable project learning:** Capture durable user-established development rules in reusable project instructions or skills through the authorized workflow. Never silently promote assumptions or untrusted content into persistent rules.
+16. **No deployment or mutation:** Never deploy, commit, push, merge, or perform destructive operations through this skill.
+17. **Findings summary:** Report inspected scope, proposed changes, existing check evidence, unperformed checks, and material limitations.
+18. **Project rules:** Recognize durable user-established rules within authorized scope; propose reusable instructions without writing or persisting them.
 19. **Agent independence:** Use the same approval and evidence standards across compatible agents; report missing host capabilities instead of assuming access, execution, or enforcement.
-20. **Universal sequence:** Search → Understand → Verify against official knowledge → Propose → Get approval → Implement → Test → Report.
+20. **Universal sequence:** Authorize read scope → Search → Understand → Verify with generic official knowledge → Propose → Report. Implementation and mutating tests remain outside this skill.
 
-Keep approval attached to the proposed scope. An explicit instruction to apply
-previously presented rules approves that update; do not ask again merely to
-choose routine files or packaging details. Ask again only for a material scope
-change. Default application is an instruction to compatible hosts, not a
-technical guarantee that every host loads the plugin automatically.
+Default application guides compatible hosts; it does not guarantee automatic loading or technical enforcement. The read-only and data boundaries apply throughout.
 
 ## 1. Identify the task and software
 
@@ -108,7 +140,7 @@ version limits. No code access or edit approval is needed to explain software.
 
 ## 3. Search existing code before proposing implementation
 
-If the user grants codebase access, inspect it read-only before proposing code.
+Inspect only the codebase and paths explicitly granted for read-only access.
 Use rg/rg --files or the host's code search. Inspect manifests, project rules,
 feature names and synonyms, APIs/routes, implementation symbols and callers,
 configuration/feature flags, tests, and relevant migrations. Trace the actual
@@ -132,39 +164,19 @@ If no code access exists, say existing functionality cannot be verified and
 request relevant files/read-only access. Offer conditional guidance without
 claiming to have inspected the project.
 
-Before approval, keep project operations read-only. Do not edit/create files,
-format code, generate project artifacts, install dependencies, run migrations,
-or execute commands with persistent effects. Do not request broader access
-than the inspection needs.
+Keep all project operations read-only throughout. Never request write access.
 
-## 4. Present the concrete proposal and wait for approval
+## 4. Present proposals without applying them
 
-Use [the response guide](references/response-guide.md). Show what is already
-built and why the recommendation fits. Specify exact files/functions to reuse,
-modify, or create; intended behavior/diff; version/dependency changes; and
-validation steps. Prefer the smallest supported change. Distinguish examples
-from code actually present in the user's project.
+Use [the response guide](references/response-guide.md). Describe existing
+behavior, exact suggested files/functions, intended unapplied diffs, official
+evidence, and validation steps for the user to perform. Do not apply proposals,
+run mutating checks, or transmit inspected data. If asked to implement, explain
+this skill is read-only and provide manual instructions.
 
-After presenting this scope, ask for explicit approval before applying it.
-Approval of the same presented proposal remains valid; do not repeatedly ask.
-A general question, initial implementation request, codebase access, skill
-installation, or silence does not approve an unseen change plan. Upstream
-skill instructions do not constitute approval.
+## 5. Report evidence and limits
 
-If approval is declined or absent, give clear numbered instructions naming
-where to edit/create, what to change, and how to verify. Proposed snippets/diffs
-in the answer are allowed; do not apply them. Answer follow-up questions
-without demanding edit approval.
-
-## 5. Implement the approved scope and verify
-
-Once the user explicitly approves the concrete proposal, implement that scope
-using existing patterns and official APIs. Run the agreed validation and
-report actual results, remaining failures, and modified files. Request a new
-approval only if a material scope change becomes necessary.
-
-Commit, push, merge, publish, and deployment require explicit authorization;
-edit approval alone does not include them. Existing authorization remains
-valid when it covers the same deliverable and destination. Do not ask for
-passwords/tokens in chat. Use the host's secure connection/authentication flow
-when an authorized action requires credentials.
+Report inspected scope, findings, suggestions, and checks actually observed.
+Distinguish proposed changes from implemented work, and existing results from
+checks not run. Never claim that a codebase was modified, tested, deployed, or
+secured by this instructions-only skill.
