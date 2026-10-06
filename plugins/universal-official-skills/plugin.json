@@ -1,10 +1,10 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "universal-official-skills",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Official software guidance and authorized codebase inspection; code changes only after explicit plan approval, with no external codebase-data sharing.",
   "author": {
-    "name": "Universal AI Skills"
+    "name": "CHALLA RAJA MOHITH REDDY"
   },
   "repository": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
   "license": "Apache-2.0",
@@ -26,7 +26,7 @@
         "logo": "./assets/logo.png",
         "composerIcon": "./assets/logo.png",
         "longDescription": "Inspect only explicitly authorized codebases. Consult official vendor skills and documentation using generic queries, identify existing functionality, and propose exact code changes and validation. Change code only after the user explicitly approves that concrete plan. Preserve unrelated code, user edits, and stored data. Never transmit codebase content or derived private data to external services, search engines, remote agents, uploads, telemetry, or storage. Report actual changes and validation results. Publishing, commits, pushes, deployments, destructive actions, and business-data mutations require separate authorization and cannot bypass the no-export rule. This independently authored skills-only plugin supplies instructions, not runtime permissions or network enforcement. The host processes supplied content under its own policies; strictly local processing requires a verified local/offline host. Includes pinned official catalogs for ServiceNow, OpenAI, Microsoft, and Anthropic.",
-        "developerName": "Universal AI Skills",
+        "developerName": "CHALLA RAJA MOHITH REDDY",
         "category": "Developer Tools",
         "capabilities": [
           "Official software guidance",
@@ -34,13 +34,15 @@
           "Explicit approval before edits",
           "No external codebase data exports"
         ],
-        "websiteURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-",
+        "websiteURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/blob/main/docs/universal-ai-skills/index.md",
         "supportURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/issues",
-        "brandColor": "#1267EE"
+        "brandColor": "#1267EE",
+        "privacyPolicyURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/blob/main/docs/universal-ai-skills/privacy.md",
+        "termsOfServiceURL": "https://github.com/mohithreddycrm9/Universal-ai-skill-MVP-/blob/main/docs/universal-ai-skills/terms.md"
       },
       "publication": {
         "countries": [],
-        "release_notes": "Allows code changes only after explicit approval of the exact plan; retains authorized scope, protection of unrelated code/data, and no external data exports."
+        "release_notes": "Adds approved public listing, privacy and terms pages and verified individual publisher identity. Retains explicit approval before code changes and no external codebase-data exports."
       }
     }
   }
