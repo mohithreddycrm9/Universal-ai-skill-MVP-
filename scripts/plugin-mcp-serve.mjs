@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Plugin MCP entrypoint (Cursor + Claude Code): ensure build artifacts exist, then stdio-serve.
+ * Plugin MCP entrypoint (Codex + Cursor + Claude Code): bootstrap, then stdio-serve.
  * Stdout is reserved for MCP; bootstrap logs go to stderr.
  */
 import { spawn } from "node:child_process";
@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const root =
+  process.env.PLUGIN_ROOT ??
   process.env.CLAUDE_PLUGIN_ROOT ??
   process.env.CURSOR_PLUGIN_ROOT ??
   join(scriptDir, "..");
@@ -37,7 +38,7 @@ function run(command, args) {
 async function ensureReady() {
   if (!existsSync(nodeModules)) {
     process.stderr.write("[universal-skill-trust] Installing dependencies…\n");
-    await run("npm", ["install", "--no-fund", "--no-audit"]);
+    await run("npm", ["ci", "--no-fund", "--no-audit"]);
   }
   if (!existsSync(distEntry)) {
     process.stderr.write("[universal-skill-trust] Building MCP server…\n");
@@ -46,7 +47,8 @@ async function ensureReady() {
 }
 
 const configDir = process.env.SKILL_MCP_CONFIG_DIR ?? join(root, "config");
-const dataDir = process.env.SKILL_MCP_DATA_DIR ?? join(root, "data");
+const dataDir = process.env.SKILL_MCP_DATA_DIR ?? process.env.PLUGIN_DATA ??
+  process.env.CLAUDE_PLUGIN_DATA ?? join(root, "data");
 
 await ensureReady();
 
@@ -64,7 +66,14 @@ const child = spawn(
   },
 );
 
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.on(signal, () => child.kill(signal));
+}
+child.on("error", (error) => {
+  process.stderr.write(`[universal-skill-trust] ${error.message}\n`);
+  process.exit(1);
+});
 child.on("exit", (code, signal) => {
-  if (signal) process.kill(process.pid, signal);
+  if (signal) process.exit(signal === "SIGINT" ? 130 : 143);
   process.exit(code ?? 1);
 });
