@@ -1,13 +1,16 @@
-# Read-only software guidance
+# Approval-gated software workflow
 
-Report findings from the explicitly authorized codebase and generic official
-knowledge. State scope, existing behavior, and reusable functionality first.
-Give exact proposed changes as unapplied diffs or manual steps. Do not write,
-overwrite, execute project code, publish, deploy, or export inspected data.
-Proposal approval does not enable mutation under this skill.
+Inspect only the authorized codebase, using read-only operations before approval.
+Show existing behavior, exact files/functions to change, intended diffs, reasons,
+and validation steps. Ask for explicit approval of this plan. Apply only that
+scope after approval, preserving unrelated code, user changes, and stored data.
+A request or access alone does not approve an unseen plan. Existing approval
+remains valid for the same scope; seek new approval for material scope changes.
 
-Use product/API/version queries only for external documentation lookups.
-Never include private snippets, logs, paths, identifiers, or project details.
-Explain missing evidence instead of guessing. Describe useful tests for the
-user to run; label them not run. Report existing results only as observed.
+Never export codebase content or derived private data. Use only generic
+product/API/version queries for official sources. Inspect validation commands
+and avoid uploads/telemetry. Run appropriate approved checks and report actual
+results, skipped checks, failures, and files changed. Separate authorization is
+required for publication, commits, pushes, merges, deployments, destructive
+actions, and business-data mutations; it does not bypass the no-export rule.
 Do not promise local-only processing or technical egress enforcement.
