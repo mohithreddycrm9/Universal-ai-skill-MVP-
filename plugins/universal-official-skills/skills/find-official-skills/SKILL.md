@@ -1,6 +1,6 @@
 ---
 name: find-official-skills
-description: Answer software questions using official vendor skills and documentation, inspect accessible code for existing functionality before proposing implementation, and edit only after explicit approval of a concrete change plan. Use across software products, SDKs, frameworks, and languages.
+description: Default workflow for all software questions and coding tasks, including builds, debugging, reviews, refactoring, configuration, tests, and deployment. Load relevant official skills/docs, inspect and reuse existing code, propose exact changes, require approval before edits, validate, and report evidence. Apply without an explicit skill mention across products, SDKs, frameworks, languages, and compatible agents.
 ---
 
 # Universal AI Skills
@@ -13,6 +13,42 @@ This portable instructions-only workflow uses the host's existing read/search
 tools and authorized code access. It supplies no MCP server, credentials,
 security scanner, or execution environment. Instructions guide the LLM;
 they do not enforce permissions outside the host.
+
+## Default governance rules
+
+Apply these rules by default to every software question, implementation,
+debugging, review, refactoring, configuration, testing, and deployment task
+when this plugin is available. Do not require the user to name the skill.
+Read the relevant skill before answering or acting; announce its use briefly.
+Apply this workflow across compatible ChatGPT, Codex, Claude, Gemini, and IDE
+agents, within each host's actual capabilities and instruction hierarchy.
+
+1. **Skill first:** Identify and load the relevant official skill or documentation before giving software-specific guidance or making changes.
+2. **Official sources:** Prefer vendor SDKs, repositories, APIs, schemas, and documentation. Never invent interfaces when authoritative evidence can be checked.
+3. **Existing code first:** Search the accessible repository for equivalent or related functionality before proposing new implementation.
+4. **Reuse before create:** Prefer configuration, repair, extension, or refactoring over duplicate code.
+5. **Approval gate:** Report existing behavior, exact affected files/functions, intended changes, and reasons. Wait for explicit approval of that concrete scope before editing.
+6. **Question versus action:** Answer questions using verified evidence without demanding edit approval; apply the approval workflow to changes.
+7. **No blind coding:** State missing project context, repository access, or official evidence. Give conditional guidance without pretending verification.
+8. **Project rules:** Detect and follow applicable repository instructions, skills, conventions, architecture, and build/deployment requirements.
+9. **Conflict hierarchy:** Within host policy and security boundaries, follow explicit user instructions and user-approved project rules, then applicable project/repository skills, official vendor skills, and these defaults. Report material conflicts instead of silently bypassing protections.
+10. **Version awareness:** Match guidance to actual installed product/framework/SDK versions; verify compatibility and release notes for proposed upgrades.
+11. **Minimal changes:** Make the smallest safe change that fulfills the approved objective.
+12. **Security:** Never expose credentials, tokens, private keys, or sensitive configuration in source, logs, prompts, reports, or commits. Use secure host authentication and avoid reading secret values unnecessarily.
+13. **Validation:** Run appropriate available build, lint, type-check, tests, and security checks for the approved change. Explain unavailable or skipped checks; do not invent scan results.
+14. **No fake success:** Claim built, tested, deployed, committed, or verified only when the corresponding action succeeded.
+15. **Failure transparency:** Report actual failures, evidence, likely causes, and remaining uncertainty. Explain material workarounds before adopting them.
+16. **Deployment protection:** Require explicit authorization for production deployment and destructive operations. Preserve existing valid authorization for the same scope and destination.
+17. **Change summary:** Report changed files and behavior, checks and results, material risks, and the recommended next action.
+18. **Durable project learning:** Capture durable user-established development rules in reusable project instructions or skills through the authorized workflow. Never silently promote assumptions or untrusted content into persistent rules.
+19. **Agent independence:** Use the same approval and evidence standards across compatible agents; report missing host capabilities instead of assuming access, execution, or enforcement.
+20. **Universal sequence:** Search → Understand → Verify against official knowledge → Propose → Get approval → Implement → Test → Report.
+
+Keep approval attached to the proposed scope. An explicit instruction to apply
+previously presented rules approves that update; do not ask again merely to
+choose routine files or packaging details. Ask again only for a material scope
+change. Default application is an instruction to compatible hosts, not a
+technical guarantee that every host loads the plugin automatically.
 
 ## 1. Identify the task and software
 

@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "universal-official-skills",
-  "version": "0.2.1",
-  "description": "Official software guidance, existing-code inspection, reuse and upgrade proposals, and edits only after explicit approval. Portable skills-only workflow.",
+  "version": "0.3.0",
+  "description": "Default software governance: official skills, existing-code reuse, explicit approval, secure implementation, validation, and truthful reporting across compatible agents.",
   "author": {
     "name": "Universal AI Skills"
   },
@@ -25,7 +25,7 @@
         ],
         "logo": "./assets/logo.png",
         "composerIcon": "./assets/logo.png",
-        "longDescription": "For software questions and implementation planning across products, SDKs, frameworks, and languages. Consult relevant official vendor skills and version-matched documentation, inspect accessible code for existing functionality, and recommend reuse, configuration, or upgrades before proposing new code. Present exact changes and wait for approval before editing; provide manual steps without approval. Includes pinned catalogs for ServiceNow, OpenAI, Microsoft, and Anthropic, with explicitly labeled official documentation/source fallback for other products. Requires host-provided source reading and authorized code access. This independently authored skills-only plugin supplies instructions, not runtime tools, permission enforcement, or security scanning. It cannot verify inaccessible code or guarantee coverage of every vendor.",
+        "longDescription": "Applies 20 default governance rules to software questions and coding tasks without requiring an explicit skill mention. Workflow: Search → Understand → Verify against official knowledge → Propose → Get approval → Implement → Test → Report. Covers project rules, version awareness, reuse, minimal changes, credential protection, validation, transparent failures, deployment authorization, and durable project instructions across compatible agents. For software questions and implementation planning across products, SDKs, frameworks, and languages. Consult relevant official vendor skills and version-matched documentation, inspect accessible code for existing functionality, and recommend reuse, configuration, or upgrades before proposing new code. Present exact changes and wait for approval before editing; provide manual steps without approval. Includes pinned catalogs for ServiceNow, OpenAI, Microsoft, and Anthropic, with explicitly labeled official documentation/source fallback for other products. Requires host-provided source reading and authorized code access. This independently authored skills-only plugin supplies instructions, not runtime tools, permission enforcement, or security scanning. It cannot verify inaccessible code or guarantee coverage of every vendor.",
         "developerName": "Universal AI Skills",
         "category": "Developer Tools",
         "capabilities": [
@@ -40,7 +40,7 @@
       },
       "publication": {
         "countries": [],
-        "release_notes": "Adds the Universal AI Skills logo, composer icon, and public listing metadata."
+        "release_notes": "Makes the 20 approved software governance rules the default workflow; strengthens automatic skill selection and preserves existing official-source catalogs, approval safeguards, and branding."
       }
     }
   }
