@@ -7,7 +7,7 @@
     ],
     "logo": "./assets/logo.png",
     "composerIcon": "./assets/logo.png",
-    "longDescription": "Inspect only explicitly authorized codebases. Consult official vendor skills and documentation using generic queries, identify existing functionality, and propose exact code changes and validation. Change code only after the user explicitly approves that concrete plan. Preserve unrelated code, user edits, and stored data. Never transmit codebase content or derived private data to external services, search engines, remote agents, uploads, telemetry, or storage. Report actual changes and validation results. Publishing, commits, pushes, deployments, destructive actions, and business-data mutations require separate authorization and cannot bypass the no-export rule. This independently authored skills-only plugin supplies instructions, not runtime permissions or network enforcement. The host processes supplied content under its own policies; strictly local processing requires a verified local/offline host. Includes pinned official vendor catalogs and version-aware documentation guidance. After plan approval, continue coding and validation within the host's execution capabilities while the user is away. Prepare reviewable results and deployment instructions; deploy only after separate approval. This instructions-only plugin provides no background worker or completion-time guarantee.",
+    "longDescription": "Inspect only explicitly authorized codebases. Consult official vendor skills and documentation using generic queries, identify existing functionality, and propose exact code changes and validation. Change code only after the user explicitly approves that concrete plan. Preserve unrelated code, user edits, and stored data. Never transmit codebase content or derived private data to external services, search engines, remote agents, uploads, telemetry, or storage. Report actual changes and validation results. Publishing, commits, pushes, deployments, destructive actions, and business-data mutations require separate authorization and cannot bypass the no-export rule. This independently authored skills-only plugin supplies instructions, not runtime permissions or network enforcement. The host processes supplied content under its own policies; strictly local processing requires a verified local/offline host. Includes pinned official vendor catalogs and version-aware documentation guidance. After plan approval, continue coding and validation within the host's execution capabilities while the user is away. Prepare reviewable results and deployment instructions; deploy only after separate approval. This instructions-only plugin provides no background worker or completion-time guarantee. Discover and visibly apply relevant official skills for searches and tasks. If none fits, ask before retrieving or using unofficial third-party skills. Persistent skill installation requires explicit approval and supported host tooling; do not claim unsupported installation or automatic loading.",
     "developerName": "CHALLA RAJA MOHITH REDDY",
     "category": "Developer Tools",
     "capabilities": [
@@ -26,12 +26,12 @@
     "com.openai": {
       "publication": {
         "countries": [],
-        "release_notes": "Continues approved coding through implementation and validation while the user is away, within host capabilities. Prepares reviewable results and deployment instructions. Retains separate deployment approval, privacy, and data protections."
+        "release_notes": "Adds visible skill discovery, reading and application for relevant searches/tasks. Requires approval before unofficial skill retrieval/use and persistent installation. Retains approved coding continuation, separate deployment approval, and privacy protections."
       }
     }
   },
   "name": "universal-official-skills",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Official software guidance and authorized codebase inspection; code changes only after explicit plan approval, with no external codebase-data sharing.",
   "author": {
     "name": "CHALLA RAJA MOHITH REDDY"
