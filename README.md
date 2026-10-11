@@ -96,6 +96,46 @@ Install as a Cursor Plugin (MCP + skill bundled):
 - MCP: `mcp.json` (uses `${CURSOR_PLUGIN_ROOT}` and auto-build via `scripts/plugin-mcp-serve.mjs`)
 - Local test and publish steps: [docs/cursor-plugin.md](./docs/cursor-plugin.md)
 
+## ChatGPT / Codex skills-only plugin
+
+**Universal AI Skills** answers software questions from official skills/docs,
+searches accessible code for existing functionality, and proposes reuse or
+upgrades before creating new code. It applies changes only after approval of
+a concrete plan; otherwise it provides file-specific manual steps.
+
+The pinned skill catalog includes ServiceNow, OpenAI, Microsoft, and Anthropic.
+Other software uses clearly identified official documentation/source fallback.
+It bundles no MCP server or scanner and needs no hosting or runtime to load its
+instructions. Vendor skills may need their own tools. Sources are **officially
+sourced, not security-scanned**. These are LLM instructions; host permissions
+remain responsible for enforcing access.
+Package: `plugins/universal-official-skills/`. Build an uploadable archive with:
+
+```bash
+python3 scripts/package-official-skills.py
+python3 -m unittest discover -s tests/plugin -v
+```
+
+Setup and distribution: [docs/official-skills-plugin.md](./docs/official-skills-plugin.md).
+The repo marketplace exposes this skills-only package. GitHub publication does
+not automatically install it in your ChatGPT account.
+
+## Optional Codex MCP gateway
+
+The existing **Universal Skill Trust Gateway** package remains at the repo root.
+For the skills-only package, add the repo marketplace:
+
+```bash
+codex plugin marketplace add mohithreddycrm9/Universal-ai-skill-MVP-
+```
+
+Then select **Universal Official Skills** from the **Universal AI Skills** source in the ChatGPT desktop
+Plugins Directory. Local development, manual MCP configuration, and verification:
+[docs/codex-plugin.md](./docs/codex-plugin.md).
+
+The compatibility manifest reuses the existing gateway and bundled skill;
+there is no separate Codex backend. Public-directory publication is a separate step.
+
 ## Connect a client
 
 Examples: `examples/mcp-clients/cursor.json`, `claude-desktop.json`, `codex.toml`.

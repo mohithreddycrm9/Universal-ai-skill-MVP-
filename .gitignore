@@ -11,3 +11,5 @@ coverage/
 uploads/
 .vitest/
 .tsx-cache/
+__pycache__/
+*.py[cod]

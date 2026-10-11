@@ -1,6 +1,13 @@
-# Codex-style MCP client example
-# Point the MCP server command at this repo's CLI.
+# Manual Codex MCP setup, as an alternative to the bundled plugin.
+# Merge into ~/.codex/config.toml. Replace /ABS/PATH with your clone's absolute path.
+# Use Node.js 22.13+ (or 24+) for node:sqlite.
+# Do not enable both this entry and the plugin's bundled MCP server.
 
-[mcp.servers.universal-skill-trust-gateway]
+[mcp_servers.universal-skill-trust]
 command = "node"
-args = ["--experimental-sqlite", "./dist/index.js", "serve"]
+args = ["/ABS/PATH/Universal-ai-skill-MVP-/scripts/plugin-mcp-serve.mjs"]
+startup_timeout_sec = 120
+
+[mcp_servers.universal-skill-trust.env]
+SKILL_MCP_CONFIG_DIR = "/ABS/PATH/Universal-ai-skill-MVP-/config"
+SKILL_MCP_DATA_DIR = "/ABS/PATH/Universal-ai-skill-MVP-/data"
